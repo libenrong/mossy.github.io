@@ -6,9 +6,8 @@ export default defineConfig({
   lang: 'zh-CN',
   lastUpdated: true,
   cleanUrls: true,
-  // 部署到 mossy.github.io 根路径，base 设为 '/'
-  // 若改部署到子路径（如 mossy.github.io/docs/），改为 '/docs/'
-  base: '/',
+  // 部署到 libenrong.github.io/mossy.github.io/ 子路径
+  base: '/mossy.github.io/',
 
   themeConfig: {
     nav: [
