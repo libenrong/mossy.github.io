@@ -6,8 +6,8 @@ export default defineConfig({
   lang: 'zh-CN',
   lastUpdated: true,
   cleanUrls: true,
-  // 部署到 libenrong.github.io/mossy.github.io/ 子路径
-  base: '/mossy.github.io/',
+  // 自定义域名 www.mossymc.top，base 设为 '/'
+  base: '/',
 
   themeConfig: {
     nav: [
