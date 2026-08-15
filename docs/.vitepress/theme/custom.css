@@ -1,0 +1,27 @@
+/* MossyMC 品牌主题色：苔藓绿 */
+:root {
+  --vp-c-brand-1: #5B8C5A;
+  --vp-c-brand-2: #4A7A49;
+  --vp-c-brand-3: #3D6B3C;
+  --vp-c-brand-light: #8BB888;
+  --vp-c-brand-dark: #3D6B3C;
+}
+
+/* 首页 hero 渐变用苔藓色 */
+:root {
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-name-background: -webkit-linear-gradient(120deg, #5B8C5A 30%, #8BB888);
+  --vp-home-hero-image-background-image: linear-gradient(-45deg, #8BB888 50%, #5B8C5A 50%);
+  --vp-home-hero-image-filter: blur(44px);
+}
+
+/* 链接悬停色 */
+:root {
+  --vp-c-brand-1: #5B8C5A;
+}
+
+.dark {
+  --vp-c-brand-1: #8BB888;
+  --vp-c-brand-2: #5B8C5A;
+  --vp-c-brand-3: #8BB888;
+}

@@ -1,0 +1,13 @@
+{
+  "name": "mossymc-docs",
+  "version": "1.0.0",
+  "description": "MossyMC 玩法文档",
+  "scripts": {
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
+  },
+  "devDependencies": {
+    "vitepress": "^1.5.0"
+  }
+}
