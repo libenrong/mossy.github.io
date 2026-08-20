@@ -363,6 +363,66 @@ function eyeJumpscare() {
     }, 300);
 }
 
+// 结果页最终jumpscare：持续3.5秒后跳转B站
+function resultJumpscare() {
+    // 先闪红白
+    flash('#7a0000', 50);
+    setTimeout(() => flash('#fff', 80), 55);
+    // 眼睛突脸
+    eyeJumpscare();
+    // 全屏覆盖层
+    const ov = document.createElement('div');
+    ov.id = 'result-jumpscare';
+    ov.style.cssText = 'position:fixed;inset:0;background:#000;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;opacity:0;';
+    document.body.appendChild(ov);
+    setTimeout(() => { ov.style.transition = 'opacity 0.15s'; ov.style.opacity = '1'; }, 280);
+
+    const txt = document.createElement('div');
+    txt.style.cssText = 'color:#fff;font-size:clamp(28px,6vw,64px);font-weight:900;letter-spacing:8px;text-align:center;opacity:0;';
+    const msgs = ['它看到了你', '它一直都在看', '你以为结束了？'];
+    txt.textContent = msgs[Math.floor(Math.random() * msgs.length)];
+    ov.appendChild(txt);
+
+    const sub = document.createElement('div');
+    sub.style.cssText = 'margin-top:20px;color:#666;font-size:clamp(10px,2vw,14px);letter-spacing:6px;text-transform:uppercase;';
+    sub.textContent = '你选了' + (ans.length || 0) + '道题 · 离开' + tabCount + '次 · 它全都知道';
+    ov.appendChild(sub);
+
+    setTimeout(() => { txt.style.transition = 'opacity 0.3s'; txt.style.opacity = '1'; }, 320);
+
+    // 屏幕持续抖动（0~3.5秒）
+    const shakeInt = setInterval(() => {
+        const x = (Math.random() - 0.5) * 12;
+        const y = (Math.random() - 0.5) * 12;
+        document.body.style.transform = `translate(${x}px, ${y}px)`;
+    }, 50);
+    setTimeout(() => clearInterval(shakeInt), 3500);
+
+    // BGM音量最大
+    if (bgm) bgm.volume = 1.0;
+
+    // 尖叫音效（3.5秒内衰减）
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.frequency.value = 80;
+        osc.type = 'sawtooth';
+        g.gain.setValueAtTime(0.9, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 3.5);
+        osc.connect(g); g.connect(ctx.destination);
+        osc.start(); osc.stop(ctx.currentTime + 3.5);
+        setTimeout(() => ctx.close(), 3600);
+    } catch(e) {}
+
+    // 3.5秒后清理并跳转
+    setTimeout(() => {
+        document.body.style.transform = '';
+        if (bgm) setBGMVolume(0, 200);
+        window.location.href = 'https://www.bilibili.com/video/BV1H5uj6gEUF';
+    }, 3500);
+}
+
 // 文字恐怖谷：只腐坏普通字母，保持HTML结构，让它看起来像编码坏了
 function textCorrupt(el) {
     if (!el) return;
@@ -961,6 +1021,8 @@ function showResult() {
 
     // 音量降低
     setTimeout(() => setBGMVolume(0.08, 5000), 3000);
+    // 结果页最终jumpscare：3.5秒后跳转B站
+    setTimeout(resultJumpscare, 2500);
 }
 
 // ================================================================
