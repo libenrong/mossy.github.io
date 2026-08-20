@@ -1095,10 +1095,85 @@ function scheduleNextScare() {
     scareCycleTimeout = setTimeout(() => {
         if (!scareCycleActive) return;
         if (cur < TOTAL && !SEQ[cur].sp) {
-            eyeJumpscare();
+            triggerMicroScare();
         }
         scheduleNextScare();
     }, delay);
+}
+
+// 眼睛+文字弹出：多个随机位置逐个闪现（高频跳脸用）
+function triggerMicroScare() {
+    flash('#1a0000', 60);
+    // 音频
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.frequency.value = 45;
+        osc.type = 'sawtooth';
+        g.gain.setValueAtTime(0.5, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+        osc.connect(g); g.connect(ctx.destination);
+        osc.start(); osc.stop(ctx.currentTime + 0.3);
+        setTimeout(() => ctx.close(), 400);
+    } catch(e) {}
+
+    const EYE_URL = 'https://imgbed-1252836860.cos.ap-shanghai.myqcloud.com/911901727847860_120.png';
+    const texts = ['它看到你了', '它看到你了', '看到你了', '👁'];
+
+    // 随机位置（远离正中的边缘区域）
+    function randPos() {
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const region = Math.floor(Math.random() * 4);
+        let x, y;
+        if (region === 0) {      // 左上
+            x = 4 + Math.random() * 20; y = 4 + Math.random() * 20;
+        } else if (region === 1) { // 右上
+            x = 60 + Math.random() * 36; y = 4 + Math.random() * 20;
+        } else if (region === 2) { // 左下
+            x = 4 + Math.random() * 20; y = 60 + Math.random() * 36;
+        } else {                  // 右下
+            x = 60 + Math.random() * 36; y = 60 + Math.random() * 36;
+        }
+        return { x: x + '%', y: y + '%' };
+    }
+
+    // 弹出一个：眼 or 文字，随机位置，延迟delay出现，2秒后消失
+    function spawnOne(type, delay) {
+        setTimeout(() => {
+            const el = document.createElement('div');
+            el.style.cssText = `position:fixed;left:${0};top:${0};width:80px;height:80px;opacity:0;transition:opacity 0.08s;z-index:9600;pointer-events:none;`;
+            const pos = randPos();
+            el.style.left = pos.x;
+            el.style.top = pos.y;
+
+            if (type === 'eye') {
+                const img = document.createElement('img');
+                img.src = EYE_URL;
+                img.style.cssText = `width:70px;height:70px;object-fit:contain;animation:mspin 0.8s linear infinite;transform:rotate(${Math.random()*360}deg);`;
+                el.appendChild(img);
+            } else {
+                el.innerHTML = `<div style="color:#cc0000;font-size:15px;font-weight:bold;text-shadow:0 0 8px #880000;white-space:nowrap;transform:rotate(${Math.random()*30-15}deg);">${texts[Math.floor(Math.random()*texts.length)]}</div>`;
+            }
+            document.body.appendChild(el);
+            requestAnimationFrame(() => { el.style.opacity = '1'; });
+            // 2秒后消失
+            setTimeout(() => {
+                el.style.opacity = '0';
+                setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 100);
+            }, 2000);
+        }, delay);
+    }
+
+    // 生成 6-9 个弹窗，眼:字 ≈ 1:1，间隔 0.25-0.5s
+    const total = 6 + Math.floor(Math.random() * 4);
+    let delay = 0;
+    for (let i = 0; i < total; i++) {
+        const type = i % 2 === 0 ? 'eye' : 'text';
+        spawnOne(type, delay);
+        delay += 250 + Math.floor(Math.random() * 300);
+    }
 }
 
 function startScareCycle() {
