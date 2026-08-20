@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人格解析</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    min-height: 100vh;
+    display: flex; justify-content: center; align-items: center;
+    background: #f4f1ed;
+    color: #2a2520;
+    padding: 20px;
+    transition: background 3s ease, color 3s ease;
+}
+
+/* 眼睛容器 */
+#eye-wrap {
+    position: fixed; inset: 0; pointer-events: none;
+    display: flex; justify-content: center; align-items: center;
+    z-index: 0; opacity: 0; transition: opacity 4s ease;
+}
+#eye-wrap img {
+    width: 180px; height: 180px;
+    object-fit: contain;
+    filter: brightness(0.85) contrast(1.1);
+    transition: width 6s ease, height 6s ease, filter 4s ease;
+}
+#eye-wrap.late img {
+    width: 280px; height: 280px;
+}
+#eye-wrap.later img {
+    width: 420px; height: 420px;
+}
+#eye-wrap.phase-dark img {
+    filter: brightness(0.4) contrast(1.4) saturate(0.8);
+}
+
+/* 自我指涉底栏 */
+#meta {
+    position: fixed; bottom: 8px; right: 12px;
+    font-size: 8px; color: transparent;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.5px; pointer-events: none; z-index: 50;
+    transition: color 4s; user-select: none;
+}
+#meta.on { color: #b0a898; }
+
+/* 主容器 */
+#app {
+    max-width: 560px; width: 100%;
+    padding: 48px 56px;
+    border-radius: 2px;
+    border: 1px solid rgba(0,0,0,0.07);
+    position: relative; z-index: 10;
+    background: transparent;
+    transition: border-color 3s;
+}
+
+
+/* 深色阶段：app容器保持文字可见 */
+#app.phase-dark {
+    background: rgba(0,0,0,0.18);
+    border-color: rgba(255,255,255,0.06);
+}
+
+#app.phase-dark .opt-btn {
+    border-color: rgba(255,255,255,0.1);
+    color: #d0c0a8;
+    opacity: 0.65;
+}
+
+#app.phase-dark .opt-btn:hover {
+    background: rgba(255,255,255,0.04);
+    border-color: rgba(255,255,255,0.22);
+    opacity: 0.8;
+}
+
+#app.phase-dark .q-text {
+    color: #d0c0a8;
+}
+
+#app.phase-dark .q-num {
+    color: #a08060;
+}
+
+#app.phase-dark .hdr {
+    border-bottom-color: rgba(255,255,255,0.07);
+}
+
+#app.phase-dark .prog-wrap {
+    background: rgba(255,255,255,0.04);
+}
+
+#app.phase-dark .prog-bar {
+    background: rgba(255,255,255,0.18);
+}
+
+#app.phase-dark .brand,
+#app.phase-dark .prog-t {
+    color: #a08060;
+    opacity: 0.7;
+}
+
+/* 特殊题文字 */
+#app.phase-dark .sp-q {
+    color: #d0c0a8;
+}
+
+/* 暗示文字 */
+#app.phase-dark .hint {
+    color: #b09070;
+}
+
+/* 结果页 */
+#app.phase-dark .r-type,
+#app.phase-dark .r-sub,
+#app.phase-dark .r-desc,
+#app.phase-dark .r-detail {
+    color: #d0c0a8;
+}
+
+/* 头部 */
+.hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(0,0,0,0.05); }
+.brand { font-size: 9px; letter-spacing: 5px; text-transform: uppercase; opacity: 0.22; font-weight: 300; }
+.prog-t { font-size: 9px; opacity: 0.22; letter-spacing: 1px; }
+.prog-t em { font-style: normal; opacity: 1; }
+.prog-wrap { height: 1px; background: rgba(0,0,0,0.04); border-radius: 1px; margin-bottom: 32px; overflow: hidden; }
+.prog-bar { height: 100%; width: 0; background: rgba(0,0,0,0.1); border-radius: 1px; transition: width 0.6s ease, background 1s; }
+
+/* 内容 */
+.content { min-height: 240px; display: flex; flex-direction: column; justify-content: center; }
+
+/* 欢迎 */
+#welcome { text-align: center; }
+#welcome h1 { font-size: 20px; font-weight: 200; letter-spacing: 8px; margin-bottom: 12px; opacity: 0.6; }
+#welcome p { font-size: 11px; opacity: 0.38; line-height: 2.4; margin-bottom: 12px; }
+#welcome .sub { font-size: 9px; opacity: 0.2; letter-spacing: 3px; margin-bottom: 28px; }
+#start {
+    background: transparent; border: 1px solid rgba(0,0,0,0.1); color: inherit;
+    font-size: 10px; letter-spacing: 4px; padding: 11px 36px; cursor: pointer;
+    font-family: inherit; text-transform: uppercase; font-weight: 300;
+    opacity: 0.4; transition: opacity 0.3s;
+}
+#start:hover { opacity: 0.75; }
+
+/* 题目 */
+#q-area { display: none; }
+#q-area.on { display: block; animation: in 0.5s ease; }
+@keyframes in { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+.q-num { font-size: 8px; letter-spacing: 3px; text-transform: uppercase; opacity: 0.18; margin-bottom: 8px; }
+.q-text { font-size: 15px; font-weight: 300; line-height: 2.1; margin-bottom: 24px; min-height: 44px; letter-spacing: 0.3px; transition: filter 0.5s, opacity 0.5s; }
+.q-opts { display: flex; flex-direction: column; gap: 5px; }
+.opt-btn {
+    background: transparent; border: 1px solid rgba(0,0,0,0.05); border-radius: 1px;
+    padding: 12px 14px; font-size: 13px; color: inherit; cursor: pointer;
+    font-family: inherit; text-align: left; transition: all 0.18s;
+    display: flex; align-items: center; gap: 10px;
+    font-weight: 300; letter-spacing: 0.2px; opacity: 0.55;
+}
+.opt-btn:hover { background: rgba(0,0,0,0.02); border-color: rgba(0,0,0,0.12); transform: translateX(2px); opacity: 0.75; }
+.opt-btn .l { width: 15px; height: 15px; border: 1px solid rgba(0,0,0,0.07); border-radius: 50%; font-size: 7.5px; display: flex; align-items: center; justify-content: center; opacity: 0.28; flex-shrink: 0; }
+
+/* 特殊题 */
+#sp-area { display: none; text-align: center; margin-top: 8px; }
+#sp-area.on { display: block; }
+.sp-q { font-size: 14px; font-weight: 300; color: #2a2520; line-height: 2.5; margin-bottom: 22px; letter-spacing: 0.4px; }
+.sp-btn { display: none; }
+
+/* 暗示文字 */
+#hint-area { min-height: 16px; margin-top: 14px; }
+.hint { font-size: 10px; color: #8a7060; opacity: 0; letter-spacing: 0.3px; font-weight: 300; font-style: italic; transition: opacity 1.2s; line-height: 1.8; }
+
+/* 结果 */
+#r-area { display: none; }
+#r-area.on { display: block; animation: in 0.6s ease; }
+.r-type { font-size: 9px; color: inherit; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 12px; opacity: 0.45; }
+.r-sub { font-size: 17px; font-weight: 200; color: inherit; margin-bottom: 10px; letter-spacing: 3px; }
+.r-desc { font-size: 11px; opacity: 0.3; line-height: 2; margin-bottom: 10px; }
+.r-detail { border-top: 1px solid rgba(0,0,0,0.04); padding-top: 12px; font-size: 11px; opacity: 0.22; line-height: 2; }
+
+/* 响应式 */
+@media (max-width: 600px) {
+    #app { padding: 32px 22px; }
+    #welcome h1 { font-size: 16px; }
+    .q-text { font-size: 13px; }
+    .opt-btn { font-size: 12px; }
+    #eye-wrap img { width: 120px !important; height: 120px !important; }
+}
+</style>
+</head>
+<body>
+
+<div id="eye-wrap">
+    <img src="/Users/include/Desktop/eye.png" alt="" id="eye-img">
+</div>
+<div id="meta"></div>
+
+<div id="app">
+    <div class="hdr">
+        <div class="brand">MindType</div>
+        <div class="prog-t">第 <em id="q-n">0</em> / <span id="q-t">40</span> 题</div>
+    </div>
+    <div class="prog-wrap"><div class="prog-bar" id="prog"></div></div>
+    <div class="content">
+
+        <div id="welcome">
+            <h1>人格解析</h1>
+            <p>通过 40 道题目，揭示你的认知密码。<br>请根据直觉作答，不必思考太久。</p>
+            <p class="sub">约 13 分钟 · 内心诚实</p>
+            <button id="start">开始测试 →</button>
+        </div>
+
+        <div id="q-area">
+            <div class="q-num" id="q-lbl">问题 1</div>
+            <div class="q-text" id="q-txt">加载中...</div>
+            <div class="q-opts" id="q-opts"></div>
+            <div id="sp-area">
+                <div class="sp-q" id="sp-q"></div>
+                <button class="sp-btn" id="sp-btn">我读完了</button>
+            </div>
+            <div id="hint-area"></div>
+        </div>
+
+        <div id="r-area">
+            <div class="r-type" id="r-type">——</div>
+            <div class="r-sub" id="r-sub">——</div>
+            <div class="r-desc" id="r-desc">——</div>
+            <div class="r-detail" id="r-detail"></div>
+        </div>
+
+    </div>
+</div>
+
+<audio id="bgm" src="/Users/include/Downloads/began.mp3" preload="auto" loop></audio>
+
+<script>
+// ================================================================
+// 数据
+// ================================================================
+const QS = [
+    {t:'在周末，你更愿意参加热闹的聚会还是安静地待在家里？',a:'热闹的聚会',b:'安静地居家',d:'EI',va:'E',vb:'I'},
+    {t:'在团队讨论中，你倾向于主动表达观点还是先倾听他人？',a:'主动表达',b:'先倾听他人',d:'EI',va:'E',vb:'I'},
+    {t:'与人相处时，你更喜欢成为焦点还是保持低调？',a:'成为焦点',b:'保持低调',d:'EI',va:'E',vb:'I'},
+    {t:'你更享受与他人共事还是独自工作？',a:'与他人共事',b:'独自工作',d:'EI',va:'E',vb:'I'},
+    {t:'当遇到困难时，你倾向于向朋友求助还是自己解决？',a:'向朋友求助',b:'自己解决',d:'EI',va:'E',vb:'I'},
+    {t:'你更喜欢在社交活动中获得能量，还是在独处中恢复？',a:'社交活动',b:'独处恢复',d:'EI',va:'E',vb:'I'},
+    {t:'你更愿意分享个人经历，还是保留私密？',a:'分享经历',b:'保留私密',d:'EI',va:'E',vb:'I'},
+    {t:'你通常先行动再思考，还是先思考再行动？',a:'先行动',b:'先思考',d:'EI',va:'E',vb:'I'},
+    {t:'你更关注眼前的细节，还是未来的各种可能性？',a:'眼前的细节',b:'未来的可能性',d:'SN',va:'S',vb:'N'},
+    {t:'你更相信实际的经验积累，还是直觉的推测？',a:'实际经验',b:'直觉推测',d:'SN',va:'S',vb:'N'},
+    {t:'当你学习新事物时，你更关注具体操作步骤还是整体概念？',a:'具体步骤',b:'整体概念',d:'SN',va:'S',vb:'N'},
+    {t:'你更留意现实中的事实数据，还是隐藏的象征意义？',a:'事实数据',b:'象征意义',d:'SN',va:'S',vb:'N'},
+    {t:'你更倾向于按已知方法做事，还是探索新的可能？',a:'按已知方法',b:'探索新可能',d:'SN',va:'S',vb:'N'},
+    {t:'你更擅长记住细节，还是记住模式与联系？',a:'记住细节',b:'记住模式',d:'SN',va:'S',vb:'N'},
+    {t:'你更喜欢阅读纪实作品还是科幻/想象文学？',a:'纪实作品',b:'科幻想象',d:'SN',va:'S',vb:'N'},
+    {t:'你更关注此刻的体验，还是对未来的构想？',a:'此刻体验',b:'未来构想',d:'SN',va:'S',vb:'N'},
+    {t:'做重要决定时，你更依赖理性分析还是内心感受？',a:'理性分析',b:'内心感受',d:'TF',va:'T',vb:'F'},
+    {t:'评价别人时，你更看重事实对错还是情感和谐？',a:'事实对错',b:'情感和谐',d:'TF',va:'T',vb:'F'},
+    {t:'当冲突发生时，你更倾向于讲道理还是照顾情绪？',a:'讲道理',b:'照顾情绪',d:'TF',va:'T',vb:'F'},
+    {t:'你更看重逻辑一致性还是人际关系的温暖？',a:'逻辑一致',b:'人际关系',d:'TF',va:'T',vb:'F'},
+    {t:'你更擅长分析问题还是体察他人感受？',a:'分析问题',b:'体察感受',d:'TF',va:'T',vb:'F'},
+    {t:'你通常以客观标准还是主观价值来评判事物？',a:'客观标准',b:'主观价值',d:'TF',va:'T',vb:'F'},
+    {t:'你更相信科学证据还是个人直觉？',a:'科学证据',b:'个人直觉',d:'TF',va:'T',vb:'F'},
+    {t:'你更喜欢生活有明确的计划，还是保持灵活与开放？',a:'明确计划',b:'灵活开放',d:'JP',va:'J',vb:'P'},
+    {t:'你更习惯按部就班，还是随遇而安？',a:'按部就班',b:'随遇而安',d:'JP',va:'J',vb:'P'},
+    {t:'当事情出现变化时，你更倾向立即调整计划还是先观察？',a:'立即调整',b:'先观察',d:'JP',va:'J',vb:'P'},
+    {t:'你更喜欢日程排满还是留出自由时间？',a:'日程排满',b:'自由时间',d:'JP',va:'J',vb:'P'},
+    {t:'你更享受完成既定任务还是随性探索？',a:'完成任务',b:'随性探索',d:'JP',va:'J',vb:'P'},
+    {t:'你更倾向于作出决定并坚持，还是保持开放选项？',a:'作出决定',b:'保持开放',d:'JP',va:'J',vb:'P'},
+    {t:'你更喜欢有序的环境还是自由的空间？',a:'有序环境',b:'自由空间',d:'JP',va:'J',vb:'P'}
+];
+
+// 特殊题：文字恐怖谷
+// 手法：它知道/自我递归/第三人突现/几乎正确的错误/时间错位/反刍重复
+const SPQS = [
+    // Q10
+    '你有没有在某个瞬间，<br>觉得自己刚才做的事，<br>好像不是自己想做的？',
+
+    // Q20 — 第三人突现
+    '你正在读这段文字。<br><span style="font-size:0.7em;opacity:0.4;">他也在读。</span><br><br>你上一次感到真正的安静，<br>是在什么时候？',
+
+    // Q30 — 选项外第三人
+    '你有没有对某个人，<br>做过一件他永远不会知道的事？<br><br>是 A 吗，还是 B？<br>还是，是 C？',
+
+    // Q40 — 它知道你的沉默
+    '有些话你从来没有对任何人说过。<br><br>你知道是哪句。<br><br>你能想起那件事发生的时候，<br>你身边有没有别人？<br>真的没有吗？',
+
+    // Q50 — 自我分裂
+    '你会不会在某些时刻，<br>突然不知道自己为什么会做这件事——<br>明明是你自己在做，<br>却像是看着自己在做？<br><br>比如现在。',
+
+    // Q60 — 反刍重复·文字恐怖谷
+    '你有没有一个习惯，<br>或者一个想法，<br>是你从来不解释原因的？<br><br>那是什——<br><br>等等，<br>你刚才想说的是"什么"。<br>现在呢？',
+
+    // Q70 — 它一直在看
+    '你有没有注意到，<br>你读这段文字的时候，<br>眼睛是从左到右移动的？<br><br>你现在停下来了。<br><br>好。继续。',
+
+    // Q80 — 递归自我
+    '你现在感觉怎么样？<br><br>真的感觉怎么样？<br><br>还是只是觉得"应该"感觉怎么样？<br><br>你觉得哪个回答是对的，<br>还是你只是在选一个答案？',
+
+    // Q90 — 几乎正确的错误
+    '你对自己的了解，<br>有多少是真正观察来的，<br>有多少只是别人告诉你的？<br><br>这道题，<br>是你自己想做的吗？<br>还是系统生成的？<br><span style="font-size:0.65em;opacity:0.25;">还是说，系统和你，有什么区别？</span>',
+
+    // Q100 — 终局
+    '如果现在有一个人，<br>能完整地看到你所有的想法，<br>你会感到害怕吗？<br><br>还是你会感到——<br><br>——被理解了？<br><br><span style="font-size:0.6em;opacity:0.2;">或者，<br>你从一开始就不知道什么是"自己的"想法？</span>'
+];
+
+// 眼睛 jumpscare
+function eyeJumpscare() {
+    const el = eyeImg;
+    const wrap = eyeWrap;
+    const computed = getComputedStyle(el);
+    // 保存原始状态
+    const origW = computed.width;
+    const origH = computed.height;
+    const origPos = { top: wrap.style.top, left: wrap.style.left, opacity: wrap.style.opacity };
+    // 先闪红，再闪白
+    flash('#7a0000', 40);
+    setTimeout(() => flash('#fff', 60), 45);
+    // 眼睛移到正中，瞬间放大
+    wrap.style.transition = 'none';
+    wrap.style.top = '50%';
+    wrap.style.left = '50%';
+    wrap.style.transform = 'translate(-50%,-50%)';
+    el.style.transition = 'width 0.06s, height 0.06s';
+    el.style.width = '98vw';
+    el.style.height = '98vh';
+    el.style.objectFit = 'cover';
+    wrap.style.opacity = '1';
+    // 低频冲击
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.frequency.value = 40;
+        osc.type = 'sawtooth';
+        g.gain.setValueAtTime(0.6, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+        osc.connect(g); g.connect(ctx.destination);
+        osc.start(); osc.stop(ctx.currentTime + 0.4);
+        setTimeout(() => ctx.close(), 500);
+    } catch(e) {}
+    // 300ms后恢复
+    setTimeout(() => {
+        wrap.style.transition = 'all 0.7s ease';
+        wrap.style.top = '';
+        wrap.style.left = '';
+        wrap.style.transform = '';
+        el.style.transition = 'width 0.6s ease, height 0.6s ease';
+        el.style.width = origW;
+        el.style.height = origH;
+        el.style.objectFit = 'contain';
+        setTimeout(() => {
+            wrap.style.transition = '';
+            el.style.transition = '';
+        }, 800);
+    }, 300);
+}
+
+// 文字恐怖谷：只腐坏普通字母，保持HTML结构，让它看起来像编码坏了
+function textCorrupt(el) {
+    if (!el) return;
+    const orig = el.innerHTML;
+    const corrupt = () => {
+        const bad = orig.replace(/[a-zA-Z0-9]/g, c => {
+            if (Math.random() < 0.07) {
+                const map = {
+                    'e':'3','i':'1','a':'4','o':'0','s':'5',
+                    't':'7','l':'1','r':'2','n':'h','h':'n',
+                    'E':'3','I':'1','A':'4','O':'0','S':'5',
+                    'T':'7','L':'1','R':'2','N':'H','H':'N'
+                };
+                return map[c] !== undefined ? map[c] : c;
+            }
+            return c;
+        });
+        el.innerHTML = bad;
+        setTimeout(() => {
+            el.innerHTML = orig;
+            setTimeout(corrupt, 600 + Math.random() * 1200);
+        }, 1500 + Math.random() * 1000);
+    };
+    setTimeout(corrupt, 2000);
+}
+
+// 反刍暗示：重复但每遍少一个字
+let echoText = '';
+function echo(text) {
+    echoText = text;
+    const el = document.createElement('div');
+    el.style.cssText = 'font-size:10px;color:#8a7060;opacity:0;letter-spacing:0.3px;font-weight:300;font-style:italic;transition:opacity 1s;margin-top:8px;text-align:center;';
+    el.textContent = text;
+    hintArea.appendChild(el);
+    requestAnimationFrame(() => el.style.opacity = '0.4');
+    let times = 0;
+    const interval = setInterval(() => {
+        times++;
+        el.textContent = text.slice(0, text.length - times * 2);
+        if (el.textContent.length <= 3) {
+            clearInterval(interval);
+            el.style.opacity = '0';
+            setTimeout(() => el.remove(), 1200);
+        }
+    }, 1200);
+}
+
+// 效果池（含 jumpscare 眼睛）
+const SP_EFFECTS = [
+    () => { flash('#8a0000', 80); },                        // 闪红
+    () => { flash('#fff', 60); },                            // 闪白
+    () => { shake(250); },                                   // 屏幕抖动
+    () => { glitchText(); },                                 // 文字碎裂
+    () => { tear(); },                                       // 画面撕裂
+    () => { silenceBgm(600); },                              // BGM静音
+    () => { eyePulse(); },                                   // 眼睛放大（轻量）
+    () => { bgDrop(); },                                     // 背景掉黑
+    () => { playNoise(); },                                  // 低频噪音
+    () => { flash('#000', 50); },                            // 闪黑
+    () => { eyeJumpscare(); },                               // 眼睛jumpscare
+    () => { textCorrupt(spQEl); },                           // 文字腐坏
+    () => { echo('你还在这里。'); },                         // 反刍文字
+    () => { echo('你回来了。'); },                           // 反刍
+];
+
+function triggerSpecialEffect() {
+    // 第7题（索引6）和第10题（索引9）时，眼睛做jumpscare
+    const spIdx = Math.floor(cur / 4); // 0~9
+    if (spIdx === 6 || spIdx === 9) {
+        eyeJumpscare();
+        return;
+    }
+    const fns = SP_EFFECTS.slice(0, 11); // 不含额外特效
+    const fn = fns[Math.floor(Math.random() * fns.length)];
+    fn();
+}
+
+// 构建序列：3普通 + 1特殊 × 10
+const SEQ = [];
+let ni = 0;
+for (let i = 0; i < 10; i++) {
+    for (let j = 0; j < 3; j++) {
+        if (ni < QS.length) SEQ.push({ ...QS[ni++], sp: false });
+    }
+    SEQ.push({ t: SPQS[i], sp: true });
+}
+const TOTAL = SEQ.length;
+
+const RESULTS = {
+    'INTJ':{s:'暗影操纵者',d:'你站在理性的深渊边缘，凝视着秩序的裂缝。',x:'你拥有战略家的头脑，但内心深处，你怀疑一切。'},
+    'INTP':{s:'虚空思考者',d:'你的思想在无尽的逻辑迷宫中穿行。',x:'你擅长解构，却难以构建。'},
+    'ENTJ':{s:'深渊指挥官',d:'你掌控着权力的洪流，但每一步都踏在未知的深渊边缘。',x:'你生来就是领导者，但领导者的孤独，你比谁都清楚。'},
+    'ENTP':{s:'混沌编织者',d:'你以混乱为食，用悖论织网。',x:'你是创新的化身，但创新往往伴随着不安与动荡。'},
+    'INFJ':{s:'幻影先知',d:'你看见别人看不见的东西。',x:'你是理想主义者，但理想在现实中往往显得苍白而脆弱。'},
+    'INFP':{s:'梦境流浪者',d:'你生活在自己的内心世界里。',x:'你的敏感是你的力量，也是你的软肋。'},
+    'ENFJ':{s:'灵魂吞噬者',d:'你拥有照亮他人的光芒。',x:'你是天生的鼓舞者，但鼓舞者也需要被鼓舞。'},
+    'ENFP':{s:'狂想之灵',d:'你的热情像野火，席卷一切。',x:'你的好奇心带你走遍世界，但世界尽头，只有你自己。'},
+    'ISTJ':{s:'铁幕守护者',d:'你以秩序为盾，以责任为矛。',x:'你是可靠的基石，但基石从不抱怨。'},
+    'ISFJ':{s:'记忆牢笼',d:'你活在过去的温暖里。',x:'你是守护者，但谁来守护你？'},
+    'ESTJ':{s:'秩序暴君',d:'你以效率为信仰，以结果为真理。',x:'你是执行官，但执行官的字典里没有"放松"。'},
+    'ESFJ':{s:'共鸣傀儡',d:'你以他人的情绪为镜。',x:'你是社交的灵魂，但灵魂也需要独处。'},
+    'ISTP':{s:'暗刃行者',d:'你以行动为语言，以技能为身份。',x:'你是匠人，但匠人也有裂痕。'},
+    'ISFP':{s:'静默幽魂',d:'你的美藏在细节里。',x:'你是艺术家，但艺术往往是孤独的。'},
+    'ESTP':{s:'疯狂火花',d:'你活在当下，以刺激为食。',x:'你是冒险家，但冒险的终点往往是未知。'},
+    'ESFP':{s:'狂欢魅影',d:'你是聚会的中心，是欢乐的化身。',x:'你是表演者，但表演总有落幕之时。'}
+};
+
+// ================================================================
+// 状态
+// ================================================================
+let cur = 0, started = false, ph = 0;
+const ans = [];
+let startTime = 0;
+let lastClick = 0;
+let mouseStill = 0, lastMove = Date.now();
+let lastMX = 0, lastMY = 0;
+let speedBuf = [];
+let tabCount = 0, tabStart = 0;
+let hoverCount = {};
+let wrongChoiceShown = false;
+let specialNoiseActive = false;
+
+// DOM
+const $ = id => document.getElementById(id);
+const qN = $('q-n'), qTEl = $('q-t'), prog = $('prog');
+const welcome = $('welcome');
+const qArea = $('q-area'), rArea = $('r-area');
+const qLbl = $('q-lbl'), qTxt = $('q-txt'), qOpts = $('q-opts');
+const spArea = $('sp-area'), spQEl = $('sp-q'), spBtn = $('sp-btn');
+const meta = $('meta');
+const eyeWrap = $('eye-wrap');
+const eyeImg = $('eye-img');
+const bgm = $('bgm');
+const hintArea = $('hint-area');
+
+// ================================================================
+// 音频
+// ================================================================
+function startBGM() {
+    bgm.volume = 0;
+    bgm.play().catch(() => {});
+    // 渐入
+    let vol = 0;
+    const fadeIn = setInterval(() => {
+        vol = Math.min(0.45, vol + 0.015);
+        bgm.volume = vol;
+        if (vol >= 0.45) clearInterval(fadeIn);
+    }, 200);
+}
+
+function setBGMVolume(v, dur = 2000) {
+    const now = bgm.volume;
+    const step = (v - now) / (dur / 50);
+    const fade = setInterval(() => {
+        bgm.volume = Math.max(0, Math.min(1, bgm.volume + step));
+        if ((step > 0 && bgm.volume >= v) || (step < 0 && bgm.volume <= v)) {
+            bgm.volume = v;
+            clearInterval(fade);
+        }
+    }, 50);
+}
+
+// ================================================================
+// 特殊题效果：随机触发一种
+// ================================================================
+
+function flash(color, dur) {
+    const el = document.createElement('div');
+    el.style.cssText = `position:fixed;inset:0;background:${color};z-index:9999;pointer-events:none;`;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), dur);
+}
+
+function shake(dur) {
+    const orig = document.body.style.transform;
+    const t = setInterval(() => {
+        document.body.style.transform = `translate(${(Math.random()-0.5)*4}px,${(Math.random()-0.5)*3}px)`;
+    }, 30);
+    setTimeout(() => {
+        clearInterval(t);
+        document.body.style.transform = orig;
+    }, dur);
+}
+
+function glitchText() {
+    const el = qTxt;
+    const orig = el.textContent;
+    el.style.transition = 'opacity 0.08s';
+    el.style.opacity = '0';
+    setTimeout(() => {
+        el.textContent = orig.split('').map(c => Math.random()<0.3 ? '' : c).join('');
+        el.style.opacity = '1';
+        el.style.transition = 'opacity 0.4s';
+        setTimeout(() => {
+            el.textContent = orig;
+        }, 300);
+    }, 120);
+}
+
+function tear() {
+    const el = document.createElement('div');
+    el.style.cssText = 'position:fixed;inset:0;z-index:9998;pointer-events:none;background:linear-gradient(to right,transparent 0%,rgba(255,255,255,0.06) 50%,transparent 100%);transform:skewX(-5deg) scaleY(0.3);';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 150);
+}
+
+function silenceBgm(dur) {
+    const orig = bgm.volume;
+    bgm.volume = 0;
+    setTimeout(() => {
+        // 恢复时制造一个突兀感
+        bgm.volume = 0.02;
+        setTimeout(() => bgm.volume = orig, 80);
+    }, dur);
+}
+
+function eyePulse() {
+    const el = eyeImg;
+    const computed = getComputedStyle(el);
+    const origW = computed.width;
+    const origH = computed.height;
+    el.style.transition = 'width 0.07s, height 0.07s';
+    el.style.width = '420px'; el.style.height = '420px';
+    setTimeout(() => {
+        el.style.transition = 'width 0.6s ease, height 0.6s ease';
+        el.style.width = origW; el.style.height = origH;
+    }, 120);
+}
+
+function bgDrop() {
+    const origBg = document.body.style.background;
+    document.body.style.transition = 'background 0.05s';
+    document.body.style.background = '#000';
+    setTimeout(() => {
+        document.body.style.transition = 'background 0.4s';
+        document.body.style.background = origBg;
+    }, 180);
+}
+
+// 低频噪音（保留为一种效果）
+function playNoise() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const bufSize = ctx.sampleRate * 3;
+        const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < bufSize; i++) d[i] = Math.random() * 2 - 1;
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'lowpass'; filter.frequency.value = 600;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0, ctx.currentTime);
+        g.gain.linearRampToValueAtTime(0.35, ctx.currentTime + 0.8);
+        g.gain.linearRampToValueAtTime(0.15, ctx.currentTime + 2.2);
+        g.gain.linearRampToValueAtTime(0, ctx.currentTime + 3.5);
+        src.connect(filter); filter.connect(g); g.connect(ctx.destination);
+        src.start(); src.stop(ctx.currentTime + 3.5);
+        setTimeout(() => ctx.close(), 4000);
+    } catch(e) {}
+}
+
+// ================================================================
+// 暗示文字
+// ================================================================
+let activeHint = null;
+
+function showHint(text, duration = 5000) {
+    // 移除旧的
+    if (activeHint) activeHint.remove();
+    const el = document.createElement('div');
+    el.className = 'hint';
+    el.innerHTML = text;  // 支持HTML换行
+    hintArea.innerHTML = '';
+    hintArea.appendChild(el);
+    requestAnimationFrame(() => { el.style.opacity = '0.55'; });
+    activeHint = el;
+    setTimeout(() => {
+        el.style.opacity = '0';
+        setTimeout(() => { if (el.parentNode) el.remove(); }, 1400);
+    }, duration);
+}
+
+function clearHint() {
+    if (activeHint) {
+        activeHint.style.opacity = '0';
+        setTimeout(() => { if (activeHint && activeHint.parentNode) activeHint.remove(); }, 200);
+        activeHint = null;
+    }
+}
+
+// 行为暗示：文字恐怖谷风格
+const HINTS = {
+    3: [
+        '你点这道题的时候，没有犹豫。',
+        '你选了左边那个。',
+        '这道题你看了两遍。',
+        '你的眼睛在这里停了一下。',
+    ],
+    4: [
+        '你刚才切换出去了。',
+        '你回来了。',
+        '那段时间里，你在看什么？',
+        '你以为我没有注意到吗？',
+    ],
+    5: [
+        '你点的那个选项，和你想的一样吗？',
+        'A。你选的 A。',
+        '还是说，你选了"应该"选的那个？',
+        '你有没有在两个选项之间犹豫过？',
+    ],
+    6: [
+        '你还记得上一道题选了什么吗？',
+        '你点的时候，真的在想这件事吗？',
+        '你是在回答问题，<br>还是只是在点？',
+        '你的答案，和你的想法，是同一件事吗？',
+    ],
+    7: [
+        '你点的每一个选项，<br>真的代表你的想法吗？',
+        '你有没有觉得，你只是在往下走？',
+        '你的答案，有多少是你真正想说的？',
+        '如果这些选项里没有你真正想选的，你会怎么办？',
+        '你选的这个，<br>是 A 还是 B？<br>还是你只是想离开这里？',
+    ],
+    8: [
+        '你还在这里。',
+        '你是自己选择继续的，<br>对吗？',
+        '还是说，你只是没有停下来？',
+        '你停下来的话，会发生什么？',
+    ]
+};
+
+function maybeShowHint() {
+    const pool = HINTS[ph];
+    if (!pool || Math.random() > 0.22) return;
+    const text = pool[Math.floor(Math.random() * pool.length)];
+    showHint(text, 4000);
+}
+
+// ================================================================
+// 鼠标监控
+// ================================================================
+document.addEventListener('mousemove', e => {
+    const dx = e.clientX - lastMX, dy = e.clientY - lastMY;
+    speedBuf.push(Math.sqrt(dx*dx + dy*dy));
+    if (speedBuf.length > 10) speedBuf.shift();
+    lastMX = e.clientX; lastMY = e.clientY;
+    lastMove = Date.now();
+    mouseStill = 0;
+});
+
+setInterval(() => {
+    mouseStill = Math.floor((Date.now() - lastMove) / 1000);
+    if (!started || cur >= TOTAL) return;
+    if (ph >= 4 && mouseStill > 8) {
+        qTxt.style.filter = `blur(${Math.min(mouseStill - 7, 3)}px)`;
+    }
+    if (mouseStill > 14) {
+        qTxt.style.filter = '';
+    }
+}, 1000);
+
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        tabStart = Date.now();
+        tabCount++;
+    } else {
+        if (tabStart && started) {
+            const dur = Math.round((Date.now() - tabStart) / 1000);
+            setTimeout(() => {
+                showHint('你刚才离开了 ' + dur + ' 秒。', 4500);
+            }, 400);
+        }
+        tabStart = 0;
+    }
+});
+
+document.addEventListener('mouseover', e => {
+    if (e.target.classList.contains('opt-btn') && SEQ[cur] && !SEQ[cur].sp) {
+        const isA = e.target.querySelector('.l').textContent === 'A';
+        if (!hoverCount[cur]) hoverCount[cur] = { a: 0, b: 0 };
+        hoverCount[cur][isA ? 'a' : 'b']++;
+    }
+});
+
+// ================================================================
+// 阶段
+// ================================================================
+function phVal() { return Math.min(9, Math.floor(cur / 4)); }
+
+function applyPhase(p) {
+    ph = p;
+
+    // 背景色：米色 → 暖灰 → 深灰 → 近黑
+    const bgs = ['#f4f1ed','#e8e3dc','#ddd6ca','#c8bfb2','#a89888','#6a5a50','#2e2420','#100c0a','#050302','#000'];
+    const fgs = ['#2a2520','#3a3530','#4a4038','#5a5048','#e8e0d4','#d0c8bc','#c8b89a','#b0a080','#a09080','#c0b0a0'];
+    document.body.style.background = bgs[p] || bgs[0];
+    document.body.style.color = fgs[p] || fgs[0];
+
+    // app容器深色class
+    const appEl = $('app');
+    appEl.classList.remove('phase-dark');
+    if (p >= 6) appEl.classList.add('phase-dark');
+
+    // 眼睛
+    if (p >= 2) eyeWrap.style.opacity = '1';
+    if (p >= 5) eyeWrap.classList.add('late');
+    if (p >= 7) { eyeWrap.classList.add('later'); eyeWrap.classList.add('phase-dark'); }
+    if (p >= 8) { eyeWrap.style.opacity = '0.6'; }
+
+    // 阶段6+：眼睛开始"活着"——轻微漂移
+    if (p >= 6) startEyeLife();
+
+    // 阶段7+：元信息栏文字开始变化
+    if (p >= 7) {
+        meta.style.letterSpacing = '1px';
+    }
+
+    // 元信息栏
+    if (p >= 3) meta.classList.add('on');
+
+    // 暗示
+    if (started) maybeShowHint();
+}
+
+// 眼睛"生命"：轻微的呼吸/漂移
+let eyeLifeInterval = null;
+function startEyeLife() {
+    if (eyeLifeInterval) return;
+    eyeLifeInterval = setInterval(() => {
+        const drift = (Math.random() - 0.5) * 8;
+        const driftY = (Math.random() - 0.5) * 6;
+        eyeWrap.style.transform = `translate(calc(-50% + ${drift}px), calc(-50% + ${driftY}px))`;
+        setTimeout(() => {
+            if (!eyeWrap.style.transform) return;
+            eyeWrap.style.transform = 'translate(-50%,-50%)';
+        }, 400);
+    }, 1800 + Math.random() * 2000);
+}
+
+// ================================================================
+// 渲染题目
+// ================================================================
+function renderQ(idx) {
+    applyPhase(phVal());
+    const q = SEQ[idx];
+    if (!q) return;
+
+    clearHint();
+    qN.textContent = idx + 1;
+    qTEl.textContent = TOTAL;
+    prog.style.width = `${(idx / TOTAL) * 100}%`;
+    qLbl.textContent = `问题 ${idx + 1}`;
+    qTxt.style.filter = '';
+
+    spArea.classList.remove('on');
+    qOpts.style.display = 'flex';
+
+    if (q.sp) {
+        qOpts.style.display = 'none';
+        spArea.classList.add('on');
+        spQEl.innerHTML = q.t;
+        qTxt.textContent = '';
+        qArea.classList.add('on');
+        welcome.style.display = 'none';
+        rArea.classList.remove('on');
+        // 特殊题：随机触发一种效果
+        triggerSpecialEffect();
+        setTimeout(() => {
+            cur++;
+            if (cur < TOTAL) renderQ(cur);
+            else showResult();
+        }, 4000);
+        return;
+    }
+
+    qOpts.style.display = 'flex';
+    spArea.classList.remove('on');
+    qTxt.textContent = q.t;
+
+    let a = q.a, b = q.b;
+
+    qOpts.innerHTML = '';
+    [{l:'A',label:a,v:q.va},{l:'B',label:b,v:q.vb}].forEach(o => {
+        const btn = document.createElement('button');
+        btn.className = 'opt-btn';
+        btn.innerHTML = `<span class="l">${o.l}</span><span>${o.label}</span>`;
+        btn.onclick = () => handleAns(o.v, o.label, o.l);
+        qOpts.appendChild(btn);
+    });
+
+    qArea.classList.add('on');
+    welcome.style.display = 'none';
+    rArea.classList.remove('on');
+}
+
+// ================================================================
+// 答案处理
+// ================================================================
+function handleAns(v, label, ltr) {
+    const delay = Date.now() - lastClick;
+    lastClick = Date.now();
+    ans[cur] = { v, label, ltr, delay };
+
+    // 悬停暗示：你本来想选另一个
+    const h = hoverCount[cur];
+    if (h && ph >= 5 && !wrongChoiceShown) {
+        const first = h.a >= h.b ? 'A' : 'B';
+        const chosen = ltr;
+        if (first !== chosen && Math.random() < 0.4) {
+            const wrongLabel = first === 'A' ? SEQ[cur].a : SEQ[cur].b;
+            showHint('你本来想选 "' + wrongLabel + '"。', 5000);
+            wrongChoiceShown = true;
+        }
+    }
+
+    // 犹豫暗示
+    if (delay > 4000 && ph >= 3) {
+        showHint('你在这里停了很久。', 4000);
+    }
+
+    // 快速点击：恐怖质问 + 红闪
+    if (delay < 500 && ph >= 4) {
+        const q = [
+            '真的想了吗？',
+            '真的想了吗？？',
+            '真的想了吗？？？',
+            '你真的在想吗？',
+            '还是只是在点？',
+            '这三个字，你真的读了吗？',
+            '想了。再想一遍。',
+            '你选的。不是系统选的。',
+        ];
+        flash('#6a0000', 120);
+        showHint(q[Math.floor(Math.random() * q.length)], 2800);
+        wrongChoiceShown = false; // 重置，允许再次触发
+    }
+
+    cur++;
+    if (cur < TOTAL) renderQ(cur);
+    else showResult();
+}
+
+// ================================================================
+// 结果页
+// ================================================================
+function showResult() {
+    applyPhase(9);
+    clearHint();
+    qArea.classList.remove('on');
+    welcome.style.display = 'none';
+    rArea.classList.add('on');
+
+    // 计算类型
+    let d = {EI:{e:0,i:0},SN:{s:0,n:0},TF:{t:0,f:0},JP:{j:0,p:0}};
+    SEQ.forEach((q, i) => {
+        if (q.sp) return;
+        const v = ans[i] ? ans[i].v : q.va;
+        if (q.d==='EI') v==='E'?d.EI.e++:d.EI.i++;
+        else if (q.d==='SN') v==='S'?d.SN.s++:d.SN.n++;
+        else if (q.d==='TF') v==='T'?d.TF.t++:d.TF.f++;
+        else if (q.d==='JP') v==='J'?d.JP.j++:d.JP.p++;
+    });
+    const gc = (m,a,b) => m[a.toLowerCase()] >= m[b.toLowerCase()] ? a : b;
+    const type = gc(d.EI,'E','I') + gc(d.SN,'S','N') + gc(d.TF,'T','F') + gc(d.JP,'J','P');
+    const r = RESULTS[type] || RESULTS['INTJ'];
+
+    $('r-type').textContent = '人格解析报告';
+    $('r-sub').textContent = r.s;
+    $('r-desc').textContent = r.d;
+    $('r-detail').innerHTML = r.x;
+    prog.style.width = '100%';
+
+    // 眼睛变大
+    eyeWrap.classList.add('later');
+    eyeWrap.style.opacity = '0.7';
+
+    // 设备信息
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    const dev = document.createElement('div');
+    dev.style.cssText = 'margin-top:20px;font-size:8px;opacity:0.18;letter-spacing:0.5px;font-family:"Courier New",monospace;';
+    dev.textContent = `${window.screen.width}×${window.screen.height} · ${navigator.userAgent.split(' ').slice(0,3).join(' ')} · 用时${elapsed}秒 · 离开${tabCount}次`;
+    rArea.appendChild(dev);
+
+    // 最后一行
+    setTimeout(() => {
+        const last = document.createElement('div');
+        last.style.cssText = 'margin-top:20px;font-size:10px;opacity:0.2;letter-spacing:4px;text-transform:uppercase;';
+        last.textContent = '你完成了';
+        rArea.appendChild(last);
+        setTimeout(() => {
+            last.style.transition = 'opacity 3s';
+            last.style.opacity = '0.45';
+        }, 500);
+    }, 4000);
+
+    // 音量降低
+    setTimeout(() => setBGMVolume(0.08, 5000), 3000);
+}
+
+// ================================================================
+// 自我指涉
+// ================================================================
+setInterval(() => {
+    if (!started || ph < 3) return;
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    const min = Math.floor(elapsed / 60);
+    const sec = String(elapsed % 60).padStart(2, '0');
+    const avgSpd = speedBuf.length ? Math.round(speedBuf.reduce((a,b)=>a+b,0)/speedBuf.length) : 0;
+
+    // 阶段7+：meta文字开始恐怖谷
+    if (ph >= 7) {
+        const glitched = `${window.screen.width}×${window.screen.height} · ${min}:${sec} · 静止${mouseStill}s · 离开${tabCount}次`.split('').map(c => {
+            if (Math.random() < 0.05) {
+                const m = {'0':'O','1':'l','3':'E','5':'S','7':'T','o':'0','l':'1'};
+                return m[c] !== undefined ? m[c] : c;
+            }
+            return c;
+        }).join('');
+        meta.textContent = glitched;
+    } else {
+        meta.textContent = `${window.screen.width}×${window.screen.height} · ${min}:${sec} · 静止${mouseStill}s · 速度${avgSpd} · 离开${tabCount}次`;
+    }
+}, 2500);
+
+// ================================================================
+// 启动
+// ================================================================
+$('start').onclick = () => {
+    if (started) return;
+    started = true;
+    startTime = Date.now();
+    lastClick = Date.now();
+    startBGM();
+    welcome.style.display = 'none';
+    document.body.style.opacity = '0';
+    setTimeout(() => {
+        document.body.style.transition = 'opacity 1.5s';
+        document.body.style.opacity = '1';
+        renderQ(0);
+    }, 100);
+};
+
+qTEl.textContent = TOTAL;
+qN.textContent = '0';
+prog.style.width = '0%';
+
+document.body.style.opacity = '0';
+setTimeout(() => {
+    document.body.style.transition = 'opacity 1.5s';
+    document.body.style.opacity = '1';
+}, 150);
+</script>
+</body>
+</html>
