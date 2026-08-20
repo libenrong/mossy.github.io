@@ -2516,67 +2516,11 @@ function resolveChoice(action) {
     if (choiceTimer) { clearInterval(choiceTimer); choiceTimer = null; }
 
     if (action === 'stay') {
-        // 留下：触发 jumpscare（声音 200%）
+        // 留下：先移除选择层，再触发跳脸（否则跳脸会被遮罩盖住看不见）
+        hideChoice();
         showHint('你选了留下。', 2000);
         // 先执行 jumpscare，然后继续下一题
-        setTimeout(() => {
-            // 眼睛突脸 + 200% 音量
-            const el = eyeImg;
-            const wrap = eyeWrap;
-            const computed = getComputedStyle(el);
-            const origW = computed.width;
-            const origH = computed.height;
-            const origOpacity = computed.opacity;
-            // 闪红闪白
-            flash('#7a0000', 40);
-            setTimeout(() => flash('#fff', 60), 45);
-            // 眼睛移到正中，瞬间放大
-            wrap.style.transition = 'none';
-            wrap.style.top = '50%';
-            wrap.style.left = '50%';
-            wrap.style.transform = 'translate(-50%,-50%)';
-            el.style.transition = 'width 0.06s, height 0.06s';
-            el.style.width = '98vw';
-            el.style.height = '98vh';
-            el.style.objectFit = 'cover';
-            wrap.style.opacity = '1';
-            // 200% 音量（BGM + 低频冲击）
-            const prevVol = bgm ? bgm.volume : 0.5;
-            if (bgm) bgm.volume = Math.min(1.0, prevVol * 2);
-            try {
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = ctx.createOscillator();
-                const g = ctx.createGain();
-                osc.frequency.value = 40;
-                osc.type = 'sawtooth';
-                g.gain.setValueAtTime(1.8, ctx.currentTime); // 200% 音量
-                g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
-                osc.connect(g); g.connect(ctx.destination);
-                osc.start(); osc.stop(ctx.currentTime + 0.5);
-                setTimeout(() => ctx.close(), 600);
-            } catch(e) {}
-            // 500ms后恢复，然后继续下一题
-            setTimeout(() => {
-                wrap.style.transition = 'all 0.7s ease';
-                wrap.style.top = '';
-                wrap.style.left = '';
-                wrap.style.transform = '';
-                el.style.transition = 'width 0.6s ease, height 0.6s ease';
-                el.style.width = origW;
-                el.style.height = origH;
-                el.style.objectFit = 'contain';
-                wrap.style.opacity = origOpacity;
-                setTimeout(() => {
-                    wrap.style.transition = '';
-                    el.style.transition = '';
-                    if (bgm) setBGMVolume(prevVol, 2500);
-                    // jumpscare 结束，继续下一题
-                    cur++;
-                    if (cur < TOTAL) renderQ(cur);
-                    else showResult();
-                }, 800);
-            }, 500);
-        }, 300);
+        showStayJumpscare();
         return; // 等待 jumpscare 结束后再继续
     } else {
         // 离开：黑屏+一声闷响+直接跳到结果页（跳过剩下题目）
@@ -2616,6 +2560,75 @@ function resolveChoice(action) {
     } else {
         showResult();
     }
+}
+
+// ================================================================
+// 跳脸：点击"留下"或倒计时结束自动留下时触发
+// 眼睛瞬间放大 + 红闪 + 低频冲击；500ms 后恢复，然后继续下一题
+// ================================================================
+function showStayJumpscare() {
+    const el = eyeImg;
+    const wrap = eyeWrap;
+    const computed = getComputedStyle(el);
+    const origW = computed.width;
+    const origH = computed.height;
+    const origOpacity = computed.opacity;
+    const origZ = wrap.style.zIndex;
+
+    // 闪红闪白
+    flash('#7a0000', 40);
+    setTimeout(() => flash('#fff', 60), 45);
+
+    // 眼睛移到正中，瞬间放大（抬到遮罩之上，确保可见）
+    wrap.style.transition = 'none';
+    wrap.style.zIndex = '100000';
+    wrap.style.top = '50%';
+    wrap.style.left = '50%';
+    wrap.style.transform = 'translate(-50%,-50%)';
+    el.style.transition = 'width 0.06s, height 0.06s';
+    el.style.width = '98vw';
+    el.style.height = '98vh';
+    el.style.objectFit = 'cover';
+    wrap.style.opacity = '1';
+
+    // 200% 音量（BGM + 低频冲击）
+    const prevVol = bgm ? bgm.volume : 0.5;
+    if (bgm) bgm.volume = Math.min(1.0, prevVol * 2);
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.frequency.value = 40;
+        osc.type = 'sawtooth';
+        g.gain.setValueAtTime(1.8, ctx.currentTime); // 200% 音量
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+        osc.connect(g); g.connect(ctx.destination);
+        osc.start(); osc.stop(ctx.currentTime + 0.5);
+        setTimeout(() => ctx.close(), 600);
+    } catch(e) {}
+
+    // 500ms 后恢复原状，然后继续下一题
+    setTimeout(() => {
+        wrap.style.transition = 'all 0.7s ease';
+        wrap.style.top = '';
+        wrap.style.left = '';
+        wrap.style.transform = '';
+        el.style.transition = 'width 0.6s ease, height 0.6s ease';
+        el.style.width = origW;
+        el.style.height = origH;
+        el.style.objectFit = 'contain';
+        wrap.style.opacity = origOpacity;
+        setTimeout(() => {
+            wrap.style.transition = '';
+            wrap.style.zIndex = origZ;
+            el.style.transition = '';
+            if (bgm) setBGMVolume(prevVol, 2500);
+            // jumpscare 结束，继续下一题
+            cur++;
+            if (cur < TOTAL) renderQ(cur);
+            else showResult();
+        }, 800);
+    }, 500);
 }
 
 function hideChoice() {
