@@ -279,34 +279,25 @@ const QS = [
 // 手法：它知道/自我递归/第三人突现/几乎正确的错误/时间错位/反刍重复
 const SPQS = [
     // Q10
-    '你有没有在某个瞬间，<br>觉得自己刚才做的事，<br>好像不是自己想做的？',
-
-    // Q20 — 第三人突现
-    '你正在读这段文字。<br><span style="font-size:0.7em;opacity:0.4;">他也在读。</span><br><br>你上一次感到真正的安静，<br>是在什么时候？',
-
-    // Q30 — 选项外第三人
-    '你有没有对某个人，<br>做过一件他永远不会知道的事？<br><br>是 A 吗，还是 B？<br>还是，是 C？',
-
-    // Q40 — 它知道你的沉默
-    '有些话你从来没有对任何人说过。<br><br>你知道是哪句。<br><br>你能想起那件事发生的时候，<br>你身边有没有别人？<br>真的没有吗？',
-
-    // Q50 — 自我分裂
-    '你会不会在某些时刻，<br>突然不知道自己为什么会做这件事——<br>明明是你自己在做，<br>却像是看着自己在做？<br><br>比如现在。',
-
-    // Q60 — 反刍重复·文字恐怖谷
-    '你有没有一个习惯，<br>或者一个想法，<br>是你从来不解释原因的？<br><br>那是什——<br><br>等等，<br>你刚才想说的是"什么"。<br>现在呢？',
-
-    // Q70 — 它一直在看
-    '你有没有注意到，<br>你读这段文字的时候，<br>眼睛是从左到右移动的？<br><br>你现在停下来了。<br><br>好。继续。',
-
-    // Q80 — 递归自我
-    '你现在感觉怎么样？<br><br>真的感觉怎么样？<br><br>还是只是觉得"应该"感觉怎么样？<br><br>你觉得哪个回答是对的，<br>还是你只是在选一个答案？',
-
-    // Q90 — 几乎正确的错误
-    '你对自己的了解，<br>有多少是真正观察来的，<br>有多少只是别人告诉你的？<br><br>这道题，<br>是你自己想做的吗？<br>还是系统生成的？<br><span style="font-size:0.65em;opacity:0.25;">还是说，系统和你，有什么区别？</span>',
-
-    // Q100 — 终局
-    '如果现在有一个人，<br>能完整地看到你所有的想法，<br>你会感到害怕吗？<br><br>还是你会感到——<br><br>——被理解了？<br><br><span style="font-size:0.6em;opacity:0.2;">或者，<br>你从一开始就不知道什么是"自己的"想法？</span>'
+    '发生了一些异常。正在恢复。',
+    // Q20
+    '发生了一些异常。正在恢复。',
+    // Q30
+    '发生了一些异常。正在恢复。',
+    // Q40
+    '发生了一些异常。正在恢复。',
+    // Q50
+    '发生了一些异常。正在恢复。',
+    // Q60
+    '发生了一些异常。正在恢复。',
+    // Q70
+    '发生了一些异常。正在恢复。',
+    // Q80
+    '发生了一些异常。正在恢复。',
+    // Q90
+    '发生了一些异常。正在恢复。',
+    // Q100
+    '发生了一些异常。正在恢复。'
 ];
 
 // 眼睛 jumpscare
@@ -425,6 +416,62 @@ function resultJumpscare() {
 }
 
 // 文字恐怖谷：只腐坏普通字母，保持HTML结构，让它看起来像编码坏了
+// 特殊题文字逐级腐坏：level越高越不对劲
+function corruptSpecialText(el, level) {
+    if (!el || !level) return;
+    const corruptions = [
+        () => {
+            // level1: 换掉一个字
+            el.innerHTML = '发生了一些异常。正在<span style="color:#a00;">恢</span>复。';
+        },
+        () => {
+            // level2: 恢复变乱码
+            el.innerHTML = '发生了一些异常。正在<span style="color:#900;font-family:monospace;">恢&zwnj;复</span>。';
+            setTimeout(() => { el.innerHTML = '发生了一些异常。正在<span style="color:#a00;">诙&zwnj;复</span>。'; }, 600);
+        },
+        () => {
+            // level3: 文字开始变形+闪烁
+            el.innerHTML = '发生了一些异常。正在恢复。';
+            let ticks = 0;
+            const iv = setInterval(() => {
+                ticks++;
+                const maps = [
+                    {'发':'髪','生':'笙','了':'了','一':'亊','些':'眂','异':'罙','常':'瑺',
+                     '正':'佱','在':'両','恢':'诙','复':'馥'},
+                    {'发':'髮','生':'冃','了':'亍','一':'丄','些':'眂','异':'戠','常':'萇',
+                     '正':'凒','在':'両','恢':'灰','复':'複'},
+                ];
+                const map = maps[ticks % 2];
+                let t = '发生了一些异常。正在恢复。';
+                for (const [k, v] of Object.entries(map)) {
+                    if (Math.random() < 0.5) t = t.replace(k, v);
+                }
+                el.innerHTML = t;
+                el.style.opacity = ticks % 2 === 0 ? '0.85' : '1';
+                if (ticks > 6) { clearInterval(iv); el.style.opacity = '1'; }
+            }, 350);
+        },
+        () => {
+            // level4: 完全不可读+抖动
+            el.innerHTML = '发生了一些异常。正在恢复。';
+            let ticks = 0;
+            const iv = setInterval(() => {
+                ticks++;
+                const t = '发生了一些异常。正在恢复。';
+                el.innerHTML = t.split('').map(c => {
+                    if (/[\u4e00-\u9fa5]/.test(c) && Math.random() < 0.7)
+                        return `<span style="color:#${ticks%2?'a00':'#c00'}">${c}</span>`;
+                    return c;
+                }).join('');
+                el.style.transform = `translateX(${(Math.random()-0.5)*4}px)`;
+                if (ticks > 8) { clearInterval(iv); el.style.transform = ''; }
+            }, 250);
+        }
+    ];
+    const fn = corruptions[Math.min(level - 1, corruptions.length - 1)];
+    setTimeout(fn, 800);
+}
+
 function textCorrupt(el) {
     if (!el) return;
     const orig = el.innerHTML;
@@ -886,6 +933,8 @@ function renderQ(idx) {
         qOpts.style.display = 'none';
         spArea.classList.add('on');
         spQEl.innerHTML = q.t;
+        // 特殊题文字越后越不对劲
+        if (idx >= 2) corruptSpecialText(spQEl, Math.floor(idx / 3));
         qTxt.textContent = '';
         qArea.classList.add('on');
         welcome.style.display = 'none';
