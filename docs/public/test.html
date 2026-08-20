@@ -1114,7 +1114,24 @@ function stopScareCycle() {
 // ================================================================
 // 诡异选项惩罚
 // ================================================================
-function weirdAns() {
+// 诡异题惩罚：逐次升级（level = 第几次点这道题，1起）
+// 字符串快速腐坏（用于 weirdAns）
+function corruptText_fast(s) {
+    const chars = '\u4e00-\u9fff\u3000-\u303f\uff00-\uffef';
+    const near = {
+        '人':['入','八'],'的':['他','地'],'在':['有','存'],'是':['足','是'],'不':['不','木'],
+        '我':['找','成'],'有':['在','友'],'你':['你','称'],'他':['人','它'],'这':['这','这'],
+        '的':['他','地'],'为':['办','位'],'个':['中','人'],'和':['利','知'],'来':['米','未'],
+    };
+    return s.split('').map(c => {
+        if (near[c] && Math.random() < 0.4) return near[c][Math.floor(Math.random() * near[c].length)];
+        if (/[a-zA-Z]/.test(c) && Math.random() < 0.3) return Math.random() < 0.5 ? c.toUpperCase() : c;
+        return c;
+    }).join('');
+}
+
+function weirdAns(level) {
+    // 1-2次：闪红+轰鸣+提示
     flash('#7a0000', 80);
     try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1122,13 +1139,47 @@ function weirdAns() {
         const g = ctx.createGain();
         osc.type = 'sawtooth';
         osc.frequency.value = 50;
-        g.gain.setValueAtTime(0.4, ctx.currentTime);
+        const vol = level >= 2 ? 0.7 : 0.4;
+        g.gain.setValueAtTime(vol, ctx.currentTime);
         g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
         osc.connect(g); g.connect(ctx.destination);
         osc.start(); osc.stop(ctx.currentTime + 0.25);
         setTimeout(() => ctx.close(), 300);
     } catch(e) {}
-    showHint('选择错误。请重新选择。', 2000);
+
+    const msgs = [
+        '选择错误。请重新选择。',
+        '真的想选这个吗？',
+        '你确定？',
+        '别乱选。',
+        '再想想。',
+    ];
+    showHint(msgs[Math.min(level - 1, msgs.length - 1)], 2500);
+
+    if (level >= 3) {
+        // 第3次起：屏幕抖动
+        shake(200);
+    }
+    if (level >= 4) {
+        // 第4次：选项区文字短暂腐坏
+        const opts = document.querySelectorAll('.opt');
+        opts.forEach(o => {
+            const orig = o.dataset.orig || o.textContent;
+            o.dataset.orig = orig;
+            o.textContent = corruptText_fast(orig);
+            setTimeout(() => { o.textContent = orig; }, 1200);
+        });
+    }
+    if (level >= 5) {
+        // 第5次：眼睛短暂闪一下（吓人但不跳转）
+        eyeWrap.style.opacity = '1';
+        eyeImg.style.width = '60vw';
+        eyeImg.style.height = '60vh';
+        setTimeout(() => {
+            eyeImg.style.width = ''; eyeImg.style.height = '';
+            eyeWrap.style.opacity = '';
+        }, 800);
+    }
 }
 
 // 构建序列：3普通 + 1特殊 × 10
@@ -1181,6 +1232,7 @@ const vigEl = $('vignette');
 
 // 选项慢半拍
 let lagInterval = null;
+let weirdCountMap = null; // {curIdx -> count} 诡异题惩罚升级计数
 
 // 犹豫提示
 const hesitEl = $('hesit-line');
@@ -1673,11 +1725,19 @@ function handleAns(v, label, ltr) {
         wrongChoiceShown = false; // 重置，允许再次触发
     }
 
-    // 诡异题惩罚：点任何选项 → 惩罚但不前进
+    // 诡异题惩罚：逐次升级（卡住不前进），5次后放过
     const q = SEQ[cur];
     if (q && q.weird) {
-        weirdAns();
-        return;
+        if (!weirdCountMap) weirdCountMap = new Map();
+        const c = (weirdCountMap.get(cur) || 0) + 1;
+        weirdCountMap.set(cur, c);
+        if (c > 5) {
+            // 放过：重置计数，正常前进
+            weirdCountMap.delete(cur);
+        } else {
+            weirdAns(c);
+            return;
+        }
     }
 
     cur++;
