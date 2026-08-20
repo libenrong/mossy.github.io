@@ -1121,8 +1121,7 @@ function renderQ(idx) {
         const ipLine = visitorIP || '…';
         const locLine = visitorLoc || '';
         ipDiv.innerHTML = `<div style="font-size:17px;letter-spacing:3px;color:#c0a880;">${ipLine}</div>`
-            + (locLine ? `<div style="font-size:11px;color:#5a5048;letter-spacing:2px;margin-top:6px;">${locLine}</div>` : '')
-            + `<div style="font-size:10px;color:#3a3530;margin-top:14px;letter-spacing:3px;">${visitorIP ? '▲ 精确到县' : '正在定位…'}</div>`;
+            + (locLine ? `<div style="font-size:11px;color:#5a5048;letter-spacing:2px;margin-top:6px;">${locLine}</div>` : '');
         qOpts.parentNode.insertBefore(ipDiv, qOpts);
         // 渐显
         setTimeout(() => { ipDiv.style.opacity = '1'; }, 300);
