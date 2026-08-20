@@ -1095,7 +1095,13 @@ function scheduleNextScare() {
     scareCycleTimeout = setTimeout(() => {
         if (!scareCycleActive) return;
         if (cur < TOTAL && !SEQ[cur].sp) {
-            triggerMicroScare();
+            // 随机选择恐怖跳脸类型（共 5 种，让节奏不可预测）
+            const r = Math.random();
+            if (r < 0.30) triggerMicroScare();        // 30% 多弹窗
+            else if (r < 0.50) triggerScreamScare();  // 20% 尖叫+震屏
+            else if (r < 0.70) triggerGiantEyeScare();// 20% 超大眼贴脸
+            else if (r < 0.85) triggerGlitchScare();  // 15% 故障撕裂
+            else triggerNightmareScare();             // 15% 夜魇（组合大招）
         }
         scheduleNextScare();
     }, delay);
@@ -1179,6 +1185,235 @@ function triggerMicroScare() {
 function startScareCycle() {
     scareCycleActive = true;
     scheduleNextScare();
+}
+
+// ================================================================
+// 恐怖跳脸 1：尖叫（高频女声尖啸 + 震屏）
+// ================================================================
+function triggerScreamScare() {
+    // 红色全屏闪
+    flash('#8a0000', 120);
+    // 屏幕抖动 400ms
+    shake(400);
+
+    // 尖叫合成：高频锯齿波 + 频率滑音（模拟惊恐女声）
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const master = ctx.createGain();
+        master.gain.setValueAtTime(0.0, ctx.currentTime);
+        master.gain.linearRampToValueAtTime(0.85, ctx.currentTime + 0.05);
+        master.gain.linearRampToValueAtTime(0.7, ctx.currentTime + 0.5);
+        master.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.4);
+
+        // 主尖啸
+        const osc1 = ctx.createOscillator();
+        osc1.type = 'sawtooth';
+        osc1.frequency.setValueAtTime(900, ctx.currentTime);
+        osc1.frequency.exponentialRampToValueAtTime(2200, ctx.currentTime + 0.15);
+        osc1.frequency.exponentialRampToValueAtTime(1400, ctx.currentTime + 0.4);
+        osc1.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 1.0);
+
+        // 失真叠加（方波）
+        const osc2 = ctx.createOscillator();
+        osc2.type = 'square';
+        osc2.frequency.setValueAtTime(1200, ctx.currentTime);
+        osc2.frequency.exponentialRampToValueAtTime(2800, ctx.currentTime + 0.2);
+        osc2.frequency.exponentialRampToValueAtTime(1800, ctx.currentTime + 0.5);
+
+        // 滤波模拟喉咙振动
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.value = 1500;
+        filter.Q.value = 5;
+
+        osc1.connect(filter); osc2.connect(filter);
+        filter.connect(master);
+        master.connect(ctx.destination);
+
+        osc1.start(); osc2.start();
+        osc1.stop(ctx.currentTime + 1.5); osc2.stop(ctx.currentTime + 1.5);
+        setTimeout(() => ctx.close(), 1600);
+    } catch(e) {}
+
+    // 眼睛瞬间贴脸（中间、极大）
+    const eye = document.createElement('img');
+    eye.src = './eye2.gif';
+    eye.style.cssText = `position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(0.1);width:200vw;height:200vh;object-fit:contain;z-index:9700;pointer-events:none;filter:brightness(1.5) contrast(1.5) hue-rotate(-20deg);transition:transform 0.12s ease-out;`;
+    document.body.appendChild(eye);
+    requestAnimationFrame(() => { eye.style.transform = 'translate(-50%,-50%) scale(1)'; });
+    setTimeout(() => {
+        eye.style.transition = 'opacity 0.3s';
+        eye.style.opacity = '0';
+        setTimeout(() => { if (eye.parentNode) eye.parentNode.removeChild(eye); }, 350);
+    }, 800);
+}
+
+// ================================================================
+// 恐怖跳脸 2：超大眼贴脸（缓慢出现 + 凝视感 + 嗡嗡声）
+// ================================================================
+function triggerGiantEyeScare() {
+    flash('#2a0000', 100);
+
+    // 低频嗡嗡
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.value = 30;
+        g.gain.setValueAtTime(0, ctx.currentTime);
+        g.gain.linearRampToValueAtTime(0.6, ctx.currentTime + 0.1);
+        g.gain.linearRampToValueAtTime(0.001, ctx.currentTime + 2.5);
+        osc.connect(g); g.connect(ctx.destination);
+        osc.start(); osc.stop(ctx.currentTime + 2.5);
+        setTimeout(() => ctx.close(), 2600);
+    } catch(e) {}
+
+    // 大眼睛从模糊聚焦到清晰
+    const eye = document.createElement('img');
+    eye.src = './eye2.gif';
+    eye.style.cssText = `position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:100vw;height:100vh;object-fit:contain;z-index:9600;pointer-events:none;filter:blur(40px) brightness(0.3);transition:filter 1.2s ease;`;
+    document.body.appendChild(eye);
+    requestAnimationFrame(() => {
+        eye.style.filter = 'blur(0px) brightness(1.3) contrast(1.3)';
+    });
+    setTimeout(() => {
+        eye.style.transition = 'opacity 0.6s';
+        eye.style.opacity = '0';
+        setTimeout(() => { if (eye.parentNode) eye.parentNode.removeChild(eye); }, 650);
+    }, 1800);
+}
+
+// ================================================================
+// 恐怖跳脸 3：故障撕裂（屏幕撕裂+多眼叠加+高频噪音）
+// ================================================================
+function triggerGlitchScare() {
+    flash('#fff', 50);
+    flash('#000', 80);
+    shake(300);
+
+    // 高频噪音
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(200, ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(2500, ctx.currentTime + 0.2);
+        g.gain.setValueAtTime(0.6, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+        osc.connect(g); g.connect(ctx.destination);
+        osc.start(); osc.stop(ctx.currentTime + 0.5);
+        setTimeout(() => ctx.close(), 600);
+    } catch(e) {}
+
+    // 多眼叠加撕裂
+    for (let i = 0; i < 5; i++) {
+        setTimeout(() => {
+            const eye = document.createElement('img');
+            eye.src = './eye2.gif';
+            const offX = (Math.random() - 0.5) * 100;
+            const offY = (Math.random() - 0.5) * 100;
+            eye.style.cssText = `position:fixed;left:calc(50% + ${offX}px);top:calc(50% + ${offY}px);transform:translate(-50%,-50%) skewX(${Math.random()*40-20}deg);width:60vw;height:60vh;object-fit:contain;z-index:9650;pointer-events:none;filter:invert(1) hue-rotate(${Math.random()*360}deg) contrast(1.5);`;
+            document.body.appendChild(eye);
+            setTimeout(() => {
+                eye.style.transition = 'opacity 0.1s';
+                eye.style.opacity = '0';
+                setTimeout(() => { if (eye.parentNode) eye.parentNode.removeChild(eye); }, 150);
+            }, 100 + Math.random() * 150);
+        }, i * 80);
+    }
+
+    // 屏幕撕裂条
+    for (let i = 0; i < 8; i++) {
+        setTimeout(() => {
+            const bar = document.createElement('div');
+            bar.style.cssText = `position:fixed;left:0;right:0;top:${Math.random()*100}%;height:${5+Math.random()*15}px;background:${Math.random()<0.5?'#000':'#fff'};z-index:9550;pointer-events:none;opacity:0.9;`;
+            document.body.appendChild(bar);
+            setTimeout(() => {
+                bar.style.transition = 'opacity 0.1s';
+                bar.style.opacity = '0';
+                setTimeout(() => { if (bar.parentNode) bar.parentNode.removeChild(bar); }, 150);
+            }, 80);
+        }, i * 60);
+    }
+}
+
+// ================================================================
+// 恐怖跳脸 4：夜魇（组合大招：尖叫+超大眼+震屏+红字+持续压迫 2 秒）
+// ================================================================
+function triggerNightmareScare() {
+    // 全红闪
+    flash('#8a0000', 150);
+    shake(800);
+
+    // 长尖叫（2.5 秒）
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const master = ctx.createGain();
+        master.gain.setValueAtTime(0, ctx.currentTime);
+        master.gain.linearRampToValueAtTime(0.9, ctx.currentTime + 0.05);
+        master.gain.linearRampToValueAtTime(0.8, ctx.currentTime + 1.5);
+        master.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 2.5);
+
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.value = 1400;
+        filter.Q.value = 6;
+
+        // 双音交替模拟人声起伏
+        for (let i = 0; i < 4; i++) {
+            const osc = ctx.createOscillator();
+            osc.type = 'sawtooth';
+            const t = ctx.currentTime + i * 0.5;
+            osc.frequency.setValueAtTime(800 + Math.random() * 600, t);
+            osc.frequency.exponentialRampToValueAtTime(1500 + Math.random() * 800, t + 0.3);
+            osc.frequency.exponentialRampToValueAtTime(700 + Math.random() * 400, t + 0.5);
+            osc.connect(filter);
+            osc.start(t);
+            osc.stop(t + 0.5);
+        }
+
+        // 低频低鸣叠加（压感）
+        const bass = ctx.createOscillator();
+        bass.type = 'sawtooth';
+        bass.frequency.value = 35;
+        const bassG = ctx.createGain();
+        bassG.gain.setValueAtTime(0, ctx.currentTime);
+        bassG.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.1);
+        bassG.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 2.5);
+        bass.connect(bassG); bassG.connect(ctx.destination);
+        bass.start(); bass.stop(ctx.currentTime + 2.5);
+
+        filter.connect(master);
+        master.connect(ctx.destination);
+        setTimeout(() => ctx.close(), 2700);
+    } catch(e) {}
+
+    // 中央超大眼快速放大
+    const eye = document.createElement('img');
+    eye.src = './eye2.gif';
+    eye.style.cssText = `position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(0.1);width:300vw;height:300vh;object-fit:contain;z-index:9700;pointer-events:none;filter:brightness(1.8) contrast(1.5) hue-rotate(-30deg);transition:transform 0.1s ease-out;`;
+    document.body.appendChild(eye);
+    requestAnimationFrame(() => { eye.style.transform = 'translate(-50%,-50%) scale(1)'; });
+
+    // 恐怖红字
+    const word = document.createElement('div');
+    word.textContent = ['它在看着你','别回头','你跑不掉的','它来了','看见你了'][Math.floor(Math.random()*5)];
+    word.style.cssText = `position:fixed;left:50%;top:15%;transform:translateX(-50%);color:#ff0000;font-size:32px;font-weight:bold;text-shadow:0 0 20px #880000, 0 0 40px #440000;letter-spacing:8px;z-index:9750;pointer-events:none;animation:pulse 0.3s ease-in-out infinite alternate;`;
+    document.body.appendChild(word);
+
+    // 2.5 秒后清理
+    setTimeout(() => {
+        eye.style.transition = 'opacity 0.4s';
+        eye.style.opacity = '0';
+        word.style.transition = 'opacity 0.3s';
+        word.style.opacity = '0';
+        setTimeout(() => {
+            if (eye.parentNode) eye.parentNode.removeChild(eye);
+            if (word.parentNode) word.parentNode.removeChild(word);
+        }, 500);
+    }, 2500);
 }
 
 function stopScareCycle() {
