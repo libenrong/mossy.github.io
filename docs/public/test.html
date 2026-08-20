@@ -195,7 +195,7 @@ body {
 <body>
 
 <div id="eye-wrap">
-    <img src="eye.png" alt="" id="eye-img">
+    <img src="/Users/include/Desktop/eye.png" alt="" id="eye-img">
 </div>
 <div id="meta"></div>
 
@@ -235,7 +235,7 @@ body {
     </div>
 </div>
 
-<audio id="bgm" src="began.mp3" preload="auto" loop></audio>
+<audio id="bgm" src="/Users/include/Downloads/began.mp3" preload="auto" loop></audio>
 
 <script>
 // ================================================================
@@ -330,7 +330,9 @@ function eyeJumpscare() {
     el.style.height = '98vh';
     el.style.objectFit = 'cover';
     wrap.style.opacity = '1';
-    // 低频冲击
+    // 低频冲击 + BGM音量突刺
+    const prevVol = bgm ? bgm.volume : 0.5;
+    if (bgm) bgm.volume = 1.0;
     try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
         const osc = ctx.createOscillator();
@@ -356,6 +358,7 @@ function eyeJumpscare() {
         setTimeout(() => {
             wrap.style.transition = '';
             el.style.transition = '';
+            if (bgm) setBGMVolume(prevVol, 2500);
         }, 800);
     }, 300);
 }
