@@ -1032,6 +1032,9 @@ const RESULTS = {
 // ================================================================
 // 状态
 // ================================================================
+// DOM 选择器助手（必须在所有 $() 调用之前声明）
+const $ = id => document.getElementById(id);
+
 let cur = 0, started = false, ph = 0;
 const ans = [];
 let startTime = 0;
@@ -1073,7 +1076,6 @@ let wrongChoiceShown = false;
 let specialNoiseActive = false;
 
 // DOM
-const $ = id => document.getElementById(id);
 const qN = $('q-n'), qTEl = $('q-t'), prog = $('prog');
 const welcome = $('welcome');
 const qArea = $('q-area'), rArea = $('r-area');
