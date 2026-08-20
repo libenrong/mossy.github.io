@@ -2580,6 +2580,7 @@ function handleAns(v, label, ltr) {
             weirdCountMap.delete(cur);
             try { console.log('[weird] 放过 cur=' + cur + ' c=' + c); } catch(e) {}
         } else {
+            try { console.log('[weird] 卡住 cur=' + cur + ' c=' + c); } catch(e) {}
             weirdAns(c);
             return;
         }
