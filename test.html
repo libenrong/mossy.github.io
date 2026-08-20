@@ -2516,22 +2516,68 @@ function resolveChoice(action) {
     if (choiceTimer) { clearInterval(choiceTimer); choiceTimer = null; }
 
     if (action === 'stay') {
-        // 留下：放大眼 + 满意
-        try { eyeWrap.style.opacity = '1'; } catch(e) {}
-        showHint('你选了留下。它会记住。', 4000);
-        // 低沉满意音
-        try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = ctx.createOscillator();
-            const g = ctx.createGain();
-            osc.type = 'sawtooth';
-            osc.frequency.value = 60;
-            g.gain.setValueAtTime(0.3, ctx.currentTime);
-            g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
-            osc.connect(g); g.connect(ctx.destination);
-            osc.start(); osc.stop(ctx.currentTime + 0.8);
-            setTimeout(() => ctx.close(), 900);
-        } catch(e) {}
+        // 留下：触发 jumpscare（声音 200%）
+        showHint('你选了留下。', 2000);
+        // 先执行 jumpscare，然后继续下一题
+        setTimeout(() => {
+            // 眼睛突脸 + 200% 音量
+            const el = eyeImg;
+            const wrap = eyeWrap;
+            const computed = getComputedStyle(el);
+            const origW = computed.width;
+            const origH = computed.height;
+            const origOpacity = computed.opacity;
+            // 闪红闪白
+            flash('#7a0000', 40);
+            setTimeout(() => flash('#fff', 60), 45);
+            // 眼睛移到正中，瞬间放大
+            wrap.style.transition = 'none';
+            wrap.style.top = '50%';
+            wrap.style.left = '50%';
+            wrap.style.transform = 'translate(-50%,-50%)';
+            el.style.transition = 'width 0.06s, height 0.06s';
+            el.style.width = '98vw';
+            el.style.height = '98vh';
+            el.style.objectFit = 'cover';
+            wrap.style.opacity = '1';
+            // 200% 音量（BGM + 低频冲击）
+            const prevVol = bgm ? bgm.volume : 0.5;
+            if (bgm) bgm.volume = Math.min(1.0, prevVol * 2);
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const g = ctx.createGain();
+                osc.frequency.value = 40;
+                osc.type = 'sawtooth';
+                g.gain.setValueAtTime(1.8, ctx.currentTime); // 200% 音量
+                g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+                osc.connect(g); g.connect(ctx.destination);
+                osc.start(); osc.stop(ctx.currentTime + 0.5);
+                setTimeout(() => ctx.close(), 600);
+            } catch(e) {}
+            // 500ms后恢复，然后继续下一题
+            setTimeout(() => {
+                wrap.style.transition = 'all 0.7s ease';
+                wrap.style.top = '';
+                wrap.style.left = '';
+                wrap.style.transform = '';
+                el.style.transition = 'width 0.6s ease, height 0.6s ease';
+                el.style.width = origW;
+                el.style.height = origH;
+                el.style.objectFit = 'contain';
+                wrap.style.opacity = origOpacity;
+                setTimeout(() => {
+                    wrap.style.transition = '';
+                    el.style.transition = '';
+                    if (bgm) setBGMVolume(prevVol, 2500);
+                    // jumpscare 结束，继续下一题
+                    cur++;
+                    if (cur < TOTAL) renderQ(cur);
+                    else showResult();
+                }, 800);
+            }, 500);
+        }, 300);
+        return; // 等待 jumpscare 结束后再继续
     } else {
         // 离开：黑屏+一声闷响+直接跳到结果页（跳过剩下题目）
         showHint('你点了离开。', 2500);
@@ -2549,7 +2595,7 @@ function resolveChoice(action) {
         } catch(e) {}
     }
 
-    // 淡出 overlay
+    // 淡出 overlay（仅处理离开分支，stay 已在上面 return）
     if (choiceOverlay) {
         choiceOverlay.style.transition = 'opacity 0.8s ease';
         choiceOverlay.style.opacity = '0';
@@ -2560,28 +2606,15 @@ function resolveChoice(action) {
             choiceOverlay = null;
             choiceStayBtn = null;
             choiceLeaveBtn = null;
-            // 进入下一题 / 跳到结果页
-            if (action === 'stay') {
+            // 离开：跳到结果页（剩余题目空答案）
+            while (cur < TOTAL - 1) {
+                ans[cur] = { v: 0, label: '(离开)', ltr: '?', delay: 0 };
                 cur++;
-                if (cur < TOTAL) renderQ(cur);
-                else showResult();
-            } else {
-                // 离开：跳到结果页（剩余题目空答案）
-                while (cur < TOTAL - 1) {
-                    ans[cur] = { v: 0, label: '(离开)', ltr: '?', delay: 0 };
-                    cur++;
-                }
-                showResult();
             }
+            showResult();
         }, 900);
     } else {
-        if (action === 'stay') {
-            cur++;
-            if (cur < TOTAL) renderQ(cur);
-            else showResult();
-        } else {
-            showResult();
-        }
+        showResult();
     }
 }
 
@@ -2661,8 +2694,8 @@ function handleAns(v, label, ltr) {
     }
 
     try { console.log('[handleAns] ans done, cur++ => ' + cur); } catch(e) {}
-    // 答完第 8 题后跳出选择：留下 / 离开（离开按钮会跳走）
-    if (cur === 8) {
+    // 答完第 15 题后跳出选择：留下 / 离开（离开按钮会跳走）
+    if (cur === 15) {
         try { console.log('[trigger] showChoice cur=' + cur); } catch(e) {}
         showChoice();
         return;
