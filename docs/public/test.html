@@ -225,6 +225,8 @@ body {
 #q-area { display: none; }
 #q-area.on { display: block; animation: in 0.5s ease; }
 @keyframes in { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+@keyframes cdPulse { from{opacity:0.7;transform:translateX(-50%) scale(1)} to{opacity:1;transform:translateX(-50%) scale(1.05)} }
+@keyframes cdNumPulse { from{opacity:0.85;transform:scale(1)} to{opacity:1;transform:scale(1.08)} }
 .q-num { font-size: 8px; letter-spacing: 3px; text-transform: uppercase; opacity: 0.18; margin-bottom: 8px; }
 .q-text { font-size: 15px; font-weight: 300; line-height: 2.1; margin-bottom: 24px; min-height: 44px; letter-spacing: 0.3px; transition: filter 0.5s, opacity 0.5s; }
 .q-opts { display: flex; flex-direction: column; gap: 5px; }
@@ -752,12 +754,201 @@ function resultJumpscare() {
         setTimeout(() => ctx.close(), 3600);
     } catch(e) {}
 
-    // 3.5秒后清理并跳转
+    // 3.5秒后清理并进入逃命倒计时
     setTimeout(() => {
         document.body.style.transform = '';
-        if (bgm) setBGMVolume(0, 200);
-        window.location.href = 'https://www.bilibili.com/video/BV1H5uj6gEUF';
+        // 进入 1 分钟逃命倒计时
+        startEscapeCountdown(ov, txt);
     }, 3500);
+}
+
+// ================================================================
+// 1 分钟逃命倒计时：每秒钟压感递增，倒计时后跳转 B 站
+// ================================================================
+function startEscapeCountdown(ov, origTxt) {
+    // 移除原干扰文字
+    if (origTxt && origTxt.parentNode) {
+        origTxt.style.transition = 'opacity 0.5s';
+        origTxt.style.opacity = '0';
+        setTimeout(() => { if (origTxt.parentNode) origTxt.parentNode.removeChild(origTxt); }, 600);
+    }
+
+    // 倒计时容器
+    const cd = document.createElement('div');
+    cd.id = 'escape-countdown';
+    cd.style.cssText = 'position:fixed;inset:0;background:#000;z-index:9998;display:flex;align-items:center;justify-content:center;flex-direction:column;opacity:1;';
+    document.body.appendChild(cd);
+    // ov 进入半透，给倒计时让位
+    if (ov) { ov.style.transition = 'opacity 1s'; ov.style.opacity = '0.3'; }
+
+    // 顶部恐吓文字（跳动变红）
+    const topLine = document.createElement('div');
+    topLine.style.cssText = 'position:absolute;top:8%;left:50%;transform:translateX(-50%);color:#ff0000;font-size:clamp(14px,2.5vw,22px);letter-spacing:6px;font-weight:bold;text-shadow:0 0 15px #880000;animation:cdPulse 0.6s ease-in-out infinite alternate;text-align:center;width:90%;';
+    topLine.textContent = '它在靠近你 · 你只有 60 秒';
+    cd.appendChild(topLine);
+
+    // 主倒计时（巨大数字）
+    const num = document.createElement('div');
+    num.style.cssText = 'color:#ff0000;font-size:clamp(80px,18vw,200px);font-weight:900;font-family:Courier New,monospace;text-shadow:0 0 40px #ff0000,0 0 80px #880000;letter-spacing:8px;';
+    num.textContent = '60';
+    cd.appendChild(num);
+
+    // 单位
+    const unit = document.createElement('div');
+    unit.style.cssText = 'color:#888;font-size:clamp(12px,2vw,18px);letter-spacing:12px;margin-top:10px;';
+    unit.textContent = '秒';
+    cd.appendChild(unit);
+
+    // 进度条
+    const barBg = document.createElement('div');
+    barBg.style.cssText = 'position:absolute;bottom:18%;left:10%;right:10%;height:4px;background:#220000;border-radius:2px;overflow:hidden;';
+    const barFg = document.createElement('div');
+    barFg.style.cssText = 'height:100%;background:linear-gradient(90deg,#ff0000,#ff4444);width:100%;transition:width 1s linear;box-shadow:0 0 10px #ff0000;';
+    barBg.appendChild(barFg);
+    cd.appendChild(barBg);
+
+    // 倒计时中随机跳出的恐怖文字
+    const hauntingTexts = [
+        '它在你身后', '别回头', '你听到声音了吗', '门后面有人',
+        '镜子里在动', '它知道你的名字', '你跑不掉的', '不要看它',
+        '一直在看', '它饿了', '你选错了', '回去选别的', '太迟了',
+        '它在笑', '闭眼也没用', '你摆脱不了', '它就是你'
+    ];
+
+    // 进度字幕（提醒用户真相）
+    const tipLine = document.createElement('div');
+    tipLine.style.cssText = 'position:absolute;bottom:8%;left:50%;transform:translateX(-50%);color:#555;font-size:clamp(9px,1.3vw,12px);letter-spacing:3px;text-align:center;width:90%;font-family:Courier New,monospace;';
+    tipLine.textContent = '没有人能完成测试';
+    cd.appendChild(tipLine);
+
+    // 倒计时逻辑
+    let left = 60;
+    const totalMs = 60000;
+    const startT = Date.now();
+
+    // 心跳背景音（持续 1 分钟）
+    let hbInterval = null;
+    try {
+        hbInterval = setInterval(() => {
+            if (left <= 0) return;
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.value = 50;
+            g.gain.setValueAtTime(0, ctx.currentTime);
+            g.gain.linearRampToValueAtTime(left < 20 ? 0.7 : 0.35, ctx.currentTime + 0.05);
+            g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+            osc.connect(g); g.connect(ctx.destination);
+            osc.start(); osc.stop(ctx.currentTime + 0.25);
+            setTimeout(() => ctx.close(), 350);
+        }, 1200 + Math.random() * 400);
+    } catch(e) {}
+
+    // 持续轻微震屏
+    const shakeInt = setInterval(() => {
+        if (left <= 0) return;
+        const intensity = 1 + (60 - left) * 0.15; // 越到最后抖得越狠
+        const x = (Math.random() - 0.5) * intensity;
+        const y = (Math.random() - 0.5) * intensity;
+        cd.style.transform = `translate(${x}px, ${y}px)`;
+    }, 60);
+
+    // 跳动吓人逻辑：随时间越来越频繁
+    const scareInterval = setInterval(() => {
+        if (left <= 0) return;
+        // 30秒后跳动频率提高
+        if (left < 30 && Math.random() < 0.5) {
+            spawnQuickJumpscare(cd);
+        } else if (Math.random() < 0.25) {
+            spawnQuickJumpscare(cd);
+        }
+    }, 2000);
+
+    // 随机飘字（持续 60 秒，不影响主数字）
+    const floatTextInterval = setInterval(() => {
+        if (left <= 0) return;
+        const t = document.createElement('div');
+        const txt = hauntingTexts[Math.floor(Math.random() * hauntingTexts.length)];
+        t.textContent = txt;
+        t.style.cssText = `position:absolute;left:${10 + Math.random() * 80}%;top:${10 + Math.random() * 70}%;color:#aa0000;font-size:${12 + Math.random() * 8}px;letter-spacing:2px;opacity:0;transition:opacity 0.3s;pointer-events:none;text-shadow:0 0 8px #550000;font-style:italic;transform:rotate(${(Math.random() - 0.5) * 20}deg);`;
+        cd.appendChild(t);
+        requestAnimationFrame(() => { t.style.opacity = '0.85'; });
+        setTimeout(() => {
+            t.style.transition = 'opacity 0.8s';
+            t.style.opacity = '0';
+            setTimeout(() => { if (t.parentNode) t.parentNode.removeChild(t); }, 900);
+        }, 1500 + Math.random() * 1000);
+    }, 1800);
+
+    // 主计时器
+    const tick = setInterval(() => {
+        left--;
+        num.textContent = left < 10 ? '0' + left : String(left);
+        // 数字越小越红
+        if (left < 10) {
+            num.style.color = '#ff2222';
+            num.style.textShadow = '0 0 60px #ff0000, 0 0 120px #ff0000, 0 0 200px #880000';
+            num.style.animation = 'cdPulse 0.4s ease-in-out infinite alternate';
+        } else if (left < 20) {
+            num.style.animation = 'cdPulse 0.5s ease-in-out infinite alternate';
+        }
+        // 进度条
+        barFg.style.width = (left / 60 * 100) + '%';
+        // 顶部文字变化
+        if (left === 30) {
+            topLine.textContent = '只剩 30 秒 · 它在微笑';
+            tipLine.textContent = '现在跳出去 · 真的能跑掉吗';
+        } else if (left === 10) {
+            topLine.textContent = '来不及了';
+            tipLine.textContent = '欢迎 · 下一个测试者';
+        } else if (left === 5) {
+            topLine.textContent = '你逃不掉的';
+            tipLine.textContent = '它一直都在';
+        }
+
+        if (left <= 0) {
+            clearInterval(tick);
+            clearInterval(shakeInt);
+            clearInterval(scareInterval);
+            clearInterval(floatTextInterval);
+            if (hbInterval) clearInterval(hbInterval);
+            // 最后一次全屏跳脸
+            spawnQuickJumpscare(cd, true);
+            // 跳转
+            setTimeout(() => {
+                window.location.href = 'https://www.bilibili.com/video/BV1H5uj6gEUF';
+            }, 1500);
+        }
+    }, 1000);
+}
+
+// 倒计时中使用的快速小跳脸（不影响主倒计时数字）
+function spawnQuickJumpscare(container, big) {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.value = big ? 60 : 35;
+        g.gain.setValueAtTime(0.5, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+        osc.connect(g); g.connect(ctx.destination);
+        osc.start(); osc.stop(ctx.currentTime + 0.2);
+        setTimeout(() => ctx.close(), 250);
+    } catch(e) {}
+
+    const eye = document.createElement('img');
+    eye.src = './eye2.gif';
+    const w = big ? '100vw' : (30 + Math.random() * 40) + 'vw';
+    const h = big ? '100vh' : (30 + Math.random() * 40) + 'vh';
+    eye.style.cssText = `position:absolute;left:${10 + Math.random() * 70}%;top:${10 + Math.random() * 70}%;transform:translate(-50%,-50%) rotate(${Math.random() * 360}deg);width:${w};height:${h};object-fit:contain;z-index:9999;pointer-events:none;filter:${big ? 'brightness(1.8) contrast(1.5) hue-rotate(-30deg)' : 'invert(0.1)'};`;
+    container.appendChild(eye);
+    setTimeout(() => {
+        eye.style.transition = 'opacity 0.15s';
+        eye.style.opacity = '0';
+        setTimeout(() => { if (eye.parentNode) eye.parentNode.removeChild(eye); }, 200);
+    }, big ? 1200 : 250 + Math.random() * 200);
 }
 
 // 文字恐怖谷：只腐坏普通字母，保持HTML结构，让它看起来像编码坏了
