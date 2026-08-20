@@ -1657,24 +1657,22 @@ $('start').onclick = () => {
     startTime = Date.now();
     lastClick = Date.now();
     startBGM();
-    welcome.style.display = 'none';
-    document.body.style.opacity = '0';
+    welcome.style.transition = 'opacity 1s ease';
+    welcome.style.opacity = '0';
     setTimeout(() => {
-        document.body.style.transition = 'opacity 1.5s';
-        document.body.style.opacity = '1';
+        welcome.style.display = 'none';
         renderQ(0);
-    }, 100);
+    }, 800);
 };
 
 qTEl.textContent = TOTAL;
 qN.textContent = '0';
 prog.style.width = '0%';
 
-document.body.style.opacity = '0';
-setTimeout(() => {
-    document.body.style.transition = 'opacity 1.5s';
-    document.body.style.opacity = '1';
-}, 150);
+// 页面进入动画：欢迎区淡入
+welcome.style.opacity = '0';
+welcome.style.transition = 'opacity 1.5s ease';
+setTimeout(() => { welcome.style.opacity = '1'; }, 80);
 
 // ================================================================
 // 页面加载时获取访问者 IP
