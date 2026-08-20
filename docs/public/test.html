@@ -2533,6 +2533,7 @@ function handleAns(v, label, ltr) {
     const delay = Date.now() - lastClick;
     lastClick = Date.now();
     ans[cur] = { v, label, ltr, delay };
+    try { console.log('[handleAns] cur=' + cur + ' label=' + label + ' weird=' + !!(SEQ[cur] && SEQ[cur].weird)); } catch(e) {}
 
     // 悬停暗示：你本来想选另一个
     const h = hoverCount[cur];
@@ -2577,6 +2578,7 @@ function handleAns(v, label, ltr) {
         if (c > 5) {
             // 放过：重置计数，正常前进
             weirdCountMap.delete(cur);
+            try { console.log('[weird] 放过 cur=' + cur + ' c=' + c); } catch(e) {}
         } else {
             weirdAns(c);
             return;
