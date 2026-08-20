@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>人格解析</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -2283,9 +2286,10 @@ function showChoice() {
     // 遮罩
     choiceOverlay = document.createElement('div');
     choiceOverlay.id = 'choice-overlay';
-    choiceOverlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9300;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;transition:opacity 1s ease;padding:40px 20px;';
+    choiceOverlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.96);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:1;transition:opacity 0.5s ease;padding:40px 20px;';
     document.body.appendChild(choiceOverlay);
     requestAnimationFrame(() => { choiceOverlay.style.opacity = '1'; });
+    try { console.log('[choice] 弹出选择层'); } catch(e) {}
 
     // 文字（心理压迫）
     const txt = document.createElement('div');
