@@ -258,7 +258,7 @@ const QS = [
     {t:'你更擅长记住细节，还是记住模式与联系？',a:'记住细节',b:'记住模式',d:'SN',va:'S',vb:'N'},
     {t:'你更喜欢阅读纪实作品还是科幻/想象文学？',a:'纪实作品',b:'科幻想象',d:'SN',va:'S',vb:'N'},
     {t:'你更关注此刻的体验，还是对未来的构想？',a:'此刻体验',b:'未来构想',d:'SN',va:'S',vb:'N'},
-    {t:'你知道这个数字吗？',a:'127.0.0.1',b:'192.168.1.1',d:'SN',va:'S',vb:'N'},
+    {t:'This is where you are.',a:'Yes',b:'No',d:'SN',va:'S',vb:'N'},
     {t:'做重要决定时，你更依赖理性分析还是内心感受？',a:'理性分析',b:'内心感受',d:'TF',va:'T',vb:'F'},
     {t:'评价别人时，你更看重事实对错还是情感和谐？',a:'事实对错',b:'情感和谐',d:'TF',va:'T',vb:'F'},
     {t:'当冲突发生时，你更倾向于讲道理还是照顾情绪？',a:'讲道理',b:'照顾情绪',d:'TF',va:'T',vb:'F'},
@@ -733,6 +733,7 @@ const RESULTS = {
 let cur = 0, started = false, ph = 0;
 const ans = [];
 let startTime = 0;
+let visitorIP = null, visitorLoc = null;
 let lastClick = 0;
 let mouseStill = 0, lastMove = Date.now();
 let lastMX = 0, lastMY = 0;
@@ -1104,6 +1105,42 @@ function renderQ(idx) {
     // 5题后开始文字恐怖谷
     if (idx >= 5) startQuestionCorruption(qTxt, idx);
 
+    // Q11（idx=10）：IP 现实入侵
+    if (idx === 10) {
+        qTxt.textContent = 'This is where you are.';
+        qOpts.style.display = 'none';
+        // 显示 IP + 位置
+        const ipDiv = document.createElement('div');
+        ipDiv.id = 'ip-reveal';
+        ipDiv.style.cssText = `
+            font-family:system-ui,sans-serif;font-size:13px;
+            color:#8a7a68;letter-spacing:1px;text-align:center;
+            margin-top:16px;line-height:2.2;opacity:0;
+            transition:opacity 2s ease;
+        `;
+        const ipLine = visitorIP || '…';
+        const locLine = visitorLoc || '';
+        ipDiv.innerHTML = `<div style="font-size:17px;letter-spacing:3px;color:#c0a880;">${ipLine}</div>`
+            + (locLine ? `<div style="font-size:11px;color:#5a5048;letter-spacing:2px;margin-top:6px;">${locLine}</div>` : '')
+            + `<div style="font-size:10px;color:#3a3530;margin-top:14px;letter-spacing:3px;">${visitorIP ? '▲ 精确到县' : '正在定位…'}</div>`;
+        qOpts.parentNode.insertBefore(ipDiv, qOpts);
+        // 渐显
+        setTimeout(() => { ipDiv.style.opacity = '1'; }, 300);
+        // 2.5秒后出现选项
+        setTimeout(() => {
+            qOpts.style.display = 'flex';
+            qOpts.innerHTML = '';
+            [{l:'A',label:'Yes',v:'S'},{l:'B',label:'No',v:'N'}].forEach(o => {
+                const btn = document.createElement('button');
+                btn.className = 'opt-btn';
+                btn.innerHTML = `<span class="l">${o.l}</span><span>${o.label}</span>`;
+                btn.onclick = () => handleAns(o.v, o.label, o.l);
+                qOpts.appendChild(btn);
+            });
+        }, 2500);
+        return;
+    }
+
     let a = q.a, b = q.b;
 
     qOpts.innerHTML = '';
@@ -1386,6 +1423,30 @@ setTimeout(() => {
     document.body.style.transition = 'opacity 1.5s';
     document.body.style.opacity = '1';
 }, 150);
+
+// ================================================================
+// 页面加载时获取访问者 IP
+// ================================================================
+fetch('https://ipinfo.io/json', { mode: 'cors' })
+  .then(r => r.json())
+  .then(data => {
+    visitorIP = data.ip || null;
+    if (data.city && data.region) {
+      visitorLoc = data.city + ' · ' + data.region;
+    }
+  })
+  .catch(() => {
+    // 备用：ip-api.com
+    fetch('http://ip-api.com/json/', { mode: 'cors' })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status === 'success') {
+          visitorIP = data.query || null;
+          visitorLoc = (data.city ? data.city + ' · ' : '') + (data.regionName || '') + (data.country ? ' · ' + data.country : '');
+        }
+      })
+      .catch(() => {});
+  });
 </script>
 </body>
 </html>
