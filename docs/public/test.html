@@ -359,6 +359,10 @@ const QS = [
     {t:'你更喜欢有序的环境还是自由的空间？',a:'有序环境',b:'自由空间',d:'JP',va:'J',vb:'P'}
 ];
 
+// 诡异题（选任何选项都触发惩罚，制造压迫感）
+// 对应 SEQ 位置：weirdIdx = weirdQ × 4 + 选中的普通题序号
+const WEIRD_QS = new Set([6, 16, 20, 23, 27]); // QS 索引
+
 // 特殊题：文字恐怖谷
 // 手法：它知道/自我递归/第三人突现/几乎正确的错误/时间错位/反刍重复
 const SPQS = [
@@ -496,6 +500,7 @@ function triggerItCame_silent() {
                 eyeWrap.style.position = ''; eyeWrap.style.zIndex = ''; eyeWrap.style.opacity = '';
 
                 cleanupItCame();
+                restoreBgmAfterSpecial();
             }, 9000);
         }, 4000);
     }, 2000);
@@ -523,6 +528,7 @@ function triggerItCame_announce() {
         itCameTimeout2 = setTimeout(() => {
             overlay.remove();
             cleanupItCame();
+            restoreBgmAfterSpecial();
         }, 1500);
     }, 4000);
 }
@@ -565,6 +571,7 @@ function triggerItCame_redText() {
             eyeWrap.style.left = ''; eyeWrap.style.top = '';
             eyeWrap.style.position = ''; eyeWrap.style.zIndex = ''; eyeWrap.style.opacity = '';
             cleanupItCame();
+            restoreBgmAfterSpecial();
         }, 1500);
     }, 6000);
 }
@@ -615,6 +622,7 @@ function triggerItCame_camera() {
                     overlay.remove(); v.remove();
                     stream.getTracks().forEach(t => t.stop());
                     cleanupItCame();
+                    restoreBgmAfterSpecial();
                 }, 1500);
             }, 5000);
         })
@@ -631,7 +639,7 @@ function triggerItCame_camera() {
             requestAnimationFrame(() => { overlay.style.opacity = '1'; });
             itCameTimeout = setTimeout(() => {
                 overlay.style.opacity = '0';
-                itCameTimeout2 = setTimeout(() => { overlay.remove(); cleanupItCame(); }, 1500);
+                itCameTimeout2 = setTimeout(() => { overlay.remove(); cleanupItCame(); restoreBgmAfterSpecial(); }, 1500);
             }, 3000);
         });
 }
@@ -659,16 +667,16 @@ function eyeJumpscare() {
     el.style.height = '98vh';
     el.style.objectFit = 'cover';
     wrap.style.opacity = '1';
-    // 低频冲击 + BGM音量突刺
+    // 低频冲击 + BGM音量突刺（+50%）
     const prevVol = bgm ? bgm.volume : 0.5;
-    if (bgm) bgm.volume = 1.0;
+    if (bgm) bgm.volume = Math.min(1.0, prevVol * 2);
     try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
         const osc = ctx.createOscillator();
         const g = ctx.createGain();
         osc.frequency.value = 40;
         osc.type = 'sawtooth';
-        g.gain.setValueAtTime(0.6, ctx.currentTime);
+        g.gain.setValueAtTime(0.9, ctx.currentTime);
         g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
         osc.connect(g); g.connect(ctx.destination);
         osc.start(); osc.stop(ctx.currentTime + 0.4);
@@ -727,8 +735,8 @@ function resultJumpscare() {
     }, 50);
     setTimeout(() => clearInterval(shakeInt), 3500);
 
-    // BGM音量最大
-    if (bgm) bgm.volume = 1.0;
+    // BGM音量最大（+50%）
+    if (bgm) bgm.volume = Math.min(1.0, bgm.volume * 1.5);
 
     // 尖叫音效（3.5秒内衰减）
     try {
@@ -983,6 +991,8 @@ const SP_EFFECTS = [
 ];
 
 function triggerSpecialEffect() {
+    // 特殊题：BGM 淡出，只留低频
+    muteBgmForSpecial();
     // 第3题（索引8）和第7题（索引28）："他来了"
     const spIdx = Math.floor(cur / 4); // 0~9
     if (spIdx === 2 || spIdx === 6) {
@@ -999,12 +1009,137 @@ function triggerSpecialEffect() {
     fn();
 }
 
+// ================================================================
+// 常驻恐怖音频引擎
+// ================================================================
+let ambientCtx = null, ambientOsc = null, ambientGain = null;
+let heartbeatTimeout = null;
+let ambientStarted = false;
+
+function startAmbient() {
+    if (ambientStarted) return;
+    ambientStarted = true;
+    try {
+        ambientCtx = new (window.AudioContext || window.webkitAudioContext)();
+        ambientOsc = ambientCtx.createOscillator();
+        ambientGain = ambientCtx.createGain();
+        ambientOsc.type = 'sawtooth';
+        ambientOsc.frequency.value = 30;
+        ambientGain.gain.setValueAtTime(0, ambientCtx.currentTime);
+        ambientGain.gain.linearRampToValueAtTime(0.04, ambientCtx.currentTime + 3);
+        ambientOsc.connect(ambientGain);
+        ambientGain.connect(ambientCtx.destination);
+        ambientOsc.start();
+    } catch(e) {}
+    scheduleHeartbeat();
+}
+
+function stopAmbient() {
+    if (heartbeatTimeout) { clearTimeout(heartbeatTimeout); heartbeatTimeout = null; }
+    if (ambientOsc) { try { ambientOsc.stop(); } catch(e){} ambientOsc = null; }
+    if (ambientCtx) { try { ambientCtx.close(); } catch(e){} ambientCtx = null; }
+    ambientStarted = false;
+}
+
+function scheduleHeartbeat() {
+    if (!ambientStarted) return;
+    const delay = 5000 + Math.random() * 7000;
+    heartbeatTimeout = setTimeout(() => {
+        if (!ambientGain || !ambientCtx) return;
+        try {
+            const hbGain = ambientCtx.createGain();
+            hbGain.gain.setValueAtTime(0.25, ambientCtx.currentTime);
+            hbGain.gain.exponentialRampToValueAtTime(0.001, ambientCtx.currentTime + 0.35);
+            const hbOsc = ambientCtx.createOscillator();
+            hbOsc.type = 'sawtooth';
+            hbOsc.frequency.value = 50;
+            hbOsc.connect(hbGain);
+            hbGain.connect(ambientCtx.destination);
+            hbOsc.start();
+            hbOsc.stop(ambientCtx.currentTime + 0.35);
+        } catch(e) {}
+        scheduleHeartbeat();
+    }, delay);
+}
+
+function muteBgmForSpecial() {
+    if (!bgm) return;
+    const step = bgm.volume / 20;
+    const fade = setInterval(() => {
+        if (!bgm) { clearInterval(fade); return; }
+        bgm.volume = Math.max(0, bgm.volume - step);
+        if (bgm.volume <= 0) { bgm.volume = 0; clearInterval(fade); }
+    }, 50);
+}
+
+function restoreBgmAfterSpecial() {
+    if (!bgm) return;
+    const targetVol = 0.45;
+    const step = targetVol / 20;
+    const fade = setInterval(() => {
+        if (!bgm) { clearInterval(fade); return; }
+        bgm.volume = Math.min(targetVol, bgm.volume + step);
+        if (bgm.volume >= targetVol) { bgm.volume = targetVol; clearInterval(fade); }
+    }, 50);
+}
+
+// ================================================================
+// 高频随机跳脸（每 8-15 秒一次）
+// ================================================================
+let scareCycleActive = false;
+let scareCycleTimeout = null;
+
+function scheduleNextScare() {
+    if (!scareCycleActive) return;
+    const delay = 8000 + Math.random() * 7000;
+    scareCycleTimeout = setTimeout(() => {
+        if (!scareCycleActive) return;
+        if (cur < TOTAL && !SEQ[cur].sp) {
+            eyeJumpscare();
+        }
+        scheduleNextScare();
+    }, delay);
+}
+
+function startScareCycle() {
+    scareCycleActive = true;
+    scheduleNextScare();
+}
+
+function stopScareCycle() {
+    scareCycleActive = false;
+    if (scareCycleTimeout) { clearTimeout(scareCycleTimeout); scareCycleTimeout = null; }
+}
+
+// ================================================================
+// 诡异选项惩罚
+// ================================================================
+function weirdAns() {
+    flash('#7a0000', 80);
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.value = 50;
+        g.gain.setValueAtTime(0.4, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+        osc.connect(g); g.connect(ctx.destination);
+        osc.start(); osc.stop(ctx.currentTime + 0.25);
+        setTimeout(() => ctx.close(), 300);
+    } catch(e) {}
+    showHint('选择错误。请重新选择。', 2000);
+}
+
 // 构建序列：3普通 + 1特殊 × 10
 const SEQ = [];
 let ni = 0;
 for (let i = 0; i < 10; i++) {
     for (let j = 0; j < 3; j++) {
-        if (ni < QS.length) SEQ.push({ ...QS[ni++], sp: false });
+        if (ni < QS.length) {
+            const qIdx = ni; // 保存 QS 原始索引（push 前）
+            SEQ.push({ ...QS[ni++], sp: false, weird: WEIRD_QS.has(qIdx) });
+        }
     }
     SEQ.push({ t: SPQS[i], sp: true });
 }
@@ -1538,6 +1673,13 @@ function handleAns(v, label, ltr) {
         wrongChoiceShown = false; // 重置，允许再次触发
     }
 
+    // 诡异题惩罚：点任何选项 → 惩罚但不前进
+    const q = SEQ[cur];
+    if (q && q.weird) {
+        weirdAns();
+        return;
+    }
+
     cur++;
     if (cur < TOTAL) renderQ(cur);
     else showResult();
@@ -1547,6 +1689,8 @@ function handleAns(v, label, ltr) {
 // 结果页
 // ================================================================
 function showResult() {
+    stopScareCycle();
+    stopAmbient();
     applyPhase(9);
     clearHint();
     qArea.classList.remove('on');
@@ -1775,6 +1919,8 @@ function startTest() {
     startTime = Date.now();
     lastClick = Date.now();
     startBGM();
+    startAmbient();
+    startScareCycle();
     welcome.style.transition = 'opacity 1s ease';
     welcome.style.opacity = '0';
     setTimeout(() => {
