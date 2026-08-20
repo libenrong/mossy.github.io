@@ -2585,7 +2585,7 @@ function handleAns(v, label, ltr) {
         }
     }
 
-    cur++;
+    try { console.log('[handleAns] ans done, cur++ => ' + cur); } catch(e) {}
     // 答完第 8 题后跳出选择：留下 / 离开（离开按钮会跳走）
     if (cur === 8) {
         try { console.log('[trigger] showChoice cur=' + cur); } catch(e) {}
