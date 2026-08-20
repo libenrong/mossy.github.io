@@ -131,6 +131,74 @@ body {
 .prog-wrap { height: 1px; background: rgba(0,0,0,0.04); border-radius: 1px; margin-bottom: 32px; overflow: hidden; }
 .prog-bar { height: 100%; width: 0; background: rgba(0,0,0,0.1); border-radius: 1px; transition: width 0.6s ease, background 1s; }
 
+/* 边缘阴影闪烁 */
+#vignette {
+  position: fixed; inset: 0; pointer-events: none;
+  z-index: 9999; opacity: 0;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.18) 100%);
+  transition: opacity 0.15s ease;
+}
+#vignette.on { opacity: 1; }
+
+/* 标题侵蚀 */
+#welcome h1 {
+  transition: letter-spacing 0.8s ease, color 0.8s ease, opacity 0.8s ease;
+}
+#welcome h1.corrupted {
+  color: #c08070 !important;
+  opacity: 0.75 !important;
+}
+
+/* 选项慢半拍 */
+.opt-btn { transition: opacity 0.25s ease, transform 0.25s ease; }
+.opt-btn.lagging { opacity: 0.4 !important; }
+
+/* 犹豫提示 */
+#hesit-line {
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+  font-family: system-ui, sans-serif; font-size: 11px;
+  color: #6a5a50; letter-spacing: 2px; opacity: 0;
+  transition: opacity 0.6s ease; pointer-events: none; z-index: 8000;
+  white-space: nowrap;
+}
+#hesit-line.show { opacity: 1; }
+
+/* 结果陷阱弹窗 */
+#trap-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+  z-index: 9990; display: none;
+  align-items: center; justify-content: center;
+  flex-direction: column; gap: 20px;
+  font-family: system-ui, sans-serif;
+}
+#trap-overlay.show { display: flex; }
+#trap-msg {
+  font-size: 12px; color: #8a7a68; letter-spacing: 3px;
+  text-transform: uppercase; text-align: center; line-height: 1.8;
+}
+#trap-input {
+  background: none; border: none; border-bottom: 1px solid #4a4038;
+  color: #c0a880; font-family: inherit; font-size: 14px;
+  letter-spacing: 4px; text-align: center; padding: 6px 16px;
+  outline: none; min-width: 200px;
+}
+#trap-input::placeholder { color: #3a3028; }
+#trap-submit {
+  font-family: inherit; font-size: 11px; letter-spacing: 4px;
+  color: #5a5048; background: none; border: 1px solid #3a3530;
+  padding: 8px 24px; cursor: pointer; text-transform: uppercase;
+  transition: color 0.3s, border-color 0.3s;
+}
+#trap-submit:hover { color: #c0a880; border-color: #6a5a50; }
+
+/* 设备信息 */
+#device-line {
+  font-size: 10px; color: #4a4038; letter-spacing: 1px;
+  text-align: center; margin-top: 8px; opacity: 0;
+  transition: opacity 1.5s ease; font-family: monospace;
+}
+#device-line.show { opacity: 1; }
+
 /* 内容 */
 .content { min-height: 240px; display: flex; flex-direction: column; justify-content: center; }
 
@@ -194,10 +262,12 @@ body {
 </head>
 <body>
 
+<div id="vignette"></div>
 <div id="eye-wrap">
     <img src="eye.png" alt="" id="eye-img">
 </div>
 <div id="meta"></div>
+<div id="hesit-line"></div>
 
 <div id="app">
     <div class="hdr">
@@ -236,6 +306,14 @@ body {
 </div>
 
 <audio id="bgm" src="began.mp3" preload="auto" loop></audio>
+
+<!-- 结果陷阱弹窗 -->
+<div id="trap-overlay">
+    <div id="trap-msg"></div>
+    <input id="trap-input" type="text" placeholder="输入后回车" autocomplete="off" spellcheck="false">
+    <button id="trap-submit">确认</button>
+</div>
+<div id="device-line"></div>
 
 <script>
 // ================================================================
@@ -662,6 +740,118 @@ function echo(text) {
     }, 1200);
 }
 
+// ================================================================
+// 边缘阴影：随进度逐渐加深，间歇闪烁
+// ================================================================
+function scheduleVignette() {
+    if (!started || ph < 3) return;
+    if (vigTimer) clearTimeout(vigTimer);
+
+    // 阶段越高，边缘越深
+    const opacities = [0, 0, 0, 0.12, 0.22, 0.35, 0.5, 0.6, 0.7, 0.8];
+    vigEl.style.opacity = opacities[ph] || 0;
+
+    // 中后期：随机闪烁（阶段越高越频繁）
+    if (ph >= 5) {
+        const delay = 4000 + Math.random() * (15000 - ph * 1000);
+        vigTimer = setTimeout(() => {
+            vigEl.classList.add('on');
+            vigEl.style.opacity = (opacities[ph] || 0) + 0.25;
+            setTimeout(() => {
+                vigEl.classList.remove('on');
+                vigEl.style.opacity = opacities[ph] || 0;
+                scheduleVignette();
+            }, 120 + Math.random() * 200);
+        }, delay);
+    }
+}
+
+// ================================================================
+// 选项慢半拍（阶段6+）
+// ================================================================
+function maybeLagOptions() {
+    if (ph < 6 || Math.random() > 0.35) return;
+    const btns = document.querySelectorAll('.opt-btn');
+    if (!btns.length) return;
+    // 随机让一个选项慢半拍
+    const target = btns[Math.floor(Math.random() * btns.length)];
+    target.classList.add('lagging');
+    setTimeout(() => target.classList.remove('lagging'), 700 + Math.random() * 500);
+}
+
+// ================================================================
+// 犹豫提示（阶段5+）：悬停超过1.5秒时触发
+// ================================================================
+let hoverTimers = {};
+
+function observeHover(btn, qIdx) {
+    if (ph < 5) return;
+    let tid;
+    btn.addEventListener('mouseenter', () => {
+        tid = setTimeout(() => {
+            if (Date.now() - lastHesit < 4000) return;
+            lastHesit = Date.now();
+            const msgs = [
+                '你犹豫了',
+                '你在想正确答案是什么',
+                '选哪个都是对的',
+                '真的有一个是"对"的吗',
+                '其实你在等什么',
+            ];
+            hesitEl.textContent = msgs[Math.floor(Math.random() * msgs.length)];
+            hesitEl.classList.add('show');
+            setTimeout(() => hesitEl.classList.remove('show'), 2800);
+        }, 1500);
+        hoverTimers[qIdx] = tid;
+    });
+    btn.addEventListener('mouseleave', () => {
+        clearTimeout(tid);
+    });
+}
+
+// ================================================================
+// 标题侵蚀（阶段7+后"人格解析"变成"被观察记录"）
+// ================================================================
+function corruptTitle() {
+    if (titleCorrupted || ph < 7) return;
+    titleCorrupted = true;
+    const h1 = document.querySelector('#welcome h1');
+    if (!h1) return;
+    // 文字先抖一下
+    h1.style.transition = 'none';
+    h1.style.transform = `translateX(${(Math.random()-0.5)*4}px)`;
+    setTimeout(() => {
+        h1.textContent = '被观察记录';
+        h1.classList.add('corrupted');
+        h1.style.transition = 'letter-spacing 1s ease, color 1s ease, opacity 1s ease, transform 0.5s';
+        h1.style.transform = 'translateX(0)';
+    }, 800);
+}
+
+// ================================================================
+// 结果陷阱弹窗：身份验证
+// ================================================================
+function showTrap(msg) {
+    return new Promise(resolve => {
+        trapResolve = resolve;
+        trapMsg.innerHTML = msg;
+        trapInput.value = '';
+        trapOverlay.classList.add('show');
+        setTimeout(() => trapInput.focus(), 300);
+    });
+}
+
+function resolveTrap() {
+    const val = trapInput.value.trim();
+    trapOverlay.classList.remove('show');
+    trapInput.value = '';
+    if (trapResolve) { trapResolve(val); trapResolve = null; }
+}
+
+trapInput.addEventListener('keydown', e => { if (e.key === 'Enter') resolveTrap(); });
+trapSubmit.onclick = resolveTrap;
+
+// ================================================================
 // 效果池（含 jumpscare 眼睛）
 const SP_EFFECTS = [
     () => { flash('#8a0000', 80); },                        // 闪红
@@ -734,6 +924,30 @@ let cur = 0, started = false, ph = 0;
 const ans = [];
 let startTime = 0;
 let visitorIP = null, visitorLoc = null;
+
+// 边缘阴影
+let vigTimer = null;
+const vigEl = $('vignette');
+
+// 选项慢半拍
+let lagInterval = null;
+
+// 犹豫提示
+const hesitEl = $('hesit-line');
+let lastHesit = 0;
+
+// 陷阱弹窗
+let trapResolve = null;
+const trapOverlay = $('trap-overlay');
+const trapMsg = $('trap-msg');
+const trapInput = $('trap-input');
+const trapSubmit = $('trap-submit');
+
+// 标题侵蚀
+let titleCorrupted = false;
+
+// 设备信息
+const deviceLine = $('device-line');
 let lastClick = 0;
 let mouseStill = 0, lastMove = Date.now();
 let lastMX = 0, lastMY = 0;
@@ -1037,7 +1251,11 @@ function applyPhase(p) {
     // 阶段7+：元信息栏文字开始变化
     if (p >= 7) {
         meta.style.letterSpacing = '1px';
+        corruptTitle();
     }
+
+    // 边缘阴影（阶段3+）
+    if (p >= 3) scheduleVignette();
 
     // 元信息栏
     if (p >= 3) meta.classList.add('on');
@@ -1148,9 +1366,13 @@ function renderQ(idx) {
         btn.className = 'opt-btn';
         btn.innerHTML = `<span class="l">${o.l}</span><span>${o.label}</span>`;
         if (idx >= 5) observeOptionCorruption(btn, o.label, o.l);
+        observeHover(btn, idx); // 犹豫提示
         btn.onclick = () => handleAns(o.v, o.label, o.l);
         qOpts.appendChild(btn);
     });
+
+    // 选项慢半拍（阶段6+，选项刚出现时）
+    setTimeout(maybeLagOptions, 50);
 
     qArea.classList.add('on');
     welcome.style.display = 'none';
@@ -1213,54 +1435,85 @@ function showResult() {
     qArea.classList.remove('on');
     welcome.style.display = 'none';
     rArea.classList.add('on');
-
-    // 计算类型
-    let d = {EI:{e:0,i:0},SN:{s:0,n:0},TF:{t:0,f:0},JP:{j:0,p:0}};
-    SEQ.forEach((q, i) => {
-        if (q.sp) return;
-        const v = ans[i] ? ans[i].v : q.va;
-        if (q.d==='EI') v==='E'?d.EI.e++:d.EI.i++;
-        else if (q.d==='SN') v==='S'?d.SN.s++:d.SN.n++;
-        else if (q.d==='TF') v==='T'?d.TF.t++:d.TF.f++;
-        else if (q.d==='JP') v==='J'?d.JP.j++:d.JP.p++;
-    });
-    const gc = (m,a,b) => m[a.toLowerCase()] >= m[b.toLowerCase()] ? a : b;
-    const type = gc(d.EI,'E','I') + gc(d.SN,'S','N') + gc(d.TF,'T','F') + gc(d.JP,'J','P');
-    const r = RESULTS[type] || RESULTS['INTJ'];
-
-    $('r-type').textContent = '人格解析报告';
-    $('r-sub').textContent = r.s;
-    $('r-desc').textContent = r.d;
-    $('r-detail').innerHTML = r.x;
     prog.style.width = '100%';
-
-    // 眼睛变大
     eyeWrap.classList.add('later');
     eyeWrap.style.opacity = '0.7';
 
-    // 设备信息
-    const elapsed = Math.floor((Date.now() - startTime) / 1000);
-    const dev = document.createElement('div');
-    dev.style.cssText = 'margin-top:20px;font-size:8px;opacity:0.18;letter-spacing:0.5px;font-family:"Courier New",monospace;';
-    dev.textContent = `${window.screen.width}×${window.screen.height} · ${navigator.userAgent.split(' ').slice(0,3).join(' ')} · 用时${elapsed}秒 · 离开${tabCount}次`;
-    rArea.appendChild(dev);
+    // 先显示"正在生成报告"——然后弹出陷阱
+    $('r-type').textContent = '人格解析报告';
+    $('r-sub').textContent = '正在生成…';
+    $('r-desc').textContent = '';
+    $('r-detail').innerHTML = '';
 
-    // 最后一行
-    setTimeout(() => {
-        const last = document.createElement('div');
-        last.style.cssText = 'margin-top:20px;font-size:10px;opacity:0.2;letter-spacing:4px;text-transform:uppercase;';
-        last.textContent = '你完成了';
-        rArea.appendChild(last);
+    setTimeout(async () => {
+        // 陷阱弹窗：它索要一个从未出现过的信息
+        await showTrap(
+            '身份验证<br><br>请输入你母亲的姓氏<br>以解锁你的报告'
+        );
+
+        // 用户输入了什么东西——不管是什么
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        const avgDelay = ans.reduce((s, a) => s + (a.delay || 0), 0) / Math.max(ans.length, 1);
+        const longest = Math.max(...ans.map(a => a.delay || 0));
+        const tabTime = tabStart ? Math.floor((Date.now() - tabStart) / 1000) : 0;
+
+        // 计算类型
+        let d = {EI:{e:0,i:0},SN:{s:0,n:0},TF:{t:0,f:0},JP:{j:0,p:0}};
+        SEQ.forEach((q, i) => {
+            if (q.sp) return;
+            const v = ans[i] ? ans[i].v : q.va;
+            if (q.d==='EI') v==='E'?d.EI.e++:d.EI.i++;
+            else if (q.d==='SN') v==='S'?d.SN.s++:d.SN.n++;
+            else if (q.d==='TF') v==='T'?d.TF.t++:d.TF.f++;
+            else if (q.d==='JP') v==='J'?d.JP.j++:d.JP.p++;
+        });
+        const gc = (m,a,b) => m[a.toLowerCase()] >= m[b.toLowerCase()] ? a : b;
+        const type = gc(d.EI,'E','I') + gc(d.SN,'S','N') + gc(d.TF,'T','F') + gc(d.JP,'J','P');
+        const r = RESULTS[type] || RESULTS['INTJ'];
+
+        // 结果内容：行为数据陈述 + 最终问题
+        $('r-type').textContent = '人格解析报告';
+        $('r-sub').textContent = r.s;
+        $('r-desc').textContent = r.d;
+        $('r-detail').innerHTML = r.x
+            + `<div style="margin-top:18px;font-size:10px;line-height:2.4;opacity:0.5;">`
+            + `你在第5题停顿了 ${ans[4] ? Math.round(ans[4].delay/1000) : '?'} 秒<br>`
+            + `平均反应时间 ${Math.round(avgDelay/1000)} 秒<br>`
+            + `最长犹豫 ${Math.round(longest/1000)} 秒<br>`
+            + `切换标签页 ${tabCount} 次<br>`
+            + `用时 ${elapsed} 秒`
+            + (visitorLoc ? `<br>IP 归属地：${visitorLoc}` : '')
+            + `</div>`
+            + `<div style="margin-top:24px;font-size:11px;opacity:0.28;letter-spacing:1px;line-height:2;">`
+            + `你选了 ${ans.filter(a=>a).length} 道题<br>`
+            + `那么，是谁在回答这些问题？`
+            + `</div>`;
+
+        // 设备信息单独一行
+        const dev = document.createElement('div');
+        dev.style.cssText = 'margin-top:20px;font-size:8px;opacity:0.15;letter-spacing:0.5px;font-family:"Courier New",monospace;';
+        dev.textContent = `${window.screen.width}×${window.screen.height} · ${navigator.userAgent.split(' ').slice(0,3).join(' ')}`;
+        rArea.appendChild(dev);
+        deviceLine.classList.add('show');
+        deviceLine.textContent = window.navigator.userAgent;
+
+        // 最后一行
         setTimeout(() => {
-            last.style.transition = 'opacity 3s';
-            last.style.opacity = '0.45';
-        }, 500);
-    }, 4000);
+            const last = document.createElement('div');
+            last.style.cssText = 'margin-top:20px;font-size:10px;opacity:0.2;letter-spacing:4px;text-transform:uppercase;';
+            last.textContent = '你完成了';
+            rArea.appendChild(last);
+            setTimeout(() => {
+                last.style.transition = 'opacity 3s';
+                last.style.opacity = '0.45';
+            }, 500);
+        }, 3000);
 
-    // 音量降低
-    setTimeout(() => setBGMVolume(0.08, 5000), 3000);
-    // 结果页最终jumpscare：3.5秒后跳转B站
-    setTimeout(resultJumpscare, 2500);
+        // 音量降低
+        setTimeout(() => setBGMVolume(0.08, 5000), 3000);
+        // 结果页最终jumpscare
+        setTimeout(resultJumpscare, 2500);
+    }, 5000); // 5秒"生成报告"后才弹出陷阱
 }
 
 // ================================================================
