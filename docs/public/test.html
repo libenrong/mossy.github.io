@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>人格解析</title>
+<title>人格解析 v2.1-debug</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { height: 100%; }
@@ -1829,8 +1829,8 @@ const trapMsg = $('trap-msg');
 const trapInput = $('trap-input');
 const trapSubmit = $('trap-submit');
 
-trapInput.addEventListener('keydown', e => { if (e.key === 'Enter') resolveTrap(); });
-trapSubmit.onclick = resolveTrap;
+if (trapInput) trapInput.addEventListener('keydown', e => { if (e.key === 'Enter') resolveTrap(); });
+if (trapSubmit) trapSubmit.onclick = resolveTrap;
 
 // 标题侵蚀
 let titleCorrupted = false;
