@@ -212,8 +212,14 @@ body {
     font-size: 10px; letter-spacing: 4px; padding: 11px 36px; cursor: pointer;
     font-family: inherit; text-transform: uppercase; font-weight: 300;
     opacity: 0.4; transition: opacity 0.3s;
+    -webkit-user-select: none; user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    touch-action: manipulation;
+    pointer-events: auto !important;
+    position: relative; z-index: 100;
 }
-#start:hover { opacity: 0.75; }
+#start:hover, #start:active { opacity: 0.85; }
 
 /* 题目 */
 #q-area { display: none; }
@@ -1651,7 +1657,8 @@ function observeOptionCorruption(btn, origLabel, letter) {
 // ================================================================
 // 启动
 // ================================================================
-$('start').onclick = () => {
+const startBtn = $('start');
+function startTest() {
     if (started) return;
     started = true;
     startTime = Date.now();
@@ -1663,7 +1670,9 @@ $('start').onclick = () => {
         welcome.style.display = 'none';
         renderQ(0);
     }, 800);
-};
+}
+startBtn.addEventListener('click', startTest);
+startBtn.addEventListener('touchend', e => { e.preventDefault(); startTest(); }, { passive: false });
 
 qTEl.textContent = TOTAL;
 qN.textContent = '0';
