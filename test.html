@@ -3,7 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>人格解析</title>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>人格解析 v2.1-debug</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { height: 100%; }
@@ -131,6 +134,74 @@ body {
 .prog-wrap { height: 1px; background: rgba(0,0,0,0.04); border-radius: 1px; margin-bottom: 32px; overflow: hidden; }
 .prog-bar { height: 100%; width: 0; background: rgba(0,0,0,0.1); border-radius: 1px; transition: width 0.6s ease, background 1s; }
 
+/* 边缘阴影闪烁 */
+#vignette {
+  position: fixed; inset: 0; pointer-events: none;
+  z-index: 9999; opacity: 0;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.18) 100%);
+  transition: opacity 0.15s ease;
+}
+#vignette.on { opacity: 1; }
+
+/* 标题侵蚀 */
+#welcome h1 {
+  transition: letter-spacing 0.8s ease, color 0.8s ease, opacity 0.8s ease;
+}
+#welcome h1.corrupted {
+  color: #c08070 !important;
+  opacity: 0.75 !important;
+}
+
+/* 选项慢半拍 */
+.opt-btn { transition: opacity 0.25s ease, transform 0.25s ease; }
+.opt-btn.lagging { opacity: 0.4 !important; }
+
+/* 犹豫提示 */
+#hesit-line {
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+  font-family: system-ui, sans-serif; font-size: 11px;
+  color: #6a5a50; letter-spacing: 2px; opacity: 0;
+  transition: opacity 0.6s ease; pointer-events: none; z-index: 8000;
+  white-space: nowrap;
+}
+#hesit-line.show { opacity: 1; }
+
+/* 结果陷阱弹窗 */
+#trap-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+  z-index: 9990; display: none;
+  align-items: center; justify-content: center;
+  flex-direction: column; gap: 20px;
+  font-family: system-ui, sans-serif;
+}
+#trap-overlay.show { display: flex; }
+#trap-msg {
+  font-size: 12px; color: #8a7a68; letter-spacing: 3px;
+  text-transform: uppercase; text-align: center; line-height: 1.8;
+}
+#trap-input {
+  background: none; border: none; border-bottom: 1px solid #4a4038;
+  color: #c0a880; font-family: inherit; font-size: 14px;
+  letter-spacing: 4px; text-align: center; padding: 6px 16px;
+  outline: none; min-width: 200px;
+}
+#trap-input::placeholder { color: #3a3028; }
+#trap-submit {
+  font-family: inherit; font-size: 11px; letter-spacing: 4px;
+  color: #5a5048; background: none; border: 1px solid #3a3530;
+  padding: 8px 24px; cursor: pointer; text-transform: uppercase;
+  transition: color 0.3s, border-color 0.3s;
+}
+#trap-submit:hover { color: #c0a880; border-color: #6a5a50; }
+
+/* 设备信息 */
+#device-line {
+  font-size: 10px; color: #4a4038; letter-spacing: 1px;
+  text-align: center; margin-top: 8px; opacity: 0;
+  transition: opacity 1.5s ease; font-family: monospace;
+}
+#device-line.show { opacity: 1; }
+
 /* 内容 */
 .content { min-height: 240px; display: flex; flex-direction: column; justify-content: center; }
 
@@ -144,13 +215,21 @@ body {
     font-size: 10px; letter-spacing: 4px; padding: 11px 36px; cursor: pointer;
     font-family: inherit; text-transform: uppercase; font-weight: 300;
     opacity: 0.4; transition: opacity 0.3s;
+    -webkit-user-select: none; user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    touch-action: manipulation;
+    pointer-events: auto !important;
+    position: relative; z-index: 100;
 }
-#start:hover { opacity: 0.75; }
+#start:hover, #start:active { opacity: 0.85; }
 
 /* 题目 */
 #q-area { display: none; }
 #q-area.on { display: block; animation: in 0.5s ease; }
 @keyframes in { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+@keyframes cdPulse { from{opacity:0.7;transform:translateX(-50%) scale(1)} to{opacity:1;transform:translateX(-50%) scale(1.05)} }
+@keyframes cdNumPulse { from{opacity:0.85;transform:scale(1)} to{opacity:1;transform:scale(1.08)} }
 .q-num { font-size: 8px; letter-spacing: 3px; text-transform: uppercase; opacity: 0.18; margin-bottom: 8px; }
 .q-text { font-size: 15px; font-weight: 300; line-height: 2.1; margin-bottom: 24px; min-height: 44px; letter-spacing: 0.3px; transition: filter 0.5s, opacity 0.5s; }
 .q-opts { display: flex; flex-direction: column; gap: 5px; }
@@ -194,10 +273,12 @@ body {
 </head>
 <body>
 
+<div id="vignette"></div>
 <div id="eye-wrap">
-    <img src="/Users/include/Desktop/eye.png" alt="" id="eye-img">
+    <img src="eye.png" alt="" id="eye-img">
 </div>
 <div id="meta"></div>
+<div id="hesit-line"></div>
 
 <div id="app">
     <div class="hdr">
@@ -235,7 +316,15 @@ body {
     </div>
 </div>
 
-<audio id="bgm" src="/Users/include/Downloads/began.mp3" preload="auto" loop></audio>
+<audio id="bgm" src="began.mp3" preload="auto" loop></audio>
+
+<!-- 结果陷阱弹窗 -->
+<div id="trap-overlay">
+    <div id="trap-msg"></div>
+    <input id="trap-input" type="text" placeholder="输入后回车" autocomplete="off" spellcheck="false">
+    <button id="trap-submit">确认</button>
+</div>
+<div id="device-line"></div>
 
 <script>
 // ================================================================
@@ -258,6 +347,7 @@ const QS = [
     {t:'你更擅长记住细节，还是记住模式与联系？',a:'记住细节',b:'记住模式',d:'SN',va:'S',vb:'N'},
     {t:'你更喜欢阅读纪实作品还是科幻/想象文学？',a:'纪实作品',b:'科幻想象',d:'SN',va:'S',vb:'N'},
     {t:'你更关注此刻的体验，还是对未来的构想？',a:'此刻体验',b:'未来构想',d:'SN',va:'S',vb:'N'},
+    {t:'This is where you are.',a:'Yes',b:'No',d:'SN',va:'S',vb:'N'},
     {t:'做重要决定时，你更依赖理性分析还是内心感受？',a:'理性分析',b:'内心感受',d:'TF',va:'T',vb:'F'},
     {t:'评价别人时，你更看重事实对错还是情感和谐？',a:'事实对错',b:'情感和谐',d:'TF',va:'T',vb:'F'},
     {t:'当冲突发生时，你更倾向于讲道理还是照顾情绪？',a:'讲道理',b:'照顾情绪',d:'TF',va:'T',vb:'F'},
@@ -274,39 +364,298 @@ const QS = [
     {t:'你更喜欢有序的环境还是自由的空间？',a:'有序环境',b:'自由空间',d:'JP',va:'J',vb:'P'}
 ];
 
+// 诡异题（选任何选项都触发惩罚，制造压迫感）
+// 对应 SEQ 位置：weirdIdx = weirdQ × 4 + 选中的普通题序号
+const WEIRD_QS = new Set([6, 16, 20, 23, 27]); // QS 索引
+
 // 特殊题：文字恐怖谷
 // 手法：它知道/自我递归/第三人突现/几乎正确的错误/时间错位/反刍重复
 const SPQS = [
     // Q10
-    '你有没有在某个瞬间，<br>觉得自己刚才做的事，<br>好像不是自己想做的？',
-
-    // Q20 — 第三人突现
-    '你正在读这段文字。<br><span style="font-size:0.7em;opacity:0.4;">他也在读。</span><br><br>你上一次感到真正的安静，<br>是在什么时候？',
-
-    // Q30 — 选项外第三人
-    '你有没有对某个人，<br>做过一件他永远不会知道的事？<br><br>是 A 吗，还是 B？<br>还是，是 C？',
-
-    // Q40 — 它知道你的沉默
-    '有些话你从来没有对任何人说过。<br><br>你知道是哪句。<br><br>你能想起那件事发生的时候，<br>你身边有没有别人？<br>真的没有吗？',
-
-    // Q50 — 自我分裂
-    '你会不会在某些时刻，<br>突然不知道自己为什么会做这件事——<br>明明是你自己在做，<br>却像是看着自己在做？<br><br>比如现在。',
-
-    // Q60 — 反刍重复·文字恐怖谷
-    '你有没有一个习惯，<br>或者一个想法，<br>是你从来不解释原因的？<br><br>那是什——<br><br>等等，<br>你刚才想说的是"什么"。<br>现在呢？',
-
-    // Q70 — 它一直在看
-    '你有没有注意到，<br>你读这段文字的时候，<br>眼睛是从左到右移动的？<br><br>你现在停下来了。<br><br>好。继续。',
-
-    // Q80 — 递归自我
-    '你现在感觉怎么样？<br><br>真的感觉怎么样？<br><br>还是只是觉得"应该"感觉怎么样？<br><br>你觉得哪个回答是对的，<br>还是你只是在选一个答案？',
-
-    // Q90 — 几乎正确的错误
-    '你对自己的了解，<br>有多少是真正观察来的，<br>有多少只是别人告诉你的？<br><br>这道题，<br>是你自己想做的吗？<br>还是系统生成的？<br><span style="font-size:0.65em;opacity:0.25;">还是说，系统和你，有什么区别？</span>',
-
-    // Q100 — 终局
-    '如果现在有一个人，<br>能完整地看到你所有的想法，<br>你会感到害怕吗？<br><br>还是你会感到——<br><br>——被理解了？<br><br><span style="font-size:0.6em;opacity:0.2;">或者，<br>你从一开始就不知道什么是"自己的"想法？</span>'
+    '发生了一些异常。正在恢复。',
+    // Q20
+    '发生了一些异常。正在恢复。',
+    // Q30
+    '发生了一些异常。正在恢复。',
+    // Q40
+    '发生了一些异常。正在恢复。',
+    // Q50
+    '发生了一些异常。正在恢复。',
+    // Q60
+    '发生了一些异常。正在恢复。',
+    // Q70
+    '发生了一些异常。正在恢复。',
+    // Q80
+    '发生了一些异常。正在恢复。',
+    // Q90
+    '发生了一些异常。正在恢复。',
+    // Q100
+    '发生了一些异常。正在恢复。'
 ];
+
+// ================================================================
+// "他来了"效果（四个变体：silent / announce / redText / camera）
+// ================================================================
+let itCameState = 'idle';
+let itCameTimeout = null, itCameTimeout2 = null;
+let itCameVariant = 'silent';
+
+// 变体权重：60% 沉默伪装，13.3% 每个新变体
+function pickItCameVariant() {
+    const r = Math.random();
+    if (r < 0.60) return 'silent';
+    if (r < 0.7333) return 'announce';
+    if (r < 0.8666) return 'redText';
+    return 'camera';
+}
+
+// 通用清理
+let itCameResolve = null; // 「它来了」结束后回调（特殊题等待下一题用）
+function cleanupItCame() {
+    if (itCameTimeout) { clearTimeout(itCameTimeout); itCameTimeout = null; }
+    if (itCameTimeout2) { clearTimeout(itCameTimeout2); itCameTimeout2 = null; }
+    itCameState = 'idle';
+    if (itCameResolve) { const r = itCameResolve; itCameResolve = null; r(); }
+}
+
+// 入口：按变体分发
+function triggerItCame(variant) {
+    if (itCameState !== 'idle') return;
+    variant = variant || pickItCameVariant();
+    itCameVariant = variant;
+    if (variant === 'announce') return triggerItCame_announce();
+    if (variant === 'redText')  return triggerItCame_redText();
+    if (variant === 'camera')   return triggerItCame_camera();
+    return triggerItCame_silent();
+}
+
+// ------------------------------------------------------------
+// 变体1：沉默伪装（原版完整流程，保留为默认）
+// ------------------------------------------------------------
+function triggerItCame_silent() {
+    itCameState = 'asking';
+    // 尺寸在 #eye-wrap img 上（容器是 flex 居中层，设置容器无效）；opacity 需保存原值恢复
+    const comp = getComputedStyle(eyeImg);
+    const origW = parseFloat(comp.width);
+    const origH = parseFloat(comp.height);
+    const origOpacity = eyeWrap.style.opacity;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'cam-ask';
+    overlay.style.cssText = `position:fixed;inset:0;background:#000;z-index:9000;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:32px;opacity:0;transition:opacity 1.5s ease;`;
+
+    const msg = document.createElement('div');
+    msg.style.cssText = `font-family:system-ui,sans-serif;font-size:13px;color:#b0a090;letter-spacing:6px;text-transform:uppercase;text-align:center;`;
+    msg.textContent = '检测到设备连接';
+
+    const sub = document.createElement('div');
+    sub.style.cssText = `font-family:system-ui,sans-serif;font-size:11px;color:#4a4038;letter-spacing:2px;text-align:center;`;
+    sub.textContent = '[ USB 摄像头 ] 已连接 — 请求访问权限';
+
+    const btn = document.createElement('div');
+    btn.textContent = '允许';
+    btn.style.cssText = `font-family:system-ui,sans-serif;font-size:11px;color:#6a6058;letter-spacing:4px;cursor:pointer;border:1px solid #3a3530;padding:8px 28px;transition:color 0.3s,border-color 0.3s;`;
+    btn.addEventListener('click', e => { e.stopPropagation(); btn.style.color = '#8a4040'; btn.style.borderColor = '#5a2020'; btn.textContent = '……'; });
+    btn.addEventListener('mouseenter', () => { btn.style.color = '#c0b090'; });
+    btn.addEventListener('mouseleave', () => { btn.style.color = '#6a6058'; });
+
+    overlay.appendChild(msg); overlay.appendChild(sub); overlay.appendChild(btn);
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => { overlay.style.opacity = '1'; });
+
+    itCameTimeout = setTimeout(() => {
+        itCameState = 'watching';
+        btn.remove();
+        sub.style.opacity = '0';
+        sub.style.transition = 'opacity 0.5s';
+        requestAnimationFrame(() => { sub.textContent = '正在获取画面…'; sub.style.color = '#a09070'; sub.style.opacity = '1'; });
+
+        itCameTimeout2 = setTimeout(() => {
+            msg.textContent = '它看到了你';
+            msg.style.fontSize = '24px'; msg.style.letterSpacing = '12px'; msg.style.color = '#c0a080';
+            msg.style.opacity = '0'; sub.style.opacity = '0';
+            requestAnimationFrame(() => { msg.style.opacity = '1'; });
+
+            eyeImg.style.transition = 'none';
+            eyeImg.style.width = '95vw'; eyeImg.style.height = '95vh'; eyeImg.style.objectFit = 'contain';
+            eyeWrap.style.zIndex = '9001';
+            eyeWrap.style.opacity = '0.95';
+
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator(); const gain = ctx.createGain();
+                osc.type = 'sawtooth'; osc.frequency.value = 40;
+                gain.gain.setValueAtTime(0.5, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 7);
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.start(); osc.stop(ctx.currentTime + 7);
+                const lfo = ctx.createOscillator(); const lfoG = ctx.createGain();
+                lfo.frequency.value = 2; lfoG.gain.value = 0.3;
+                lfo.connect(lfoG); lfoG.connect(gain.gain);
+                lfo.start(); lfo.stop(ctx.currentTime + 7);
+            } catch(e) {}
+
+            setTimeout(() => {
+                msg.textContent = '它走了。';
+                msg.style.fontSize = '13px'; msg.style.letterSpacing = '4px'; msg.style.color = '#5a5040';
+                msg.style.opacity = '0';
+                requestAnimationFrame(() => { msg.style.opacity = '1'; });
+
+                setTimeout(() => { overlay.style.opacity = '0'; setTimeout(() => overlay.remove(), 2100); }, 2500);
+
+                eyeImg.style.transition = 'width 2s ease, height 2s ease';
+                eyeImg.style.width = origW + 'px'; eyeImg.style.height = origH + 'px';
+                eyeImg.style.objectFit = '';
+                eyeWrap.style.zIndex = '';
+                eyeWrap.style.opacity = origOpacity;
+
+                cleanupItCame();
+                restoreBgmAfterSpecial();
+            }, 9000);
+        }, 4000);
+    }, 2000);
+}
+
+// ------------------------------------------------------------
+// 变体2：它来了（纯宣告，无眼睛，无声音）
+// ------------------------------------------------------------
+function triggerItCame_announce() {
+    itCameState = 'watching';
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `position:fixed;inset:0;background:#000;z-index:9000;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 1.2s ease;`;
+
+    const msg = document.createElement('div');
+    msg.style.cssText = `font-family:system-ui,sans-serif;font-size:42px;color:#8a0000;letter-spacing:8px;text-align:center;font-weight:300;`;
+    msg.textContent = '它来了。';
+
+    overlay.appendChild(msg);
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => { overlay.style.opacity = '1'; });
+
+    // 4秒后淡出
+    itCameTimeout = setTimeout(() => {
+        overlay.style.opacity = '0';
+        itCameTimeout2 = setTimeout(() => {
+            overlay.remove();
+            cleanupItCame();
+            restoreBgmAfterSpecial();
+        }, 1500);
+    }, 4000);
+}
+
+// ------------------------------------------------------------
+// 变体3：让我看看你（红字 + 眼睛缓慢放大占满）
+// ------------------------------------------------------------
+function triggerItCame_redText() {
+    itCameState = 'watching';
+    // 尺寸在 #eye-wrap img 上；opacity 需保存原值恢复
+    const comp = getComputedStyle(eyeImg);
+    const origW = parseFloat(comp.width);
+    const origH = parseFloat(comp.height);
+    const origOpacity = eyeWrap.style.opacity;
+
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `position:fixed;inset:0;background:#000;z-index:9000;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 1.2s ease;`;
+
+    const msg = document.createElement('div');
+    msg.style.cssText = `font-family:system-ui,sans-serif;font-size:34px;color:#8a0000;letter-spacing:6px;text-align:center;font-weight:300;`;
+    msg.textContent = '让我看看你';
+
+    overlay.appendChild(msg);
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => { overlay.style.opacity = '1'; });
+
+    // 同步：眼睛缓慢放大到 95vw（尺寸在 img 上）
+    eyeImg.style.transition = 'width 5s ease, height 5s ease';
+    eyeImg.style.width = '95vw'; eyeImg.style.height = '95vh'; eyeImg.style.objectFit = 'contain';
+    eyeWrap.style.zIndex = '9001';
+    eyeWrap.style.opacity = '0.95';
+
+    // 6秒后：眼睛和文字淡出，归位
+    itCameTimeout = setTimeout(() => {
+        overlay.style.opacity = '0';
+        msg.style.opacity = '0';
+        itCameTimeout2 = setTimeout(() => {
+            overlay.remove();
+            eyeImg.style.transition = 'width 2s ease, height 2s ease';
+            eyeImg.style.width = origW + 'px'; eyeImg.style.height = origH + 'px';
+            eyeImg.style.objectFit = '';
+            eyeWrap.style.zIndex = '';
+            eyeWrap.style.opacity = origOpacity;
+            cleanupItCame();
+            restoreBgmAfterSpecial();
+        }, 1500);
+    }, 6000);
+}
+
+// ------------------------------------------------------------
+// 变体4：打开摄像头（真 getUserMedia）
+// ------------------------------------------------------------
+function triggerItCame_camera() {
+    itCameState = 'asking';
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        // 浏览器不支持，走变体2
+        return triggerItCame_announce();
+    }
+
+    // 先在后台静默调 getUserMedia，让原生权限弹窗出现
+    navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+        .then(stream => {
+            // 拿到了画面：黑屏 + "它看到了你" + 摄像头画面局部占满
+            itCameState = 'watching';
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `position:fixed;inset:0;background:#000;z-index:9000;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:24px;opacity:0;transition:opacity 0.8s ease;`;
+
+            const msg = document.createElement('div');
+            msg.style.cssText = `font-family:system-ui,sans-serif;font-size:22px;color:#8a0000;letter-spacing:10px;text-align:center;font-weight:300;`;
+            msg.textContent = '它看到了你';
+
+            const sub = document.createElement('div');
+            sub.style.cssText = `font-family:system-ui,sans-serif;font-size:11px;color:#4a4038;letter-spacing:2px;text-align:center;`;
+            sub.textContent = '[ 正在传输画面 ]';
+
+            const v = document.createElement('video');
+            v.srcObject = stream;
+            v.autoplay = true;
+            v.muted = true;
+            v.playsInline = true;
+            v.style.cssText = `position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:60vw;height:60vh;object-fit:cover;filter:invert(1) hue-rotate(180deg) contrast(1.4) brightness(0.5);opacity:0;transition:opacity 1.5s ease;z-index:9002;border:1px solid #2a2018;`;
+
+            overlay.appendChild(msg); overlay.appendChild(sub);
+            document.body.appendChild(overlay);
+            document.body.appendChild(v);
+            requestAnimationFrame(() => { overlay.style.opacity = '1'; v.style.opacity = '0.6'; });
+
+            // 5秒后关闭 stream + 淡出
+            itCameTimeout = setTimeout(() => {
+                overlay.style.opacity = '0';
+                v.style.opacity = '0';
+                itCameTimeout2 = setTimeout(() => {
+                    overlay.remove(); v.remove();
+                    stream.getTracks().forEach(t => t.stop());
+                    cleanupItCame();
+                    restoreBgmAfterSpecial();
+                }, 1500);
+            }, 5000);
+        })
+        .catch(() => {
+            // 拒绝或失败：温和收场，不强迫
+            itCameState = 'watching';
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `position:fixed;inset:0;background:#000;z-index:9000;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 1.2s ease;`;
+            const msg = document.createElement('div');
+            msg.style.cssText = `font-family:system-ui,sans-serif;font-size:24px;color:#5a5040;letter-spacing:8px;text-align:center;font-weight:300;`;
+            msg.textContent = '它没看到。';
+            overlay.appendChild(msg);
+            document.body.appendChild(overlay);
+            requestAnimationFrame(() => { overlay.style.opacity = '1'; });
+            itCameTimeout = setTimeout(() => {
+                overlay.style.opacity = '0';
+                itCameTimeout2 = setTimeout(() => { overlay.remove(); cleanupItCame(); restoreBgmAfterSpecial(); }, 1500);
+            }, 3000);
+        });
+}
+
 
 // 眼睛 jumpscare
 function eyeJumpscare() {
@@ -330,14 +679,16 @@ function eyeJumpscare() {
     el.style.height = '98vh';
     el.style.objectFit = 'cover';
     wrap.style.opacity = '1';
-    // 低频冲击
+    // 低频冲击 + BGM音量突刺（+50%）
+    const prevVol = bgm ? bgm.volume : 0.5;
+    if (bgm) bgm.volume = Math.min(1.0, prevVol * 2);
     try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
         const osc = ctx.createOscillator();
         const g = ctx.createGain();
         osc.frequency.value = 40;
         osc.type = 'sawtooth';
-        g.gain.setValueAtTime(0.6, ctx.currentTime);
+        g.gain.setValueAtTime(0.9, ctx.currentTime);
         g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
         osc.connect(g); g.connect(ctx.destination);
         osc.start(); osc.stop(ctx.currentTime + 0.4);
@@ -356,11 +707,317 @@ function eyeJumpscare() {
         setTimeout(() => {
             wrap.style.transition = '';
             el.style.transition = '';
+            if (bgm) setBGMVolume(prevVol, 2500);
         }, 800);
     }, 300);
 }
 
+// 结果页最终jumpscare：持续3.5秒后跳转B站
+function resultJumpscare() {
+    // 先闪红白
+    flash('#7a0000', 50);
+    setTimeout(() => flash('#fff', 80), 55);
+    // 眼睛突脸
+    eyeJumpscare();
+    // 全屏覆盖层
+    const ov = document.createElement('div');
+    ov.id = 'result-jumpscare';
+    ov.style.cssText = 'position:fixed;inset:0;background:#000;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;opacity:0;';
+    document.body.appendChild(ov);
+    setTimeout(() => { ov.style.transition = 'opacity 0.15s'; ov.style.opacity = '1'; }, 280);
+
+    const txt = document.createElement('div');
+    txt.style.cssText = 'color:#fff;font-size:clamp(28px,6vw,64px);font-weight:900;letter-spacing:8px;text-align:center;opacity:0;';
+    const msgs = ['它看到了你', '它一直都在看', '你以为结束了？'];
+    txt.textContent = msgs[Math.floor(Math.random() * msgs.length)];
+    ov.appendChild(txt);
+
+    const sub = document.createElement('div');
+    sub.style.cssText = 'margin-top:20px;color:#666;font-size:clamp(10px,2vw,14px);letter-spacing:6px;text-transform:uppercase;';
+    sub.textContent = '你选了' + (ans.filter(a => a).length || 0) + '道题 · 离开' + tabCount + '次 · 它全都知道';
+    ov.appendChild(sub);
+
+    setTimeout(() => { txt.style.transition = 'opacity 0.3s'; txt.style.opacity = '1'; }, 320);
+
+    // 屏幕持续抖动（0~3.5秒）
+    const shakeInt = setInterval(() => {
+        const x = (Math.random() - 0.5) * 12;
+        const y = (Math.random() - 0.5) * 12;
+        document.body.style.transform = `translate(${x}px, ${y}px)`;
+    }, 50);
+    setTimeout(() => clearInterval(shakeInt), 3500);
+
+    // BGM音量最大（+50%）
+    if (bgm) bgm.volume = Math.min(1.0, bgm.volume * 1.5);
+
+    // 尖叫音效（3.5秒内衰减）
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.frequency.value = 80;
+        osc.type = 'sawtooth';
+        g.gain.setValueAtTime(0.9, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 3.5);
+        osc.connect(g); g.connect(ctx.destination);
+        osc.start(); osc.stop(ctx.currentTime + 3.5);
+        setTimeout(() => ctx.close(), 3600);
+    } catch(e) {}
+
+    // 3.5秒后清理并进入逃命倒计时
+    setTimeout(() => {
+        document.body.style.transform = '';
+        // 进入 1 分钟逃命倒计时
+        startEscapeCountdown(ov, txt);
+    }, 3500);
+}
+
+// ================================================================
+// 1 分钟逃命倒计时：每秒钟压感递增，倒计时后跳转 B 站
+// ================================================================
+function startEscapeCountdown(ov, origTxt) {
+    // 移除原干扰文字
+    if (origTxt && origTxt.parentNode) {
+        origTxt.style.transition = 'opacity 0.5s';
+        origTxt.style.opacity = '0';
+        setTimeout(() => { if (origTxt.parentNode) origTxt.parentNode.removeChild(origTxt); }, 600);
+    }
+
+    // 倒计时容器
+    const cd = document.createElement('div');
+    cd.id = 'escape-countdown';
+    cd.style.cssText = 'position:fixed;inset:0;background:#000;z-index:9998;display:flex;align-items:center;justify-content:center;flex-direction:column;opacity:1;';
+    document.body.appendChild(cd);
+    // ov 进入半透，给倒计时让位
+    if (ov) { ov.style.transition = 'opacity 1s'; ov.style.opacity = '0.3'; }
+
+    // 顶部恐吓文字（跳动变红）
+    const topLine = document.createElement('div');
+    topLine.style.cssText = 'position:absolute;top:8%;left:50%;transform:translateX(-50%);color:#ff0000;font-size:clamp(14px,2.5vw,22px);letter-spacing:6px;font-weight:bold;text-shadow:0 0 15px #880000;animation:cdPulse 0.6s ease-in-out infinite alternate;text-align:center;width:90%;';
+    topLine.textContent = '它在靠近你 · 你只有 60 秒';
+    cd.appendChild(topLine);
+
+    // 主倒计时（巨大数字）
+    const num = document.createElement('div');
+    num.style.cssText = 'color:#ff0000;font-size:clamp(80px,18vw,200px);font-weight:900;font-family:Courier New,monospace;text-shadow:0 0 40px #ff0000,0 0 80px #880000;letter-spacing:8px;';
+    num.textContent = '60';
+    cd.appendChild(num);
+
+    // 单位
+    const unit = document.createElement('div');
+    unit.style.cssText = 'color:#888;font-size:clamp(12px,2vw,18px);letter-spacing:12px;margin-top:10px;';
+    unit.textContent = '秒';
+    cd.appendChild(unit);
+
+    // 进度条
+    const barBg = document.createElement('div');
+    barBg.style.cssText = 'position:absolute;bottom:18%;left:10%;right:10%;height:4px;background:#220000;border-radius:2px;overflow:hidden;';
+    const barFg = document.createElement('div');
+    barFg.style.cssText = 'height:100%;background:linear-gradient(90deg,#ff0000,#ff4444);width:100%;transition:width 1s linear;box-shadow:0 0 10px #ff0000;';
+    barBg.appendChild(barFg);
+    cd.appendChild(barBg);
+
+    // 倒计时中随机跳出的恐怖文字
+    const hauntingTexts = [
+        '它在你身后', '别回头', '你听到声音了吗', '门后面有人',
+        '镜子里在动', '它知道你的名字', '你跑不掉的', '不要看它',
+        '一直在看', '它饿了', '你选错了', '回去选别的', '太迟了',
+        '它在笑', '闭眼也没用', '你摆脱不了', '它就是你'
+    ];
+
+    // 进度字幕（提醒用户真相）
+    const tipLine = document.createElement('div');
+    tipLine.style.cssText = 'position:absolute;bottom:8%;left:50%;transform:translateX(-50%);color:#555;font-size:clamp(9px,1.3vw,12px);letter-spacing:3px;text-align:center;width:90%;font-family:Courier New,monospace;';
+    tipLine.textContent = '没有人能完成测试';
+    cd.appendChild(tipLine);
+
+    // 倒计时逻辑
+    let left = 60;
+    const totalMs = 60000;
+    const startT = Date.now();
+
+    // 心跳背景音（持续 1 分钟）
+    let hbInterval = null;
+    try {
+        hbInterval = setInterval(() => {
+            if (left <= 0) return;
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.value = 50;
+            g.gain.setValueAtTime(0, ctx.currentTime);
+            g.gain.linearRampToValueAtTime(left < 20 ? 0.7 : 0.35, ctx.currentTime + 0.05);
+            g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+            osc.connect(g); g.connect(ctx.destination);
+            osc.start(); osc.stop(ctx.currentTime + 0.25);
+            setTimeout(() => ctx.close(), 350);
+        }, 1200 + Math.random() * 400);
+    } catch(e) {}
+
+    // 持续轻微震屏
+    const shakeInt = setInterval(() => {
+        if (left <= 0) return;
+        const intensity = 1 + (60 - left) * 0.15; // 越到最后抖得越狠
+        const x = (Math.random() - 0.5) * intensity;
+        const y = (Math.random() - 0.5) * intensity;
+        cd.style.transform = `translate(${x}px, ${y}px)`;
+    }, 60);
+
+    // 跳动吓人逻辑：随时间越来越频繁
+    const scareInterval = setInterval(() => {
+        if (left <= 0) return;
+        // 30秒后跳动频率提高
+        if (left < 30 && Math.random() < 0.5) {
+            spawnQuickJumpscare(cd);
+        } else if (Math.random() < 0.25) {
+            spawnQuickJumpscare(cd);
+        }
+    }, 2000);
+
+    // 随机飘字（持续 60 秒，不影响主数字）
+    const floatTextInterval = setInterval(() => {
+        if (left <= 0) return;
+        const t = document.createElement('div');
+        const txt = hauntingTexts[Math.floor(Math.random() * hauntingTexts.length)];
+        t.textContent = txt;
+        t.style.cssText = `position:absolute;left:${10 + Math.random() * 80}%;top:${10 + Math.random() * 70}%;color:#aa0000;font-size:${12 + Math.random() * 8}px;letter-spacing:2px;opacity:0;transition:opacity 0.3s;pointer-events:none;text-shadow:0 0 8px #550000;font-style:italic;transform:rotate(${(Math.random() - 0.5) * 20}deg);`;
+        cd.appendChild(t);
+        requestAnimationFrame(() => { t.style.opacity = '0.85'; });
+        setTimeout(() => {
+            t.style.transition = 'opacity 0.8s';
+            t.style.opacity = '0';
+            setTimeout(() => { if (t.parentNode) t.parentNode.removeChild(t); }, 900);
+        }, 1500 + Math.random() * 1000);
+    }, 1800);
+
+    // 主计时器
+    const tick = setInterval(() => {
+        left--;
+        num.textContent = left < 10 ? '0' + left : String(left);
+        // 数字越小越红
+        if (left < 10) {
+            num.style.color = '#ff2222';
+            num.style.textShadow = '0 0 60px #ff0000, 0 0 120px #ff0000, 0 0 200px #880000';
+            num.style.animation = 'cdPulse 0.4s ease-in-out infinite alternate';
+        } else if (left < 20) {
+            num.style.animation = 'cdPulse 0.5s ease-in-out infinite alternate';
+        }
+        // 进度条
+        barFg.style.width = (left / 60 * 100) + '%';
+        // 顶部文字变化
+        if (left === 30) {
+            topLine.textContent = '只剩 30 秒 · 它在微笑';
+            tipLine.textContent = '现在跳出去 · 真的能跑掉吗';
+        } else if (left === 10) {
+            topLine.textContent = '来不及了';
+            tipLine.textContent = '欢迎 · 下一个测试者';
+        } else if (left === 5) {
+            topLine.textContent = '你逃不掉的';
+            tipLine.textContent = '它一直都在';
+        }
+
+        if (left <= 0) {
+            clearInterval(tick);
+            clearInterval(shakeInt);
+            clearInterval(scareInterval);
+            clearInterval(floatTextInterval);
+            if (hbInterval) clearInterval(hbInterval);
+            // 最后一次全屏跳脸
+            spawnQuickJumpscare(cd, true);
+            // 跳转
+            setTimeout(() => {
+                window.location.href = 'https://www.bilibili.com/video/BV1H5uj6gEUF';
+            }, 1500);
+        }
+    }, 1000);
+}
+
+// 倒计时中使用的快速小跳脸（不影响主倒计时数字）
+function spawnQuickJumpscare(container, big) {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.value = big ? 60 : 35;
+        g.gain.setValueAtTime(0.5, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+        osc.connect(g); g.connect(ctx.destination);
+        osc.start(); osc.stop(ctx.currentTime + 0.2);
+        setTimeout(() => ctx.close(), 250);
+    } catch(e) {}
+
+    const eye = document.createElement('img');
+    eye.src = './eye2.gif';
+    const w = big ? '100vw' : (30 + Math.random() * 40) + 'vw';
+    const h = big ? '100vh' : (30 + Math.random() * 40) + 'vh';
+    eye.style.cssText = `position:absolute;left:${10 + Math.random() * 70}%;top:${10 + Math.random() * 70}%;transform:translate(-50%,-50%) rotate(${Math.random() * 360}deg);width:${w};height:${h};object-fit:contain;z-index:9999;pointer-events:none;filter:${big ? 'brightness(1.8) contrast(1.5) hue-rotate(-30deg)' : 'invert(0.1)'};`;
+    container.appendChild(eye);
+    setTimeout(() => {
+        eye.style.transition = 'opacity 0.15s';
+        eye.style.opacity = '0';
+        setTimeout(() => { if (eye.parentNode) eye.parentNode.removeChild(eye); }, 200);
+    }, big ? 1200 : 250 + Math.random() * 200);
+}
+
 // 文字恐怖谷：只腐坏普通字母，保持HTML结构，让它看起来像编码坏了
+// 特殊题文字逐级腐坏：level越高越不对劲
+function corruptSpecialText(el, level) {
+    if (!el || !level) return;
+    const corruptions = [
+        () => {
+            // level1: 换掉一个字
+            el.innerHTML = '发生了一些异常。正在<span style="color:#a00;">恢</span>复。';
+        },
+        () => {
+            // level2: 恢复变乱码
+            el.innerHTML = '发生了一些异常。正在<span style="color:#900;font-family:monospace;">恢&zwnj;复</span>。';
+            setTimeout(() => { el.innerHTML = '发生了一些异常。正在<span style="color:#a00;">诙&zwnj;复</span>。'; }, 600);
+        },
+        () => {
+            // level3: 文字开始变形+闪烁
+            el.innerHTML = '发生了一些异常。正在恢复。';
+            let ticks = 0;
+            const iv = setInterval(() => {
+                ticks++;
+                const maps = [
+                    {'发':'髪','生':'笙','了':'了','一':'亊','些':'眂','异':'罙','常':'瑺',
+                     '正':'佱','在':'両','恢':'诙','复':'馥'},
+                    {'发':'髮','生':'冃','了':'亍','一':'丄','些':'眂','异':'戠','常':'萇',
+                     '正':'凒','在':'両','恢':'灰','复':'複'},
+                ];
+                const map = maps[ticks % 2];
+                let t = '发生了一些异常。正在恢复。';
+                for (const [k, v] of Object.entries(map)) {
+                    if (Math.random() < 0.5) t = t.replace(k, v);
+                }
+                el.innerHTML = t;
+                el.style.opacity = ticks % 2 === 0 ? '0.85' : '1';
+                if (ticks > 6) { clearInterval(iv); el.style.opacity = '1'; }
+            }, 350);
+        },
+        () => {
+            // level4: 完全不可读+抖动
+            el.innerHTML = '发生了一些异常。正在恢复。';
+            let ticks = 0;
+            const iv = setInterval(() => {
+                ticks++;
+                const t = '发生了一些异常。正在恢复。';
+                el.innerHTML = t.split('').map(c => {
+                    if (/[\u4e00-\u9fa5]/.test(c) && Math.random() < 0.7)
+                        return `<span style="color:#${ticks%2?'a00':'#c00'}">${c}</span>`;
+                    return c;
+                }).join('');
+                el.style.transform = `translateX(${(Math.random()-0.5)*4}px)`;
+                if (ticks > 8) { clearInterval(iv); el.style.transform = ''; }
+            }, 250);
+        }
+    ];
+    const fn = corruptions[Math.min(level - 1, corruptions.length - 1)];
+    setTimeout(fn, 800);
+}
+
 function textCorrupt(el) {
     if (!el) return;
     const orig = el.innerHTML;
@@ -407,6 +1064,115 @@ function echo(text) {
     }, 1200);
 }
 
+// ================================================================
+// 边缘阴影：随进度逐渐加深，间歇闪烁
+// ================================================================
+function scheduleVignette() {
+    if (!started || ph < 3) return;
+    if (vigTimer) clearTimeout(vigTimer);
+
+    // 阶段越高，边缘越深
+    const opacities = [0, 0, 0, 0.12, 0.22, 0.35, 0.5, 0.6, 0.7, 0.8];
+    vigEl.style.opacity = opacities[ph] || 0;
+
+    // 中后期：随机闪烁（阶段越高越频繁）
+    if (ph >= 5) {
+        const delay = 4000 + Math.random() * (15000 - ph * 1000);
+        vigTimer = setTimeout(() => {
+            vigEl.classList.add('on');
+            vigEl.style.opacity = (opacities[ph] || 0) + 0.25;
+            setTimeout(() => {
+                vigEl.classList.remove('on');
+                vigEl.style.opacity = opacities[ph] || 0;
+                scheduleVignette();
+            }, 120 + Math.random() * 200);
+        }, delay);
+    }
+}
+
+// ================================================================
+// 选项慢半拍（阶段6+）
+// ================================================================
+function maybeLagOptions() {
+    if (ph < 6 || Math.random() > 0.35) return;
+    const btns = document.querySelectorAll('.opt-btn');
+    if (!btns.length) return;
+    // 随机让一个选项慢半拍
+    const target = btns[Math.floor(Math.random() * btns.length)];
+    target.classList.add('lagging');
+    setTimeout(() => target.classList.remove('lagging'), 700 + Math.random() * 500);
+}
+
+// ================================================================
+// 犹豫提示（阶段5+）：悬停超过1.5秒时触发
+// ================================================================
+let hoverTimers = {};
+
+function observeHover(btn, qIdx) {
+    if (ph < 5) return;
+    let tid;
+    btn.addEventListener('mouseenter', () => {
+        tid = setTimeout(() => {
+            if (Date.now() - lastHesit < 4000) return;
+            lastHesit = Date.now();
+            const msgs = [
+                '你犹豫了',
+                '你在想正确答案是什么',
+                '选哪个都是对的',
+                '真的有一个是"对"的吗',
+                '其实你在等什么',
+            ];
+            hesitEl.textContent = msgs[Math.floor(Math.random() * msgs.length)];
+            hesitEl.classList.add('show');
+            setTimeout(() => hesitEl.classList.remove('show'), 2800);
+        }, 1500);
+        hoverTimers[qIdx] = tid;
+    });
+    btn.addEventListener('mouseleave', () => {
+        clearTimeout(tid);
+    });
+}
+
+// ================================================================
+// 标题侵蚀（阶段7+后"人格解析"变成"被观察记录"）
+// ================================================================
+function corruptTitle() {
+    if (titleCorrupted || ph < 7) return;
+    titleCorrupted = true;
+    const h1 = document.querySelector('#welcome h1');
+    if (!h1) return;
+    // 文字先抖一下
+    h1.style.transition = 'none';
+    h1.style.transform = `translateX(${(Math.random()-0.5)*4}px)`;
+    setTimeout(() => {
+        h1.textContent = '被观察记录';
+        h1.classList.add('corrupted');
+        h1.style.transition = 'letter-spacing 1s ease, color 1s ease, opacity 1s ease, transform 0.5s';
+        h1.style.transform = 'translateX(0)';
+    }, 800);
+}
+
+// ================================================================
+// 结果陷阱弹窗：身份验证
+// ================================================================
+function showTrap(msg) {
+    return new Promise(resolve => {
+        trapResolve = resolve;
+        trapMsg.innerHTML = msg;
+        trapInput.value = '';
+        trapOverlay.classList.add('show');
+        setTimeout(() => trapInput.focus(), 300);
+    });
+}
+
+function resolveTrap() {
+    const val = trapInput.value.trim();
+    trapOverlay.classList.remove('show');
+    trapInput.value = '';
+    if (trapResolve) { trapResolve(val); trapResolve = null; }
+}
+
+// ================================================================
 // 效果池（含 jumpscare 眼睛）
 const SP_EFFECTS = [
     () => { flash('#8a0000', 80); },                        // 闪红
@@ -426,9 +1192,16 @@ const SP_EFFECTS = [
 ];
 
 function triggerSpecialEffect() {
-    // 第7题（索引6）和第10题（索引9）时，眼睛做jumpscare
+    // 特殊题：BGM 淡出，只留低频
+    muteBgmForSpecial();
+    // 第 3 个和第 7 个特殊题（spIdx 2 / 6）："他来了"
     const spIdx = Math.floor(cur / 4); // 0~9
-    if (spIdx === 6 || spIdx === 9) {
+    if (spIdx === 2 || spIdx === 6) {
+        triggerItCame();
+        return;
+    }
+    // 第10题（索引36）：jumpscare
+    if (spIdx === 9) {
         eyeJumpscare();
         return;
     }
@@ -437,12 +1210,578 @@ function triggerSpecialEffect() {
     fn();
 }
 
+// ================================================================
+// 常驻恐怖音频引擎
+// ================================================================
+let ambientCtx = null, ambientOsc = null, ambientGain = null;
+let heartbeatTimeout = null;
+let ambientStarted = false;
+
+function startAmbient() {
+    if (ambientStarted) return;
+    ambientStarted = true;
+    try {
+        ambientCtx = new (window.AudioContext || window.webkitAudioContext)();
+        ambientOsc = ambientCtx.createOscillator();
+        ambientGain = ambientCtx.createGain();
+        ambientOsc.type = 'sawtooth';
+        ambientOsc.frequency.value = 30;
+        ambientGain.gain.setValueAtTime(0, ambientCtx.currentTime);
+        ambientGain.gain.linearRampToValueAtTime(0.04, ambientCtx.currentTime + 3);
+        ambientOsc.connect(ambientGain);
+        ambientGain.connect(ambientCtx.destination);
+        ambientOsc.start();
+    } catch(e) {}
+    scheduleHeartbeat();
+}
+
+function stopAmbient() {
+    if (heartbeatTimeout) { clearTimeout(heartbeatTimeout); heartbeatTimeout = null; }
+    if (ambientOsc) { try { ambientOsc.stop(); } catch(e){} ambientOsc = null; }
+    if (ambientCtx) { try { ambientCtx.close(); } catch(e){} ambientCtx = null; }
+    ambientStarted = false;
+}
+
+function scheduleHeartbeat() {
+    if (!ambientStarted) return;
+    const delay = 5000 + Math.random() * 7000;
+    heartbeatTimeout = setTimeout(() => {
+        if (!ambientGain || !ambientCtx) return;
+        try {
+            const hbGain = ambientCtx.createGain();
+            hbGain.gain.setValueAtTime(0.25, ambientCtx.currentTime);
+            hbGain.gain.exponentialRampToValueAtTime(0.001, ambientCtx.currentTime + 0.35);
+            const hbOsc = ambientCtx.createOscillator();
+            hbOsc.type = 'sawtooth';
+            hbOsc.frequency.value = 50;
+            hbOsc.connect(hbGain);
+            hbGain.connect(ambientCtx.destination);
+            hbOsc.start();
+            hbOsc.stop(ambientCtx.currentTime + 0.35);
+        } catch(e) {}
+        scheduleHeartbeat();
+    }, delay);
+}
+
+function muteBgmForSpecial() {
+    if (!bgm) return;
+    const step = bgm.volume / 20;
+    const fade = setInterval(() => {
+        if (!bgm) { clearInterval(fade); return; }
+        bgm.volume = Math.max(0, bgm.volume - step);
+        if (bgm.volume <= 0) { bgm.volume = 0; clearInterval(fade); }
+    }, 50);
+}
+
+function restoreBgmAfterSpecial() {
+    if (!bgm) return;
+    const targetVol = 0.45;
+    const step = targetVol / 20;
+    const fade = setInterval(() => {
+        if (!bgm) { clearInterval(fade); return; }
+        bgm.volume = Math.min(targetVol, bgm.volume + step);
+        if (bgm.volume >= targetVol) { bgm.volume = targetVol; clearInterval(fade); }
+    }, 50);
+}
+
+// ================================================================
+// 高频随机跳脸（每 8-15 秒一次）
+// ================================================================
+let scareCycleActive = false;
+let scareCycleTimeout = null;
+
+function scheduleNextScare() {
+    if (!scareCycleActive) return;
+    const delay = 8000 + Math.random() * 7000;
+    scareCycleTimeout = setTimeout(() => {
+        if (!scareCycleActive) return;
+        if (cur < TOTAL && !SEQ[cur].sp) {
+            // 随机选择恐怖跳脸类型（共 6 种，让节奏不可预测）
+            const r = Math.random();
+            if (r < 0.16) triggerMicroScare();        // 16% 多弹窗
+            else if (r < 0.32) triggerGhostFaceScare();// 16% 鬼脸全屏突脸+尖叫
+            else if (r < 0.48) triggerScreamScare();  // 16% 尖叫+震屏
+            else if (r < 0.64) triggerGiantEyeScare();// 16% 超大眼贴脸
+            else if (r < 0.82) triggerGlitchScare();  // 18% 故障撕裂
+            else triggerNightmareScare();             // 18% 夜魇（组合大招）
+        }
+        scheduleNextScare();
+    }, delay);
+}
+
+// 眼睛+文字弹出：多个随机位置逐个闪现（高频跳脸用）
+function triggerMicroScare() {
+    flash('#1a0000', 60);
+    // 音频
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.frequency.value = 45;
+        osc.type = 'sawtooth';
+        g.gain.setValueAtTime(0.5, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+        osc.connect(g); g.connect(ctx.destination);
+        osc.start(); osc.stop(ctx.currentTime + 0.3);
+        setTimeout(() => ctx.close(), 400);
+    } catch(e) {}
+
+    const EYE_URL = './eye2.gif';
+    const texts = ['它看到你了', '它看到你了', '看到你了', '👁'];
+
+    // 随机位置（远离正中的边缘区域）
+    function randPos() {
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const region = Math.floor(Math.random() * 4);
+        let x, y;
+        if (region === 0) {      // 左上
+            x = 4 + Math.random() * 20; y = 4 + Math.random() * 20;
+        } else if (region === 1) { // 右上
+            x = 60 + Math.random() * 36; y = 4 + Math.random() * 20;
+        } else if (region === 2) { // 左下
+            x = 4 + Math.random() * 20; y = 60 + Math.random() * 36;
+        } else {                  // 右下
+            x = 60 + Math.random() * 36; y = 60 + Math.random() * 36;
+        }
+        return { x: x + '%', y: y + '%' };
+    }
+
+    // 弹出一个：眼 or 文字，随机位置，延迟delay出现，2秒后消失
+    function spawnOne(type, delay) {
+        setTimeout(() => {
+            const el = document.createElement('div');
+            el.style.cssText = `position:fixed;left:${0};top:${0};width:80px;height:80px;opacity:0;transition:opacity 0.08s;z-index:9600;pointer-events:none;`;
+            const pos = randPos();
+            el.style.left = pos.x;
+            el.style.top = pos.y;
+
+            if (type === 'eye') {
+                const img = document.createElement('img');
+                img.src = EYE_URL;
+                img.style.cssText = `width:70px;height:70px;object-fit:contain;animation:mspin 0.8s linear infinite;transform:rotate(${Math.random()*360}deg);`;
+                el.appendChild(img);
+            } else {
+                el.innerHTML = `<div style="color:#cc0000;font-size:15px;font-weight:bold;text-shadow:0 0 8px #880000;white-space:nowrap;transform:rotate(${Math.random()*30-15}deg);">${texts[Math.floor(Math.random()*texts.length)]}</div>`;
+            }
+            document.body.appendChild(el);
+            requestAnimationFrame(() => { el.style.opacity = '1'; });
+            // 2秒后消失
+            setTimeout(() => {
+                el.style.opacity = '0';
+                setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 100);
+            }, 2000);
+        }, delay);
+    }
+
+    // 生成 6-9 个弹窗，眼:字 ≈ 1:1，间隔 0.25-0.5s
+    const total = 6 + Math.floor(Math.random() * 4);
+    let delay = 0;
+    for (let i = 0; i < total; i++) {
+        const type = i % 2 === 0 ? 'eye' : 'text';
+        spawnOne(type, delay);
+        delay += 250 + Math.floor(Math.random() * 300);
+    }
+}
+
+function startScareCycle() {
+    scareCycleActive = true;
+    scheduleNextScare();
+}
+
+// ================================================================
+// 恐怖跳脸 1：尖叫（高频女声尖啸 + 震屏）
+// ================================================================
+function triggerScreamScare() {
+    // 红色全屏闪
+    flash('#8a0000', 120);
+    // 屏幕抖动 400ms
+    shake(400);
+
+    // 尖叫合成：高频锯齿波 + 频率滑音（模拟惊恐女声）
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const master = ctx.createGain();
+        master.gain.setValueAtTime(0.0, ctx.currentTime);
+        master.gain.linearRampToValueAtTime(0.85, ctx.currentTime + 0.05);
+        master.gain.linearRampToValueAtTime(0.7, ctx.currentTime + 0.5);
+        master.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.4);
+
+        // 主尖啸
+        const osc1 = ctx.createOscillator();
+        osc1.type = 'sawtooth';
+        osc1.frequency.setValueAtTime(900, ctx.currentTime);
+        osc1.frequency.exponentialRampToValueAtTime(2200, ctx.currentTime + 0.15);
+        osc1.frequency.exponentialRampToValueAtTime(1400, ctx.currentTime + 0.4);
+        osc1.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 1.0);
+
+        // 失真叠加（方波）
+        const osc2 = ctx.createOscillator();
+        osc2.type = 'square';
+        osc2.frequency.setValueAtTime(1200, ctx.currentTime);
+        osc2.frequency.exponentialRampToValueAtTime(2800, ctx.currentTime + 0.2);
+        osc2.frequency.exponentialRampToValueAtTime(1800, ctx.currentTime + 0.5);
+
+        // 滤波模拟喉咙振动
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.value = 1500;
+        filter.Q.value = 5;
+
+        osc1.connect(filter); osc2.connect(filter);
+        filter.connect(master);
+        master.connect(ctx.destination);
+
+        osc1.start(); osc2.start();
+        osc1.stop(ctx.currentTime + 1.5); osc2.stop(ctx.currentTime + 1.5);
+        setTimeout(() => ctx.close(), 1600);
+    } catch(e) {}
+
+    // 眼睛瞬间贴脸（中间、极大）
+    const eye = document.createElement('img');
+    eye.src = './eye2.gif';
+    eye.style.cssText = `position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(0.1);width:200vw;height:200vh;object-fit:contain;z-index:9700;pointer-events:none;filter:brightness(1.5) contrast(1.5) hue-rotate(-20deg);transition:transform 0.12s ease-out;`;
+    document.body.appendChild(eye);
+    requestAnimationFrame(() => { eye.style.transform = 'translate(-50%,-50%) scale(1)'; });
+    setTimeout(() => {
+        eye.style.transition = 'opacity 0.3s';
+        eye.style.opacity = '0';
+        setTimeout(() => { if (eye.parentNode) eye.parentNode.removeChild(eye); }, 350);
+    }, 800);
+}
+
+// ================================================================
+// 恐怖跳脸 2：超大眼贴脸（缓慢出现 + 凝视感 + 嗡嗡声）
+// ================================================================
+function triggerGiantEyeScare() {
+    flash('#2a0000', 100);
+
+    // 低频嗡嗡
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.value = 30;
+        g.gain.setValueAtTime(0, ctx.currentTime);
+        g.gain.linearRampToValueAtTime(0.6, ctx.currentTime + 0.1);
+        g.gain.linearRampToValueAtTime(0.001, ctx.currentTime + 2.5);
+        osc.connect(g); g.connect(ctx.destination);
+        osc.start(); osc.stop(ctx.currentTime + 2.5);
+        setTimeout(() => ctx.close(), 2600);
+    } catch(e) {}
+
+    // 大眼睛从模糊聚焦到清晰
+    const eye = document.createElement('img');
+    eye.src = './eye2.gif';
+    eye.style.cssText = `position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:100vw;height:100vh;object-fit:contain;z-index:9600;pointer-events:none;filter:blur(40px) brightness(0.3);transition:filter 1.2s ease;`;
+    document.body.appendChild(eye);
+    requestAnimationFrame(() => {
+        eye.style.filter = 'blur(0px) brightness(1.3) contrast(1.3)';
+    });
+    setTimeout(() => {
+        eye.style.transition = 'opacity 0.6s';
+        eye.style.opacity = '0';
+        setTimeout(() => { if (eye.parentNode) eye.parentNode.removeChild(eye); }, 650);
+    }, 1800);
+}
+
+// ================================================================
+// 恐怖跳脸 3：故障撕裂（屏幕撕裂+多眼叠加+高频噪音）
+// ================================================================
+function triggerGlitchScare() {
+    flash('#fff', 50);
+    flash('#000', 80);
+    shake(300);
+
+    // 高频噪音
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(200, ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(2500, ctx.currentTime + 0.2);
+        g.gain.setValueAtTime(0.6, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+        osc.connect(g); g.connect(ctx.destination);
+        osc.start(); osc.stop(ctx.currentTime + 0.5);
+        setTimeout(() => ctx.close(), 600);
+    } catch(e) {}
+
+    // 多眼叠加撕裂
+    for (let i = 0; i < 5; i++) {
+        setTimeout(() => {
+            const eye = document.createElement('img');
+            eye.src = './eye2.gif';
+            const offX = (Math.random() - 0.5) * 100;
+            const offY = (Math.random() - 0.5) * 100;
+            eye.style.cssText = `position:fixed;left:calc(50% + ${offX}px);top:calc(50% + ${offY}px);transform:translate(-50%,-50%) skewX(${Math.random()*40-20}deg);width:60vw;height:60vh;object-fit:contain;z-index:9650;pointer-events:none;filter:invert(1) hue-rotate(${Math.random()*360}deg) contrast(1.5);`;
+            document.body.appendChild(eye);
+            setTimeout(() => {
+                eye.style.transition = 'opacity 0.1s';
+                eye.style.opacity = '0';
+                setTimeout(() => { if (eye.parentNode) eye.parentNode.removeChild(eye); }, 150);
+            }, 100 + Math.random() * 150);
+        }, i * 80);
+    }
+
+    // 屏幕撕裂条
+    for (let i = 0; i < 8; i++) {
+        setTimeout(() => {
+            const bar = document.createElement('div');
+            bar.style.cssText = `position:fixed;left:0;right:0;top:${Math.random()*100}%;height:${5+Math.random()*15}px;background:${Math.random()<0.5?'#000':'#fff'};z-index:9550;pointer-events:none;opacity:0.9;`;
+            document.body.appendChild(bar);
+            setTimeout(() => {
+                bar.style.transition = 'opacity 0.1s';
+                bar.style.opacity = '0';
+                setTimeout(() => { if (bar.parentNode) bar.parentNode.removeChild(bar); }, 150);
+            }, 80);
+        }, i * 60);
+    }
+}
+
+// ================================================================
+// 恐怖跳脸 4：夜魇（组合大招：尖叫+超大眼+震屏+红字+持续压迫 2 秒）
+// ================================================================
+function triggerNightmareScare() {
+    // 全红闪
+    flash('#8a0000', 150);
+    shake(800);
+
+    // 长尖叫（2.5 秒）
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const master = ctx.createGain();
+        master.gain.setValueAtTime(0, ctx.currentTime);
+        master.gain.linearRampToValueAtTime(0.9, ctx.currentTime + 0.05);
+        master.gain.linearRampToValueAtTime(0.8, ctx.currentTime + 1.5);
+        master.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 2.5);
+
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.value = 1400;
+        filter.Q.value = 6;
+
+        // 双音交替模拟人声起伏
+        for (let i = 0; i < 4; i++) {
+            const osc = ctx.createOscillator();
+            osc.type = 'sawtooth';
+            const t = ctx.currentTime + i * 0.5;
+            osc.frequency.setValueAtTime(800 + Math.random() * 600, t);
+            osc.frequency.exponentialRampToValueAtTime(1500 + Math.random() * 800, t + 0.3);
+            osc.frequency.exponentialRampToValueAtTime(700 + Math.random() * 400, t + 0.5);
+            osc.connect(filter);
+            osc.start(t);
+            osc.stop(t + 0.5);
+        }
+
+        // 低频低鸣叠加（压感）
+        const bass = ctx.createOscillator();
+        bass.type = 'sawtooth';
+        bass.frequency.value = 35;
+        const bassG = ctx.createGain();
+        bassG.gain.setValueAtTime(0, ctx.currentTime);
+        bassG.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.1);
+        bassG.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 2.5);
+        bass.connect(bassG); bassG.connect(ctx.destination);
+        bass.start(); bass.stop(ctx.currentTime + 2.5);
+
+        filter.connect(master);
+        master.connect(ctx.destination);
+        setTimeout(() => ctx.close(), 2700);
+    } catch(e) {}
+
+    // 中央超大眼快速放大
+    const eye = document.createElement('img');
+    eye.src = './eye2.gif';
+    eye.style.cssText = `position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(0.1);width:300vw;height:300vh;object-fit:contain;z-index:9700;pointer-events:none;filter:brightness(1.8) contrast(1.5) hue-rotate(-30deg);transition:transform 0.1s ease-out;`;
+    document.body.appendChild(eye);
+    requestAnimationFrame(() => { eye.style.transform = 'translate(-50%,-50%) scale(1)'; });
+
+    // 恐怖红字
+    const word = document.createElement('div');
+    word.textContent = ['它在看着你','别回头','你跑不掉的','它来了','看见你了'][Math.floor(Math.random()*5)];
+    word.style.cssText = `position:fixed;left:50%;top:15%;transform:translateX(-50%);color:#ff0000;font-size:32px;font-weight:bold;text-shadow:0 0 20px #880000, 0 0 40px #440000;letter-spacing:8px;z-index:9750;pointer-events:none;animation:pulse 0.3s ease-in-out infinite alternate;`;
+    document.body.appendChild(word);
+
+    // 2.5 秒后清理
+    setTimeout(() => {
+        eye.style.transition = 'opacity 0.4s';
+        eye.style.opacity = '0';
+        word.style.transition = 'opacity 0.3s';
+        word.style.opacity = '0';
+        setTimeout(() => {
+            if (eye.parentNode) eye.parentNode.removeChild(eye);
+            if (word.parentNode) word.parentNode.removeChild(word);
+        }, 500);
+    }, 2500);
+}
+
+function stopScareCycle() {
+    scareCycleActive = false;
+    if (scareCycleTimeout) { clearTimeout(scareCycleTimeout); scareCycleTimeout = null; }
+}
+
+// ================================================================
+// 恐怖跳脸 5（鬼脸）：三张鬼脸图随机全屏突脸 + 尖叫
+// ================================================================
+const GHOST_FACES = ['./ghost1.jpeg', './ghost2.jpg', './ghost3.jpg'];
+
+function triggerGhostFaceScare() {
+    // 随机选一张鬼脸
+    const faceUrl = GHOST_FACES[Math.floor(Math.random() * GHOST_FACES.length)];
+
+    // 全屏红闪
+    flash('#8a0000', 120);
+    // 重度震屏
+    shake(500);
+
+    // 尖叫合成（复用模式1的尖啸 + 方波失真）
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const master = ctx.createGain();
+        master.gain.setValueAtTime(0.0, ctx.currentTime);
+        master.gain.linearRampToValueAtTime(0.9, ctx.currentTime + 0.05);
+        master.gain.linearRampToValueAtTime(0.75, ctx.currentTime + 0.6);
+        master.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.6);
+
+        const osc1 = ctx.createOscillator();
+        osc1.type = 'sawtooth';
+        osc1.frequency.setValueAtTime(950, ctx.currentTime);
+        osc1.frequency.exponentialRampToValueAtTime(2300, ctx.currentTime + 0.15);
+        osc1.frequency.exponentialRampToValueAtTime(1500, ctx.currentTime + 0.4);
+        osc1.frequency.exponentialRampToValueAtTime(820, ctx.currentTime + 1.1);
+
+        const osc2 = ctx.createOscillator();
+        osc2.type = 'square';
+        osc2.frequency.setValueAtTime(1300, ctx.currentTime);
+        osc2.frequency.exponentialRampToValueAtTime(2900, ctx.currentTime + 0.2);
+        osc2.frequency.exponentialRampToValueAtTime(1900, ctx.currentTime + 0.5);
+
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.value = 1500;
+        filter.Q.value = 5;
+
+        // 低频压感叠加
+        const bass = ctx.createOscillator();
+        bass.type = 'sawtooth';
+        bass.frequency.value = 38;
+        const bassG = ctx.createGain();
+        bassG.gain.setValueAtTime(0, ctx.currentTime);
+        bassG.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.1);
+        bassG.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.6);
+        bass.connect(bassG); bassG.connect(ctx.destination);
+        bass.start(); bass.stop(ctx.currentTime + 1.6);
+
+        osc1.connect(filter); osc2.connect(filter);
+        filter.connect(master);
+        master.connect(ctx.destination);
+
+        osc1.start(); osc2.start();
+        osc1.stop(ctx.currentTime + 1.7); osc2.stop(ctx.currentTime + 1.7);
+        setTimeout(() => ctx.close(), 1800);
+    } catch(e) {}
+
+    // 鬼脸全屏突脸：从中心极小快速放大占满屏
+    const face = document.createElement('img');
+    face.src = faceUrl;
+    face.style.cssText = `position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(0.05);width:105vw;height:105vh;object-fit:contain;z-index:9800;pointer-events:none;filter:brightness(1.3) contrast(1.2);transition:transform 0.1s ease-out, filter 0.3s;`;
+    document.body.appendChild(face);
+    requestAnimationFrame(() => {
+        face.style.transform = 'translate(-50%,-50%) scale(1)';
+        face.style.filter = 'brightness(1.1) contrast(1.3)';
+    });
+    // 短暂保持后淡出（1.2 秒）
+    setTimeout(() => {
+        face.style.transition = 'opacity 0.35s, transform 0.35s';
+        face.style.opacity = '0';
+        face.style.transform = 'translate(-50%,-50%) scale(1.4)';
+        setTimeout(() => { if (face.parentNode) face.parentNode.removeChild(face); }, 400);
+    }, 1200);
+}
+
+// ================================================================
+// 诡异选项惩罚
+// ================================================================
+// 诡异题惩罚：逐次升级（level = 第几次点这道题，1起）
+// 字符串快速腐坏（用于 weirdAns）
+function corruptText_fast(s) {
+    const chars = '\u4e00-\u9fff\u3000-\u303f\uff00-\uffef';
+    const near = {
+        '人':['入','八'],'的':['他','地'],'在':['有','存'],'是':['足','是'],'不':['不','木'],
+        '我':['找','成'],'有':['在','友'],'你':['你','称'],'他':['人','它'],'这':['这','这'],
+        '的':['他','地'],'为':['办','位'],'个':['中','人'],'和':['利','知'],'来':['米','未'],
+    };
+    return s.split('').map(c => {
+        if (near[c] && Math.random() < 0.4) return near[c][Math.floor(Math.random() * near[c].length)];
+        if (/[a-zA-Z]/.test(c) && Math.random() < 0.3) return Math.random() < 0.5 ? c.toUpperCase() : c;
+        return c;
+    }).join('');
+}
+
+function weirdAns(level) {
+    // 1-2次：闪红+轰鸣+提示
+    flash('#7a0000', 80);
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.value = 50;
+        const vol = level >= 2 ? 0.7 : 0.4;
+        g.gain.setValueAtTime(vol, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+        osc.connect(g); g.connect(ctx.destination);
+        osc.start(); osc.stop(ctx.currentTime + 0.25);
+        setTimeout(() => ctx.close(), 300);
+    } catch(e) {}
+
+    const msgs = [
+        '选择错误。请重新选择。',
+        '真的想选这个吗？',
+        '你确定？',
+        '别乱选。',
+        '再想想。',
+    ];
+    showHint(msgs[Math.min(level - 1, msgs.length - 1)], 2500);
+
+    if (level >= 3) {
+        // 第3次起：屏幕抖动
+        shake(200);
+    }
+    if (level >= 4) {
+        // 第4次：选项区文字短暂腐坏
+        const opts = document.querySelectorAll('.opt-btn');
+        opts.forEach(o => {
+            const orig = o.dataset.orig || o.textContent;
+            o.dataset.orig = orig;
+            o.textContent = corruptText_fast(orig);
+            setTimeout(() => { o.textContent = orig; }, 1200);
+        });
+    }
+    if (level >= 5) {
+        // 第5次：眼睛短暂闪一下（吓人但不跳转）
+        eyeWrap.style.opacity = '1';
+        eyeImg.style.width = '60vw';
+        eyeImg.style.height = '60vh';
+        setTimeout(() => {
+            eyeImg.style.width = ''; eyeImg.style.height = '';
+            eyeWrap.style.opacity = '';
+        }, 800);
+    }
+}
+
 // 构建序列：3普通 + 1特殊 × 10
 const SEQ = [];
 let ni = 0;
 for (let i = 0; i < 10; i++) {
     for (let j = 0; j < 3; j++) {
-        if (ni < QS.length) SEQ.push({ ...QS[ni++], sp: false });
+        if (ni < QS.length) {
+            const qIdx = ni; // 保存 QS 原始索引（push 前）
+            SEQ.push({ ...QS[ni++], sp: false, weird: WEIRD_QS.has(qIdx) });
+        }
     }
     SEQ.push({ t: SPQS[i], sp: true });
 }
@@ -470,9 +1809,41 @@ const RESULTS = {
 // ================================================================
 // 状态
 // ================================================================
+// DOM 选择器助手（必须在所有 $() 调用之前声明）
+const $ = id => document.getElementById(id);
+
 let cur = 0, started = false, ph = 0;
 const ans = [];
 let startTime = 0;
+let visitorIP = null, visitorLoc = null;
+
+// 边缘阴影
+let vigTimer = null;
+const vigEl = $('vignette');
+
+// 选项慢半拍
+let lagInterval = null;
+let weirdCountMap = null; // {curIdx -> count} 诡异题惩罚升级计数
+
+// 犹豫提示
+const hesitEl = $('hesit-line');
+let lastHesit = 0;
+
+// 陷阱弹窗
+let trapResolve = null;
+const trapOverlay = $('trap-overlay');
+const trapMsg = $('trap-msg');
+const trapInput = $('trap-input');
+const trapSubmit = $('trap-submit');
+
+if (trapInput) trapInput.addEventListener('keydown', e => { if (e.key === 'Enter') resolveTrap(); });
+if (trapSubmit) trapSubmit.onclick = resolveTrap;
+
+// 标题侵蚀
+let titleCorrupted = false;
+
+// 设备信息
+const deviceLine = $('device-line');
 let lastClick = 0;
 let mouseStill = 0, lastMove = Date.now();
 let lastMX = 0, lastMY = 0;
@@ -483,7 +1854,6 @@ let wrongChoiceShown = false;
 let specialNoiseActive = false;
 
 // DOM
-const $ = id => document.getElementById(id);
 const qN = $('q-n'), qTEl = $('q-t'), prog = $('prog');
 const welcome = $('welcome');
 const qArea = $('q-area'), rArea = $('r-area');
@@ -498,14 +1868,62 @@ const hintArea = $('hint-area');
 // ================================================================
 // 音频
 // ================================================================
+// 合成 BGM 降级：began.mp3 缺失/加载失败时，用 Web Audio 生成持续恐怖氛围音
+let synthBgm = null; // { ctx, gain }
+
+function startSynthBGM() {
+    if (synthBgm) return;
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const master = ctx.createGain();
+        master.gain.value = 0; // 由 startBGM 渐入驱动
+        master.connect(ctx.destination);
+        // 双失谐低频 drone（54Hz / 55.5Hz 拍频）
+        const o1 = ctx.createOscillator(); o1.type = 'sawtooth'; o1.frequency.value = 54;
+        const o2 = ctx.createOscillator(); o2.type = 'sawtooth'; o2.frequency.value = 55.5;
+        const g1 = ctx.createGain(); g1.gain.value = 0.5;
+        const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 220;
+        o1.connect(g1); o2.connect(g1); g1.connect(lp); lp.connect(master);
+        o1.start(); o2.start();
+        // 慢速呼吸起伏
+        const lfo = ctx.createOscillator(); lfo.frequency.value = 0.07;
+        const lfoG = ctx.createGain(); lfoG.gain.value = 0.18;
+        lfo.connect(lfoG); lfoG.connect(master.gain);
+        lfo.start();
+        // 随机心跳（3-7 秒一次）
+        const beat = () => {
+            if (!synthBgm || !synthBgm.ctx) return;
+            try {
+                const bCtx = synthBgm.ctx;
+                const bg = bCtx.createGain();
+                bg.gain.setValueAtTime(0.0, bCtx.currentTime);
+                bg.gain.linearRampToValueAtTime(0.45, bCtx.currentTime + 0.02);
+                bg.gain.exponentialRampToValueAtTime(0.001, bCtx.currentTime + 0.22);
+                const bo = bCtx.createOscillator(); bo.type = 'sine'; bo.frequency.value = 48;
+                bo.connect(bg); bg.connect(master);
+                bo.start(); bo.stop(bCtx.currentTime + 0.25);
+            } catch(e) {}
+            setTimeout(beat, 3000 + Math.random() * 4000);
+        };
+        beat();
+        synthBgm = { ctx, gain: master };
+    } catch(e) {}
+}
+
+// began.mp3 缺失或加载失败时，降级为合成 BGM
+bgm.addEventListener('error', () => startSynthBGM());
+
 function startBGM() {
     bgm.volume = 0;
-    bgm.play().catch(() => {});
+    if (synthBgm && synthBgm.gain) synthBgm.gain.gain.value = 0;
+    const p = bgm.play();
+    if (p && p.catch) p.catch(() => {});
     // 渐入
     let vol = 0;
     const fadeIn = setInterval(() => {
         vol = Math.min(0.45, vol + 0.015);
         bgm.volume = vol;
+        if (synthBgm && synthBgm.gain) synthBgm.gain.gain.value = vol * 0.25;
         if (vol >= 0.45) clearInterval(fadeIn);
     }, 200);
 }
@@ -515,8 +1933,10 @@ function setBGMVolume(v, dur = 2000) {
     const step = (v - now) / (dur / 50);
     const fade = setInterval(() => {
         bgm.volume = Math.max(0, Math.min(1, bgm.volume + step));
+        if (synthBgm && synthBgm.gain) synthBgm.gain.gain.value = bgm.volume * 0.25;
         if ((step > 0 && bgm.volume >= v) || (step < 0 && bgm.volume <= v)) {
             bgm.volume = v;
+            if (synthBgm && synthBgm.gain) synthBgm.gain.gain.value = v * 0.25;
             clearInterval(fade);
         }
     }, 50);
@@ -776,7 +2196,11 @@ function applyPhase(p) {
     // 阶段7+：元信息栏文字开始变化
     if (p >= 7) {
         meta.style.letterSpacing = '1px';
+        corruptTitle();
     }
+
+    // 边缘阴影（阶段3+）
+    if (p >= 3) scheduleVignette();
 
     // 元信息栏
     if (p >= 3) meta.classList.add('on');
@@ -792,10 +2216,10 @@ function startEyeLife() {
     eyeLifeInterval = setInterval(() => {
         const drift = (Math.random() - 0.5) * 8;
         const driftY = (Math.random() - 0.5) * 6;
-        eyeWrap.style.transform = `translate(calc(-50% + ${drift}px), calc(-50% + ${driftY}px))`;
+        eyeWrap.style.transform = `translate(${drift}px, ${driftY}px)`;
         setTimeout(() => {
             if (!eyeWrap.style.transform) return;
-            eyeWrap.style.transform = 'translate(-50%,-50%)';
+            eyeWrap.style.transform = '';
         }, 400);
     }, 1800 + Math.random() * 2000);
 }
@@ -807,6 +2231,10 @@ function renderQ(idx) {
     applyPhase(phVal());
     const q = SEQ[idx];
     if (!q) return;
+
+    // 清理 Q11 的 IP 展示残留（防止一直显示到测试结束）
+    const oldIp = document.getElementById('ip-reveal');
+    if (oldIp && oldIp.parentNode) oldIp.parentNode.removeChild(oldIp);
 
     clearHint();
     qN.textContent = idx + 1;
@@ -822,23 +2250,75 @@ function renderQ(idx) {
         qOpts.style.display = 'none';
         spArea.classList.add('on');
         spQEl.innerHTML = q.t;
+        // 特殊题文字越后越不对劲
+        if (idx >= 2) corruptSpecialText(spQEl, Math.floor(idx / 3));
         qTxt.textContent = '';
         qArea.classList.add('on');
         welcome.style.display = 'none';
         rArea.classList.remove('on');
         // 特殊题：随机触发一种效果
         triggerSpecialEffect();
-        setTimeout(() => {
+        let advanced = false;
+        const advance = () => {
+            if (advanced) return;
+            advanced = true;
             cur++;
             if (cur < TOTAL) renderQ(cur);
             else showResult();
-        }, 4000);
+        };
+        if (itCameState !== 'idle') {
+            // 「它来了」黑屏期间暂停跳题，等效果结束再进入下一题
+            // （25 秒安全兑底：防止摄像头权限弹窗一直挂着导致卡死）
+            itCameResolve = advance;
+            setTimeout(() => {
+                if (itCameState !== 'idle') { cleanupItCame(); advance(); }
+            }, 25000);
+        } else {
+            setTimeout(advance, 4000);
+        }
         return;
     }
 
     qOpts.style.display = 'flex';
     spArea.classList.remove('on');
     qTxt.textContent = q.t;
+    // 5题后开始文字恐怖谷
+    if (idx >= 5) startQuestionCorruption(qTxt, idx);
+
+    // Q11（idx=10）：IP 现实入侵
+    if (idx === 10) {
+        qTxt.textContent = 'This is where you are.';
+        qOpts.style.display = 'none';
+        // 显示 IP + 位置
+        const ipDiv = document.createElement('div');
+        ipDiv.id = 'ip-reveal';
+        ipDiv.style.cssText = `
+            font-family:system-ui,sans-serif;font-size:13px;
+            color:#8a7a68;letter-spacing:1px;text-align:center;
+            margin-top:16px;line-height:2.2;opacity:0;
+            transition:opacity 2s ease;
+        `;
+        const ipLine = visitorIP || '…';
+        const locLine = visitorLoc || '';
+        ipDiv.innerHTML = `<div style="font-size:17px;letter-spacing:3px;color:#c0a880;">${ipLine}</div>`
+            + (locLine ? `<div style="font-size:11px;color:#5a5048;letter-spacing:2px;margin-top:6px;">${locLine}</div>` : '');
+        qOpts.parentNode.insertBefore(ipDiv, qOpts);
+        // 渐显
+        setTimeout(() => { ipDiv.style.opacity = '1'; }, 300);
+        // 2.5秒后出现选项
+        setTimeout(() => {
+            qOpts.style.display = 'flex';
+            qOpts.innerHTML = '';
+            [{l:'A',label:'Yes',v:'S'},{l:'B',label:'No',v:'N'}].forEach(o => {
+                const btn = document.createElement('button');
+                btn.className = 'opt-btn';
+                btn.innerHTML = `<span class="l">${o.l}</span><span>${o.label}</span>`;
+                btn.onclick = () => handleAns(o.v, o.label, o.l);
+                qOpts.appendChild(btn);
+            });
+        }, 2500);
+        return;
+    }
 
     let a = q.a, b = q.b;
 
@@ -847,13 +2327,276 @@ function renderQ(idx) {
         const btn = document.createElement('button');
         btn.className = 'opt-btn';
         btn.innerHTML = `<span class="l">${o.l}</span><span>${o.label}</span>`;
+        if (idx >= 5) observeOptionCorruption(btn, o.label, o.l);
+        observeHover(btn, idx); // 犹豫提示
         btn.onclick = () => handleAns(o.v, o.label, o.l);
         qOpts.appendChild(btn);
     });
 
+    // 选项慢半拍（阶段6+，选项刚出现时）
+    setTimeout(maybeLagOptions, 50);
+
     qArea.classList.add('on');
     welcome.style.display = 'none';
     rArea.classList.remove('on');
+}
+
+// ================================================================
+// 答完第 8 题后的选择：留下 / 离开（离开按钮一直跳位置）
+// ================================================================
+let choiceOverlay = null;
+let choiceStayBtn = null;
+let choiceLeaveBtn = null;
+let choiceAttempts = 0;
+let choiceResolved = false;
+let choiceMouseHandler = null;
+let choiceTimer = null;
+
+function showChoice() {
+    if (choiceOverlay) return;
+    choiceResolved = false;
+    choiceAttempts = 0;
+
+    // 遮罩
+    choiceOverlay = document.createElement('div');
+    choiceOverlay.id = 'choice-overlay';
+    choiceOverlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.96);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:1;transition:opacity 0.5s ease;padding:40px 20px;';
+    document.body.appendChild(choiceOverlay);
+    try { console.log('[choice] 弹出选择层 cur=' + cur); } catch(e) {}
+
+    // 文字（心理压迫）
+    const txt = document.createElement('div');
+    txt.id = 'choice-text';
+    txt.style.cssText = 'color:#ddd;font-size:clamp(15px,2.2vw,20px);line-height:2;text-align:center;max-width:600px;letter-spacing:2px;font-family:Courier New,monospace;';
+    txt.innerHTML = '你已经答了 8 道题。<br><br>现在问一个免费的问题：<br><br><span style="color:#ff4444;font-size:clamp(20px,3vw,28px);font-weight:bold;">你确定要继续吗？</span>';
+    choiceOverlay.appendChild(txt);
+
+    // 描述小字
+    const sub = document.createElement('div');
+    sub.style.cssText = 'color:#666;font-size:clamp(11px,1.5vw,13px);margin-top:30px;letter-spacing:3px;text-align:center;';
+    sub.textContent = '你可以随时选择离开。';
+    choiceOverlay.appendChild(sub);
+
+    // 按钮容器
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'margin-top:50px;position:relative;width:340px;height:160px;';
+    choiceOverlay.appendChild(wrap);
+
+    // 留下按钮（固定左边）
+    choiceStayBtn = document.createElement('button');
+    choiceStayBtn.id = 'choice-stay';
+    choiceStayBtn.textContent = '留下';
+    choiceStayBtn.style.cssText = 'position:absolute;left:0;top:50%;transform:translateY(-50%);width:130px;height:60px;background:#222;color:#eee;border:1px solid #555;font-size:18px;letter-spacing:8px;cursor:pointer;font-family:inherit;transition:all 0.2s;';
+    choiceStayBtn.addEventListener('mouseenter', () => {
+        choiceStayBtn.style.background = '#3a3a3a';
+        choiceStayBtn.style.borderColor = '#888';
+    });
+    choiceStayBtn.addEventListener('mouseleave', () => {
+        choiceStayBtn.style.background = '#222';
+        choiceStayBtn.style.borderColor = '#555';
+    });
+    choiceStayBtn.addEventListener('click', () => {
+        if (choiceResolved) return;
+        choiceResolved = true;
+        resolveChoice('stay');
+    });
+    wrap.appendChild(choiceStayBtn);
+
+    // 离开按钮（初始位置在右边，会跳走）
+    choiceLeaveBtn = document.createElement('button');
+    choiceLeaveBtn.id = 'choice-leave';
+    choiceLeaveBtn.textContent = '离开';
+    choiceLeaveBtn.style.cssText = 'position:absolute;left:200px;top:50%;transform:translateY(-50%);width:130px;height:60px;background:#2a0000;color:#ff8888;border:1px solid #660000;font-size:18px;letter-spacing:8px;cursor:pointer;font-family:inherit;transition:left 0.25s cubic-bezier(0.2,0.9,0.3,1), top 0.25s cubic-bezier(0.2,0.9,0.3,1);';
+    choiceLeaveBtn.addEventListener('click', (e) => {
+        // 理论上跳得很厉几乎点不到，但如果点到了...
+        e.preventDefault();
+        if (choiceResolved) return;
+        if (choiceAttempts < 3) {
+            // 第一次、第二次点中也跳走
+            choiceAttempts++;
+            jumpLeaveBtn();
+            showHint('你点了离开。但离开没有那么容易。', 3000);
+            try { playLowTone(); } catch(e) {}
+        } else {
+            // 第三次点中：放过
+            choiceResolved = true;
+            resolveChoice('leave');
+        }
+    });
+    wrap.appendChild(choiceLeaveBtn);
+
+    // 全局 mousemove 监听：如果鼠标接近离开按钮，跳走
+    choiceMouseHandler = (e) => {
+        if (!choiceLeaveBtn || choiceResolved) return;
+        const rect = choiceLeaveBtn.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        const dx = e.clientX - cx;
+        const dy = e.clientY - cy;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        // 100px 范围内触发跳走
+        if (dist < 100) {
+            choiceAttempts++;
+            jumpLeaveBtn();
+            // 跳多了文字会变
+            updateChoiceText();
+        }
+    };
+    document.addEventListener('mousemove', choiceMouseHandler);
+
+    // 15 秒倒计时：到时间自动选"留下"
+    let sec = 15;
+    const tick = setInterval(() => {
+        if (choiceResolved) { clearInterval(tick); return; }
+        sec--;
+        sub.textContent = '你可以随时选择离开。 (' + sec + ' 秒后默认留下)';
+        if (sec <= 0) {
+            clearInterval(tick);
+            if (!choiceResolved) {
+                choiceResolved = true;
+                resolveChoice('stay');
+            }
+        }
+    }, 1000);
+    choiceTimer = tick;
+}
+
+function jumpLeaveBtn() {
+    if (!choiceLeaveBtn) return;
+    // 在 wrap 容器范围内随机跳
+    const wrap = choiceLeaveBtn.parentElement;
+    const wrapRect = wrap.getBoundingClientRect();
+    const btnW = 130, btnH = 60;
+    // 留 10px 边距
+    const maxX = Math.max(0, wrapRect.width - btnW - 10);
+    const maxY = Math.max(0, wrapRect.height - btnH - 10);
+    const newX = 10 + Math.random() * maxX;
+    const newY = 10 + Math.random() * maxY;
+    choiceLeaveBtn.style.left = newX + 'px';
+    choiceLeaveBtn.style.top = newY + 'px';
+    choiceLeaveBtn.style.transform = 'none';
+    // 跳的时候闪一下
+    choiceLeaveBtn.style.background = '#5a0000';
+    setTimeout(() => { if (choiceLeaveBtn) choiceLeaveBtn.style.background = '#2a0000'; }, 150);
+    // 微微"受惊"音效
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.value = 800;
+        g.gain.setValueAtTime(0.15, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
+        osc.connect(g); g.connect(ctx.destination);
+        osc.start(); osc.stop(ctx.currentTime + 0.1);
+        setTimeout(() => ctx.close(), 150);
+    } catch(e) {}
+}
+
+function updateChoiceText() {
+    const txt = document.getElementById('choice-text');
+    if (!txt) return;
+    if (choiceAttempts >= 15) {
+        txt.innerHTML = '离开按钮已经在请求原谅。<br><br><span style="color:#888;font-size:14px;">（它已经累了。）</span>';
+        if (choiceLeaveBtn) choiceLeaveBtn.style.opacity = '0.3';
+    } else if (choiceAttempts >= 10) {
+        txt.innerHTML = '你试了 ' + choiceAttempts + ' 次了。<br><br><span style="color:#888;font-size:14px;">真的还想走吗？</span>';
+    } else if (choiceAttempts >= 5) {
+        txt.innerHTML = '它不会让你离开的。<br><br><span style="color:#888;font-size:14px;">这才是它想要你选的。</span>';
+    } else if (choiceAttempts >= 2) {
+        txt.innerHTML = '你确定要点“离开”吗？<br><br><span style="color:#888;font-size:14px;">它不想你走。</span>';
+    }
+}
+
+function resolveChoice(action) {
+    if (choiceMouseHandler) {
+        document.removeEventListener('mousemove', choiceMouseHandler);
+        choiceMouseHandler = null;
+    }
+    if (choiceTimer) { clearInterval(choiceTimer); choiceTimer = null; }
+
+    if (action === 'stay') {
+        // 留下：放大眼 + 满意
+        try { eyeWrap.style.opacity = '1'; } catch(e) {}
+        showHint('你选了留下。它会记住。', 4000);
+        // 低沉满意音
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.value = 60;
+            g.gain.setValueAtTime(0.3, ctx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+            osc.connect(g); g.connect(ctx.destination);
+            osc.start(); osc.stop(ctx.currentTime + 0.8);
+            setTimeout(() => ctx.close(), 900);
+        } catch(e) {}
+    } else {
+        // 离开：黑屏+一声闷响+直接跳到结果页（跳过剩下题目）
+        showHint('你点了离开。', 2500);
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.value = 40;
+            g.gain.setValueAtTime(0.5, ctx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.5);
+            osc.connect(g); g.connect(ctx.destination);
+            osc.start(); osc.stop(ctx.currentTime + 1.5);
+            setTimeout(() => ctx.close(), 1600);
+        } catch(e) {}
+    }
+
+    // 淡出 overlay
+    if (choiceOverlay) {
+        choiceOverlay.style.transition = 'opacity 0.8s ease';
+        choiceOverlay.style.opacity = '0';
+        setTimeout(() => {
+            if (choiceOverlay && choiceOverlay.parentNode) {
+                choiceOverlay.parentNode.removeChild(choiceOverlay);
+            }
+            choiceOverlay = null;
+            choiceStayBtn = null;
+            choiceLeaveBtn = null;
+            // 进入下一题 / 跳到结果页
+            if (action === 'stay') {
+                cur++;
+                if (cur < TOTAL) renderQ(cur);
+                else showResult();
+            } else {
+                // 离开：跳到结果页（剩余题目空答案）
+                while (cur < TOTAL - 1) {
+                    ans[cur] = { v: 0, label: '(离开)', ltr: '?', delay: 0 };
+                    cur++;
+                }
+                showResult();
+            }
+        }, 900);
+    } else {
+        if (action === 'stay') {
+            cur++;
+            if (cur < TOTAL) renderQ(cur);
+            else showResult();
+        } else {
+            showResult();
+        }
+    }
+}
+
+function hideChoice() {
+    if (choiceMouseHandler) {
+        document.removeEventListener('mousemove', choiceMouseHandler);
+        choiceMouseHandler = null;
+    }
+    if (choiceTimer) { clearInterval(choiceTimer); choiceTimer = null; }
+    if (choiceOverlay && choiceOverlay.parentNode) {
+        choiceOverlay.parentNode.removeChild(choiceOverlay);
+    }
+    choiceOverlay = null;
+    choiceStayBtn = null;
+    choiceLeaveBtn = null;
 }
 
 // ================================================================
@@ -863,6 +2606,8 @@ function handleAns(v, label, ltr) {
     const delay = Date.now() - lastClick;
     lastClick = Date.now();
     ans[cur] = { v, label, ltr, delay };
+    cur++; // ← 必须在 weird/第8题判断之前，否则 cur 卡住不动
+    try { console.log('[handleAns] cur=' + cur + ' label=' + label + ' weird=' + !!(SEQ[cur] && SEQ[cur].weird)); } catch(e) {}
 
     // 悬停暗示：你本来想选另一个
     const h = hoverCount[cur];
@@ -898,7 +2643,30 @@ function handleAns(v, label, ltr) {
         wrongChoiceShown = false; // 重置，允许再次触发
     }
 
-    cur++;
+    // 诡异题惩罚：逐次升级（卡住不前进），5次后放过
+    const q = SEQ[cur];
+    if (q && q.weird) {
+        if (!weirdCountMap) weirdCountMap = new Map();
+        const c = (weirdCountMap.get(cur) || 0) + 1;
+        weirdCountMap.set(cur, c);
+        if (c > 5) {
+            // 放过：重置计数，正常前进
+            weirdCountMap.delete(cur);
+            try { console.log('[weird] 放过 cur=' + cur + ' c=' + c); } catch(e) {}
+        } else {
+            try { console.log('[weird] 卡住 cur=' + cur + ' c=' + c); } catch(e) {}
+            weirdAns(c);
+            return;
+        }
+    }
+
+    try { console.log('[handleAns] ans done, cur++ => ' + cur); } catch(e) {}
+    // 答完第 8 题后跳出选择：留下 / 离开（离开按钮会跳走）
+    if (cur === 8) {
+        try { console.log('[trigger] showChoice cur=' + cur); } catch(e) {}
+        showChoice();
+        return;
+    }
     if (cur < TOTAL) renderQ(cur);
     else showResult();
 }
@@ -907,57 +2675,92 @@ function handleAns(v, label, ltr) {
 // 结果页
 // ================================================================
 function showResult() {
+    stopScareCycle();
+    stopAmbient();
     applyPhase(9);
     clearHint();
     qArea.classList.remove('on');
     welcome.style.display = 'none';
     rArea.classList.add('on');
-
-    // 计算类型
-    let d = {EI:{e:0,i:0},SN:{s:0,n:0},TF:{t:0,f:0},JP:{j:0,p:0}};
-    SEQ.forEach((q, i) => {
-        if (q.sp) return;
-        const v = ans[i] ? ans[i].v : q.va;
-        if (q.d==='EI') v==='E'?d.EI.e++:d.EI.i++;
-        else if (q.d==='SN') v==='S'?d.SN.s++:d.SN.n++;
-        else if (q.d==='TF') v==='T'?d.TF.t++:d.TF.f++;
-        else if (q.d==='JP') v==='J'?d.JP.j++:d.JP.p++;
-    });
-    const gc = (m,a,b) => m[a.toLowerCase()] >= m[b.toLowerCase()] ? a : b;
-    const type = gc(d.EI,'E','I') + gc(d.SN,'S','N') + gc(d.TF,'T','F') + gc(d.JP,'J','P');
-    const r = RESULTS[type] || RESULTS['INTJ'];
-
-    $('r-type').textContent = '人格解析报告';
-    $('r-sub').textContent = r.s;
-    $('r-desc').textContent = r.d;
-    $('r-detail').innerHTML = r.x;
     prog.style.width = '100%';
-
-    // 眼睛变大
     eyeWrap.classList.add('later');
     eyeWrap.style.opacity = '0.7';
 
-    // 设备信息
-    const elapsed = Math.floor((Date.now() - startTime) / 1000);
-    const dev = document.createElement('div');
-    dev.style.cssText = 'margin-top:20px;font-size:8px;opacity:0.18;letter-spacing:0.5px;font-family:"Courier New",monospace;';
-    dev.textContent = `${window.screen.width}×${window.screen.height} · ${navigator.userAgent.split(' ').slice(0,3).join(' ')} · 用时${elapsed}秒 · 离开${tabCount}次`;
-    rArea.appendChild(dev);
+    // 先显示"正在生成报告"——然后弹出陷阱
+    $('r-type').textContent = '人格解析报告';
+    $('r-sub').textContent = '正在生成…';
+    $('r-desc').textContent = '';
+    $('r-detail').innerHTML = '';
 
-    // 最后一行
-    setTimeout(() => {
-        const last = document.createElement('div');
-        last.style.cssText = 'margin-top:20px;font-size:10px;opacity:0.2;letter-spacing:4px;text-transform:uppercase;';
-        last.textContent = '你完成了';
-        rArea.appendChild(last);
+    setTimeout(async () => {
+        // 陷阱弹窗：它索要一个从未出现过的信息
+        await showTrap(
+            '身份验证<br><br>请输入你母亲的姓氏<br>以解锁你的报告'
+        );
+
+        // 用户输入了什么东西——不管是什么
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        const avgDelay = ans.reduce((s, a) => s + (a.delay || 0), 0) / Math.max(ans.length, 1);
+        const longest = Math.max(...ans.map(a => a.delay || 0));
+        const tabTime = tabStart ? Math.floor((Date.now() - tabStart) / 1000) : 0;
+
+        // 计算类型
+        let d = {EI:{e:0,i:0},SN:{s:0,n:0},TF:{t:0,f:0},JP:{j:0,p:0}};
+        SEQ.forEach((q, i) => {
+            if (q.sp) return;
+            const v = ans[i] ? ans[i].v : q.va;
+            if (q.d==='EI') v==='E'?d.EI.e++:d.EI.i++;
+            else if (q.d==='SN') v==='S'?d.SN.s++:d.SN.n++;
+            else if (q.d==='TF') v==='T'?d.TF.t++:d.TF.f++;
+            else if (q.d==='JP') v==='J'?d.JP.j++:d.JP.p++;
+        });
+        const gc = (m,a,b) => m[a.toLowerCase()] >= m[b.toLowerCase()] ? a : b;
+        const type = gc(d.EI,'E','I') + gc(d.SN,'S','N') + gc(d.TF,'T','F') + gc(d.JP,'J','P');
+        const r = RESULTS[type] || RESULTS['INTJ'];
+
+        // 结果内容：行为数据陈述 + 最终问题
+        $('r-type').textContent = '人格解析报告';
+        $('r-sub').textContent = r.s;
+        $('r-desc').textContent = r.d;
+        $('r-detail').innerHTML = r.x
+            + `<div style="margin-top:18px;font-size:10px;line-height:2.4;opacity:0.5;">`
+            + `你在第5题停顿了 ${ans[4] ? Math.round(ans[4].delay/1000) : '?'} 秒<br>`
+            + `平均反应时间 ${Math.round(avgDelay/1000)} 秒<br>`
+            + `最长犹豫 ${Math.round(longest/1000)} 秒<br>`
+            + `切换标签页 ${tabCount} 次<br>`
+            + `用时 ${elapsed} 秒`
+            + (visitorLoc ? `<br>IP 归属地：${visitorLoc}` : '')
+            + `</div>`
+            + `<div style="margin-top:24px;font-size:11px;opacity:0.28;letter-spacing:1px;line-height:2;">`
+            + `你选了 ${ans.filter(a=>a).length} 道题<br>`
+            + `那么，是谁在回答这些问题？`
+            + `</div>`;
+
+        // 设备信息单独一行
+        const dev = document.createElement('div');
+        dev.style.cssText = 'margin-top:20px;font-size:8px;opacity:0.15;letter-spacing:0.5px;font-family:"Courier New",monospace;';
+        dev.textContent = `${window.screen.width}×${window.screen.height} · ${navigator.userAgent.split(' ').slice(0,3).join(' ')}`;
+        rArea.appendChild(dev);
+        deviceLine.classList.add('show');
+        deviceLine.textContent = window.navigator.userAgent;
+
+        // 最后一行
         setTimeout(() => {
-            last.style.transition = 'opacity 3s';
-            last.style.opacity = '0.45';
-        }, 500);
-    }, 4000);
+            const last = document.createElement('div');
+            last.style.cssText = 'margin-top:20px;font-size:10px;opacity:0.2;letter-spacing:4px;text-transform:uppercase;';
+            last.textContent = '你完成了';
+            rArea.appendChild(last);
+            setTimeout(() => {
+                last.style.transition = 'opacity 3s';
+                last.style.opacity = '0.45';
+            }, 500);
+        }, 3000);
 
-    // 音量降低
-    setTimeout(() => setBGMVolume(0.08, 5000), 3000);
+        // 音量降低
+        setTimeout(() => setBGMVolume(0.08, 5000), 3000);
+        // 结果页最终jumpscare
+        setTimeout(resultJumpscare, 2500);
+    }, 5000); // 5秒"生成报告"后才弹出陷阱
 }
 
 // ================================================================
@@ -985,33 +2788,168 @@ setInterval(() => {
     }
 }, 2500);
 
+function distortChar(c) {
+    const r = Math.random();
+    if (r < 0.10) {
+        // 简繁互换
+        const tc = {'为':'為','会':'會','开':'開','关':'關','来':'來','时':'時','见':'見','进':'進','远':'遠','连':'連','无':'無','对':'對','实':'實','应':'應','过':'過','变':'變','当':'當','门':'門','间':'間','区':'區','书':'書','东':'東','车':'車','广':'廣','产':'產','业':'業','学':'學','与':'與','给':'給','经':'經','总':'總','马':'馬','鸟':'鳥','鱼':'魚','虫':'蟲','龙':'龍','风雨雷电':'風雨雷電'};
+        const keys = Object.keys(tc);
+        const k = keys.find(k => k === c);
+        if (k) return tc[k];
+        const kv = Object.entries(tc).find(([k,v]) => v === c);
+        if (kv) return kv[0];
+    } else if (r < 0.20) {
+        // 近形字替换
+        const sim = {'人':'入','己':'已','士':'土','大':'太','日':'目','了':'子','八':'人','力':'刀','干':'于','今':'令','么':'公','才':'寸','下':'上','万':'方','与':'兴','天':'夫','不':'还','中':'申','手':'毛','升':'开','反':'友','天':'夫','内':'肉','父':'爻','匀':'勺','尤':'龙','仆':'仁','仇':'仅','仍':'扔','斤':'斥','爪':'瓜','伐':'代','伤':'伕','优':'优','伙':'伴','会':'云','创':'刂','杂':'九','各':'名','名':'各','后':'石','因':'囚','在':'右','夸':'夺','扣':'叩','地':'他','场':'坪','再':'冉','协':'十','压':'厂','厌':'庆','戌':'成','同':'回','因':'囚','在':'右','吃':'口','吗':'马','回':'同','团':'困','因':'囚','多':'夕','她':'他','妈':'好','收':'改','如':'好','字':'学','孙':'子','红':'虹','论':'抢','设':'没','访':'仿','尽':'层','导':'异','寿':'春','麦':'妻','寿':'春'};
+        if (sim[c]) return sim[c];
+    } else if (r < 0.28) {
+        // 同音/近音替换
+        const hom = {'你':'您','他':'它','是':'似','我':'哦','这':'这','那':'哪','有':'又','在':'再','的':'得','和':'合','就':'究','不':'木','很':'狠','都':'兜','能':'呢','会':'汇','也':'野','把':'吧','去':'趣','来':'赖','时':'十','看':'刊','出':'刍','个':'各','说':'硕','想':'响','做':'作','到':'道','很':'狠','太':'态','能':'呢','着':'者','过':'国','还':'孩','等':'蹬','再':'在','好':'号','里':'理','后':'候','被':'悲','被':'备','给':'跟','被':'北','很':'很'};
+        if (hom[c]) return hom[c];
+    }
+    return c;
+}
+
+function startQuestionCorruption(el, qIdx) {
+    if (!el) return;
+    let stopped = false;
+    let step = 0;
+
+    const tick = () => {
+        if (stopped) return;
+        const text = el.textContent;
+        const chars = text.split('');
+        const op = Math.random();
+
+        if (op < 0.20) {
+            // 添字
+            const pos = Math.floor(Math.random() * chars.length);
+            const extras = ['的','你','它','在','了','？','。','...','…','—','「','」','...'];
+            chars.splice(pos, 0, extras[Math.floor(Math.random() * extras.length)]);
+        } else if (op < 0.35) {
+            // 删字
+            if (chars.length > 3) {
+                const pos = Math.floor(Math.random() * chars.length);
+                chars.splice(pos, 1);
+            }
+        } else if (op < 0.60) {
+            // 扭曲词义：随机替换字符
+            const start = Math.floor(Math.random() * Math.max(1, chars.length - 4));
+            const cnt = Math.floor(Math.random() * 3) + 1;
+            for (let i = 0; i < cnt && start + i < chars.length; i++) {
+                if (/[a-zA-Z0-9\u4e00-\u9fa5]/.test(chars[start + i])) {
+                    chars[start + i] = distortChar(chars[start + i]);
+                }
+            }
+        }
+
+        el.textContent = chars.join('');
+        step++;
+        const delay = 400 + step * 80 + Math.random() * 300;
+        setTimeout(tick, delay);
+    };
+
+    setTimeout(tick, 1200 + Math.random() * 600);
+
+    // 停止条件：用户点击任意选项
+    // （事件委托绑定在 qOpts 容器上——按钮每次渲染都会被 innerHTML 重建，
+    //   绑在按钮上的监听器会随重建失效，导致腐坏永不停止、空循环烧 CPU）
+    const stop = () => { stopped = true; };
+    qOpts.addEventListener('click', stop, { once: true });
+}
+
+function observeOptionCorruption(btn, origLabel, letter) {
+    let corrupted = false;
+    const labelSpan = btn.querySelector('span:last-child');
+
+    const tryCorrupt = () => {
+        if (corrupted) return;
+        corrupted = true;
+        const text = origLabel;
+        const chars = text.split('');
+        const op = Math.random();
+
+        if (op < 0.25) {
+            // 添字
+            const pos = Math.floor(Math.random() * Math.max(1, chars.length));
+            chars.splice(pos, 0, '的');
+        } else if (op < 0.45) {
+            // 简繁
+            const tc = {'为':'為','会':'會','开':'開','关':'關','来':'來','时':'時','对':'對','无':'無','实':'實','过':'過','当':'當','书':'書','东':'東','马':'馬','鸟':'鳥','鱼':'魚','学':'學','与':'與','经':'經','总':'總','产':'產','业':'業'};
+            chars.forEach((c, i) => { if (tc[c]) chars[i] = tc[c]; });
+        } else if (op < 0.65) {
+            // 替换字符
+            chars.forEach((c, i) => { if (Math.random() < 0.3) chars[i] = distortChar(c); });
+        } else {
+            // 打乱顺序
+            const si = Math.floor(Math.random() * Math.max(1, chars.length - 2));
+            if (si + 2 < chars.length) {
+                [chars[si], chars[si+2]] = [chars[si+2], chars[si]];
+            }
+        }
+        labelSpan.textContent = chars.join('');
+    };
+
+    // 鼠标悬停时有机会腐坏（用户犹豫时）
+    btn.addEventListener('mouseenter', () => {
+        if (Math.random() < 0.45) tryCorrupt();
+    }, { once: true });
+}
+
 // ================================================================
 // 启动
 // ================================================================
-$('start').onclick = () => {
+const startBtn = $('start');
+function startTest() {
     if (started) return;
     started = true;
     startTime = Date.now();
     lastClick = Date.now();
     startBGM();
-    welcome.style.display = 'none';
-    document.body.style.opacity = '0';
+    startAmbient();
+    startScareCycle();
+    welcome.style.transition = 'opacity 1s ease';
+    welcome.style.opacity = '0';
     setTimeout(() => {
-        document.body.style.transition = 'opacity 1.5s';
-        document.body.style.opacity = '1';
+        welcome.style.display = 'none';
         renderQ(0);
-    }, 100);
-};
+    }, 800);
+}
+startBtn.addEventListener('click', startTest);
+startBtn.addEventListener('touchend', e => { e.preventDefault(); startTest(); }, { passive: false });
 
 qTEl.textContent = TOTAL;
 qN.textContent = '0';
 prog.style.width = '0%';
 
-document.body.style.opacity = '0';
-setTimeout(() => {
-    document.body.style.transition = 'opacity 1.5s';
-    document.body.style.opacity = '1';
-}, 150);
+// 页面进入动画：欢迎区淡入
+welcome.style.opacity = '0';
+welcome.style.transition = 'opacity 1.5s ease';
+setTimeout(() => { welcome.style.opacity = '1'; }, 80);
+
+// ================================================================
+// 页面加载时获取访问者 IP
+// ================================================================
+fetch('https://ipinfo.io/json', { mode: 'cors' })
+  .then(r => r.json())
+  .then(data => {
+    visitorIP = data.ip || null;
+    if (data.city && data.region) {
+      visitorLoc = data.city + ' · ' + data.region;
+    }
+  })
+  .catch(() => {
+    // 备用：ip-api.com
+    fetch('http://ip-api.com/json/', { mode: 'cors' })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status === 'success') {
+          visitorIP = data.query || null;
+          visitorLoc = (data.city ? data.city + ' · ' : '') + (data.regionName || '') + (data.country ? ' · ' + data.country : '');
+        }
+      })
+      .catch(() => {});
+  });
 </script>
 </body>
 </html>

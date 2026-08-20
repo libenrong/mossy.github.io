@@ -410,10 +410,12 @@ function pickItCameVariant() {
 }
 
 // 通用清理
+let itCameResolve = null; // 「它来了」结束后回调（特殊题等待下一题用）
 function cleanupItCame() {
     if (itCameTimeout) { clearTimeout(itCameTimeout); itCameTimeout = null; }
     if (itCameTimeout2) { clearTimeout(itCameTimeout2); itCameTimeout2 = null; }
     itCameState = 'idle';
+    if (itCameResolve) { const r = itCameResolve; itCameResolve = null; r(); }
 }
 
 // 入口：按变体分发
@@ -432,9 +434,11 @@ function triggerItCame(variant) {
 // ------------------------------------------------------------
 function triggerItCame_silent() {
     itCameState = 'asking';
-    const comp = getComputedStyle(eyeWrap);
+    // 尺寸在 #eye-wrap img 上（容器是 flex 居中层，设置容器无效）；opacity 需保存原值恢复
+    const comp = getComputedStyle(eyeImg);
     const origW = parseFloat(comp.width);
     const origH = parseFloat(comp.height);
+    const origOpacity = eyeWrap.style.opacity;
 
     const overlay = document.createElement('div');
     overlay.id = 'cam-ask';
@@ -472,10 +476,10 @@ function triggerItCame_silent() {
             msg.style.opacity = '0'; sub.style.opacity = '0';
             requestAnimationFrame(() => { msg.style.opacity = '1'; });
 
-            eyeWrap.style.transition = 'none';
-            eyeWrap.style.width = '95vw'; eyeWrap.style.height = '95vh'; eyeWrap.style.opacity = '0.95';
-            eyeWrap.style.zIndex = '9001'; eyeWrap.style.position = 'fixed';
-            eyeWrap.style.left = '2.5vw'; eyeWrap.style.top = '2.5vh';
+            eyeImg.style.transition = 'none';
+            eyeImg.style.width = '95vw'; eyeImg.style.height = '95vh'; eyeImg.style.objectFit = 'contain';
+            eyeWrap.style.zIndex = '9001';
+            eyeWrap.style.opacity = '0.95';
 
             try {
                 const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -499,10 +503,11 @@ function triggerItCame_silent() {
 
                 setTimeout(() => { overlay.style.opacity = '0'; setTimeout(() => overlay.remove(), 2100); }, 2500);
 
-                eyeWrap.style.transition = 'width 2s ease, height 2s ease, opacity 2s ease, left 2s ease, top 2s ease';
-                eyeWrap.style.width = origW + 'px'; eyeWrap.style.height = origH + 'px';
-                eyeWrap.style.left = ''; eyeWrap.style.top = '';
-                eyeWrap.style.position = ''; eyeWrap.style.zIndex = ''; eyeWrap.style.opacity = '';
+                eyeImg.style.transition = 'width 2s ease, height 2s ease';
+                eyeImg.style.width = origW + 'px'; eyeImg.style.height = origH + 'px';
+                eyeImg.style.objectFit = '';
+                eyeWrap.style.zIndex = '';
+                eyeWrap.style.opacity = origOpacity;
 
                 cleanupItCame();
                 restoreBgmAfterSpecial();
@@ -543,9 +548,11 @@ function triggerItCame_announce() {
 // ------------------------------------------------------------
 function triggerItCame_redText() {
     itCameState = 'watching';
-    const comp = getComputedStyle(eyeWrap);
+    // 尺寸在 #eye-wrap img 上；opacity 需保存原值恢复
+    const comp = getComputedStyle(eyeImg);
     const origW = parseFloat(comp.width);
     const origH = parseFloat(comp.height);
+    const origOpacity = eyeWrap.style.opacity;
 
     const overlay = document.createElement('div');
     overlay.style.cssText = `position:fixed;inset:0;background:#000;z-index:9000;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 1.2s ease;`;
@@ -558,12 +565,11 @@ function triggerItCame_redText() {
     document.body.appendChild(overlay);
     requestAnimationFrame(() => { overlay.style.opacity = '1'; });
 
-    // 同步：眼睛缓慢放大到 95vw
-    eyeWrap.style.transition = 'width 5s ease, height 5s ease, opacity 5s ease, left 5s ease, top 5s ease';
-    eyeWrap.style.width = '95vw'; eyeWrap.style.height = '95vh'; eyeWrap.style.opacity = '0.95';
-    eyeWrap.style.position = 'fixed';
-    eyeWrap.style.left = '2.5vw'; eyeWrap.style.top = '2.5vh';
+    // 同步：眼睛缓慢放大到 95vw（尺寸在 img 上）
+    eyeImg.style.transition = 'width 5s ease, height 5s ease';
+    eyeImg.style.width = '95vw'; eyeImg.style.height = '95vh'; eyeImg.style.objectFit = 'contain';
     eyeWrap.style.zIndex = '9001';
+    eyeWrap.style.opacity = '0.95';
 
     // 6秒后：眼睛和文字淡出，归位
     itCameTimeout = setTimeout(() => {
@@ -571,10 +577,11 @@ function triggerItCame_redText() {
         msg.style.opacity = '0';
         itCameTimeout2 = setTimeout(() => {
             overlay.remove();
-            eyeWrap.style.transition = 'width 2s ease, height 2s ease, opacity 2s ease, left 2s ease, top 2s ease';
-            eyeWrap.style.width = origW + 'px'; eyeWrap.style.height = origH + 'px';
-            eyeWrap.style.left = ''; eyeWrap.style.top = '';
-            eyeWrap.style.position = ''; eyeWrap.style.zIndex = ''; eyeWrap.style.opacity = '';
+            eyeImg.style.transition = 'width 2s ease, height 2s ease';
+            eyeImg.style.width = origW + 'px'; eyeImg.style.height = origH + 'px';
+            eyeImg.style.objectFit = '';
+            eyeWrap.style.zIndex = '';
+            eyeWrap.style.opacity = origOpacity;
             cleanupItCame();
             restoreBgmAfterSpecial();
         }, 1500);
@@ -727,7 +734,7 @@ function resultJumpscare() {
 
     const sub = document.createElement('div');
     sub.style.cssText = 'margin-top:20px;color:#666;font-size:clamp(10px,2vw,14px);letter-spacing:6px;text-transform:uppercase;';
-    sub.textContent = '你选了' + (ans.length || 0) + '道题 · 离开' + tabCount + '次 · 它全都知道';
+    sub.textContent = '你选了' + (ans.filter(a => a).length || 0) + '道题 · 离开' + tabCount + '次 · 它全都知道';
     ov.appendChild(sub);
 
     setTimeout(() => { txt.style.transition = 'opacity 0.3s'; txt.style.opacity = '1'; }, 320);
@@ -1187,7 +1194,7 @@ const SP_EFFECTS = [
 function triggerSpecialEffect() {
     // 特殊题：BGM 淡出，只留低频
     muteBgmForSpecial();
-    // 第3题（索引8）和第7题（索引28）："他来了"
+    // 第 3 个和第 7 个特殊题（spIdx 2 / 6）："他来了"
     const spIdx = Math.floor(cur / 4); // 0~9
     if (spIdx === 2 || spIdx === 6) {
         triggerItCame();
@@ -1746,7 +1753,7 @@ function weirdAns(level) {
     }
     if (level >= 4) {
         // 第4次：选项区文字短暂腐坏
-        const opts = document.querySelectorAll('.opt');
+        const opts = document.querySelectorAll('.opt-btn');
         opts.forEach(o => {
             const orig = o.dataset.orig || o.textContent;
             o.dataset.orig = orig;
@@ -1861,14 +1868,62 @@ const hintArea = $('hint-area');
 // ================================================================
 // 音频
 // ================================================================
+// 合成 BGM 降级：began.mp3 缺失/加载失败时，用 Web Audio 生成持续恐怖氛围音
+let synthBgm = null; // { ctx, gain }
+
+function startSynthBGM() {
+    if (synthBgm) return;
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const master = ctx.createGain();
+        master.gain.value = 0; // 由 startBGM 渐入驱动
+        master.connect(ctx.destination);
+        // 双失谐低频 drone（54Hz / 55.5Hz 拍频）
+        const o1 = ctx.createOscillator(); o1.type = 'sawtooth'; o1.frequency.value = 54;
+        const o2 = ctx.createOscillator(); o2.type = 'sawtooth'; o2.frequency.value = 55.5;
+        const g1 = ctx.createGain(); g1.gain.value = 0.5;
+        const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 220;
+        o1.connect(g1); o2.connect(g1); g1.connect(lp); lp.connect(master);
+        o1.start(); o2.start();
+        // 慢速呼吸起伏
+        const lfo = ctx.createOscillator(); lfo.frequency.value = 0.07;
+        const lfoG = ctx.createGain(); lfoG.gain.value = 0.18;
+        lfo.connect(lfoG); lfoG.connect(master.gain);
+        lfo.start();
+        // 随机心跳（3-7 秒一次）
+        const beat = () => {
+            if (!synthBgm || !synthBgm.ctx) return;
+            try {
+                const bCtx = synthBgm.ctx;
+                const bg = bCtx.createGain();
+                bg.gain.setValueAtTime(0.0, bCtx.currentTime);
+                bg.gain.linearRampToValueAtTime(0.45, bCtx.currentTime + 0.02);
+                bg.gain.exponentialRampToValueAtTime(0.001, bCtx.currentTime + 0.22);
+                const bo = bCtx.createOscillator(); bo.type = 'sine'; bo.frequency.value = 48;
+                bo.connect(bg); bg.connect(master);
+                bo.start(); bo.stop(bCtx.currentTime + 0.25);
+            } catch(e) {}
+            setTimeout(beat, 3000 + Math.random() * 4000);
+        };
+        beat();
+        synthBgm = { ctx, gain: master };
+    } catch(e) {}
+}
+
+// began.mp3 缺失或加载失败时，降级为合成 BGM
+bgm.addEventListener('error', () => startSynthBGM());
+
 function startBGM() {
     bgm.volume = 0;
-    bgm.play().catch(() => {});
+    if (synthBgm && synthBgm.gain) synthBgm.gain.gain.value = 0;
+    const p = bgm.play();
+    if (p && p.catch) p.catch(() => {});
     // 渐入
     let vol = 0;
     const fadeIn = setInterval(() => {
         vol = Math.min(0.45, vol + 0.015);
         bgm.volume = vol;
+        if (synthBgm && synthBgm.gain) synthBgm.gain.gain.value = vol * 0.25;
         if (vol >= 0.45) clearInterval(fadeIn);
     }, 200);
 }
@@ -1878,8 +1933,10 @@ function setBGMVolume(v, dur = 2000) {
     const step = (v - now) / (dur / 50);
     const fade = setInterval(() => {
         bgm.volume = Math.max(0, Math.min(1, bgm.volume + step));
+        if (synthBgm && synthBgm.gain) synthBgm.gain.gain.value = bgm.volume * 0.25;
         if ((step > 0 && bgm.volume >= v) || (step < 0 && bgm.volume <= v)) {
             bgm.volume = v;
+            if (synthBgm && synthBgm.gain) synthBgm.gain.gain.value = v * 0.25;
             clearInterval(fade);
         }
     }, 50);
@@ -2159,10 +2216,10 @@ function startEyeLife() {
     eyeLifeInterval = setInterval(() => {
         const drift = (Math.random() - 0.5) * 8;
         const driftY = (Math.random() - 0.5) * 6;
-        eyeWrap.style.transform = `translate(calc(-50% + ${drift}px), calc(-50% + ${driftY}px))`;
+        eyeWrap.style.transform = `translate(${drift}px, ${driftY}px)`;
         setTimeout(() => {
             if (!eyeWrap.style.transform) return;
-            eyeWrap.style.transform = 'translate(-50%,-50%)';
+            eyeWrap.style.transform = '';
         }, 400);
     }, 1800 + Math.random() * 2000);
 }
@@ -2174,6 +2231,10 @@ function renderQ(idx) {
     applyPhase(phVal());
     const q = SEQ[idx];
     if (!q) return;
+
+    // 清理 Q11 的 IP 展示残留（防止一直显示到测试结束）
+    const oldIp = document.getElementById('ip-reveal');
+    if (oldIp && oldIp.parentNode) oldIp.parentNode.removeChild(oldIp);
 
     clearHint();
     qN.textContent = idx + 1;
@@ -2197,11 +2258,24 @@ function renderQ(idx) {
         rArea.classList.remove('on');
         // 特殊题：随机触发一种效果
         triggerSpecialEffect();
-        setTimeout(() => {
+        let advanced = false;
+        const advance = () => {
+            if (advanced) return;
+            advanced = true;
             cur++;
             if (cur < TOTAL) renderQ(cur);
             else showResult();
-        }, 4000);
+        };
+        if (itCameState !== 'idle') {
+            // 「它来了」黑屏期间暂停跳题，等效果结束再进入下一题
+            // （25 秒安全兑底：防止摄像头权限弹窗一直挂着导致卡死）
+            itCameResolve = advance;
+            setTimeout(() => {
+                if (itCameState !== 'idle') { cleanupItCame(); advance(); }
+            }, 25000);
+        } else {
+            setTimeout(advance, 4000);
+        }
         return;
     }
 
@@ -2532,6 +2606,7 @@ function handleAns(v, label, ltr) {
     const delay = Date.now() - lastClick;
     lastClick = Date.now();
     ans[cur] = { v, label, ltr, delay };
+    cur++; // ← 必须在 weird/第8题判断之前，否则 cur 卡住不动
     try { console.log('[handleAns] cur=' + cur + ' label=' + label + ' weird=' + !!(SEQ[cur] && SEQ[cur].weird)); } catch(e) {}
 
     // 悬停暗示：你本来想选另一个
@@ -2777,9 +2852,10 @@ function startQuestionCorruption(el, qIdx) {
     setTimeout(tick, 1200 + Math.random() * 600);
 
     // 停止条件：用户点击任意选项
+    // （事件委托绑定在 qOpts 容器上——按钮每次渲染都会被 innerHTML 重建，
+    //   绑在按钮上的监听器会随重建失效，导致腐坏永不停止、空循环烧 CPU）
     const stop = () => { stopped = true; };
-    const stopWrap = () => { stop(); document.querySelectorAll('.opt-btn').forEach(b => b.removeEventListener('click', stopWrap)); };
-    document.querySelectorAll('.opt-btn').forEach(b => b.addEventListener('click', stopWrap, { once: true }));
+    qOpts.addEventListener('click', stop, { once: true });
 }
 
 function observeOptionCorruption(btn, origLabel, letter) {
