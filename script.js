@@ -378,3 +378,47 @@ const SERVER_HOST = 'mossymc.top';
 
     document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 })();
+
+/* ===========================
+   主题切换：深色 / 浅色
+   初值由 <head> 内联脚本在首屏前应用（localStorage 或系统偏好）。
+   这里只处理按钮点击，并在用户未手动选择时跟随系统变化。
+   =========================== */
+(function initThemeToggle() {
+    const root = document.documentElement;
+    const btn = document.getElementById('themeToggle');
+    const STORAGE_KEY = 'mossy-theme';
+    const systemDark = window.matchMedia('(prefers-color-scheme: dark)');
+
+    function currentTheme() {
+        return root.hasAttribute('data-theme') ? 'dark' : 'light';
+    }
+
+    function applyTheme(theme, updateButton) {
+        if (theme === 'dark') root.setAttribute('data-theme', 'dark');
+        else root.removeAttribute('data-theme');
+
+        if (updateButton && btn) {
+            const nextLabel = theme === 'dark' ? '切换到浅色模式' : '切换到深色模式';
+            btn.setAttribute('aria-label', nextLabel);
+            btn.setAttribute('title', nextLabel);
+        }
+    }
+
+    if (btn) {
+        btn.addEventListener('click', () => {
+            const next = currentTheme() === 'dark' ? 'light' : 'dark';
+            applyTheme(next, true);
+            try { localStorage.setItem(STORAGE_KEY, next); } catch (e) {}
+        });
+    }
+
+    // 仅在用户未手动选择过时跟随系统主题变化
+    systemDark.addEventListener('change', (e) => {
+        try {
+            if (!localStorage.getItem(STORAGE_KEY)) applyTheme(e.matches ? 'dark' : 'light', true);
+        } catch (err) {
+            applyTheme(e.matches ? 'dark' : 'light', true);
+        }
+    });
+})();
