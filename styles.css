@@ -81,7 +81,7 @@ body::before {
         /* 苔藓斑点纹理叠加 */
         radial-gradient(circle at 12% 18%, rgba(91, 140, 90, 0.05) 0 1.5px, transparent 1.8px),
         radial-gradient(circle at 78% 9%, rgba(91, 140, 90, 0.04) 0 2px, transparent 2.3px),
-        url("photo/美景2.png");
+        url("resource/美景2.png");
     background-size: auto, 480px 480px, cover;
     background-position: center, center, center 55%;
     background-repeat: repeat, repeat, no-repeat;
@@ -202,7 +202,7 @@ a {
             rgba(12, 20, 16, 0.55) 65%,
             rgba(232, 232, 237, 0.96) 96%,
             var(--bg) 100%),
-        url("photo/美景1.png");
+        url("resource/美景1.png");
     background-size: cover;
     background-position: center 30%;
     background-repeat: no-repeat;
@@ -1284,7 +1284,7 @@ body {
         linear-gradient(180deg, rgba(20, 20, 24, 0.8), rgba(20, 20, 24, 0.9)),
         radial-gradient(circle at 12% 18%, rgba(143, 191, 140, 0.06) 0 1.5px, transparent 1.8px),
         radial-gradient(circle at 78% 9%, rgba(143, 191, 140, 0.05) 0 2px, transparent 2.3px),
-        url("photo/美景2.png");
+        url("resource/美景2.png");
     background-size: auto, 480px 480px, cover;
     background-position: center, center, center 55%;
     background-repeat: repeat, repeat, no-repeat;
@@ -1335,7 +1335,7 @@ body {
             rgba(12, 16, 14, 0.66) 65%,
             rgba(27, 27, 32, 0.96) 96%,
             var(--bg) 100%),
-        url("photo/美景1.png");
+        url("resource/美景1.png");
 }
 
 /* 大面磨砂玻璃卡片：白玻璃 → 深色玻璃 */
@@ -1405,4 +1405,49 @@ body {
     .nav-right {
         gap: 12px;
     }
+}
+
+/* ===========================
+   隐秘彩蛋（FIM）：触发后不可逆
+   连点导航 Logo 5 次触发
+   =========================== */
+
+/* 全站黑白滤镜：作用于页面内容与背景层，但不动覆盖层 */
+body.fim-active > *:not(.fim-overlay) {
+    filter: grayscale(1);
+    transition: filter 2.5s ease;
+}
+
+body.fim-active::before {
+    filter: grayscale(1) blur(2px) saturate(0.85) brightness(1.05);
+    transition: filter 2.5s ease;
+}
+
+/* 覆盖层：无底色，fim.png 一开始即铺满全屏、全透明，60 秒内逐渐显现 */
+.fim-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.fim-overlay.show {
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.fim-overlay.show img {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    /* 拉伸铺满浏览器可视区，不裁剪、不保持比例 */
+    object-fit: fill;
+    opacity: 0;
+    animation: fimFadeIn 60s linear forwards;
+}
+
+@keyframes fimFadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
 }
