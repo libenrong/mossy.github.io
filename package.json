@@ -4,7 +4,7 @@
   "description": "MossyMC 玩法文档",
   "scripts": {
     "docs:dev": "vitepress dev docs",
-    "docs:build": "vitepress build docs && node -e \"require('node:fs').cpSync('resource', 'docs/.vitepress/dist/resource', { recursive: true })\"",
+    "docs:build": "vitepress build docs && node -e \"const f=require('node:fs');f.cpSync('resource','docs/.vitepress/dist/resource',{recursive:true});f.copyFileSync('psych.html','docs/.vitepress/dist/psych.html')\"",
     "docs:preview": "vitepress preview docs"
   },
   "devDependencies": {
