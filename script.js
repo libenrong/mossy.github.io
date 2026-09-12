@@ -422,3 +422,111 @@ const SERVER_HOST = 'mossymc.top';
         }
     });
 })();
+
+/* ===========================
+   隐秘彩蛋（FIM）：不可逆，触发后只能刷新恢复
+   触发方式：1.4 秒内连点导航 Logo 5 次
+   效果：循环播放 resource/fim.mp3
+         resource/fim.png 铺满全屏，由全透明在 60 秒内逐渐显现
+         整页套上黑白滤镜，所有文字变为 FRIEND INSIDE ME
+   =========================== */
+(function initFimEasterEgg() {
+    const logo = document.querySelector('.nav-logo');
+    if (!logo) return;
+
+    const CLICKS_NEEDED = 5;
+    const WINDOW_MS = 1400;
+    let clicks = 0;
+    let timer = null;
+    let fired = false;
+
+    const FIM_TEXT = 'FRIEND INSIDE ME';
+
+    // 立即把所有可见文本改写为 FIM_TEXT
+    function rewritePageText() {
+        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+            acceptNode(node) {
+                const parent = node.parentElement;
+                if (!parent) return NodeFilter.FILTER_REJECT;
+                const tag = parent.tagName;
+                if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'NOSCRIPT' || tag === 'TEXTAREA') {
+                    return NodeFilter.FILTER_REJECT;
+                }
+                if (parent.closest && parent.closest('.fim-overlay')) return NodeFilter.FILTER_REJECT;
+                return node.nodeValue && node.nodeValue.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+            }
+        });
+        const targets = [];
+        while (walker.nextNode()) targets.push(walker.currentNode);
+        targets.forEach((n) => { n.nodeValue = FIM_TEXT; });
+    }
+
+    // 持续强制：之后任何 JS 写入的文本（如在线人数轮询）都会立刻被改写
+    function enforceFimText() {
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((m) => {
+                const t = m.target;
+                if (t.nodeType === Node.TEXT_NODE && t.nodeValue && t.nodeValue.trim() && t.nodeValue !== FIM_TEXT) {
+                    const parent = t.parentElement;
+                    if (parent && parent.closest && parent.closest('.fim-overlay')) return;
+                    t.nodeValue = FIM_TEXT;
+                }
+            });
+        });
+        observer.observe(document.body, { subtree: true, characterData: true });
+    }
+
+    function trigger() {
+        if (fired) return;
+        fired = true;
+        document.body.classList.add('fim-active');
+
+        // 所有文字变为 FRIEND INSIDE ME
+        rewritePageText();
+        enforceFimText();
+
+        // 循环播放 fim.mp3，音量渐入
+        const audio = new Audio('resource/fim.mp3');
+        audio.loop = true;
+        audio.volume = 0;
+        const fadeIn = () => {
+            if (audio.volume < 0.9) {
+                audio.volume = Math.min(0.9, audio.volume + 0.012);
+                requestAnimationFrame(fadeIn);
+            }
+        };
+        const play = () => {
+            const p = audio.play();
+            if (p && p.catch) p.catch(() => {
+                // 自动播放被拦截时，等下一次点击再补放
+                document.addEventListener('pointerdown', () => { audio.play().catch(() => {}); }, { once: true });
+            });
+        };
+        play();
+        fadeIn();
+
+        // fim.png 覆盖层：先插入 DOM，下一帧再加 .show 触发动画
+        const overlay = document.createElement('div');
+        overlay.className = 'fim-overlay';
+        const img = document.createElement('img');
+        img.src = 'resource/fim.png';
+        img.alt = '';
+        overlay.appendChild(img);
+        document.body.appendChild(overlay);
+
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => overlay.classList.add('show'));
+        });
+    }
+
+    logo.addEventListener('click', () => {
+        if (fired) return;
+        clicks++;
+        clearTimeout(timer);
+        timer = setTimeout(() => { clicks = 0; }, WINDOW_MS);
+        if (clicks >= CLICKS_NEEDED) {
+            clicks = 0;
+            trigger();
+        }
+    });
+})();
