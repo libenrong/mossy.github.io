@@ -75,7 +75,7 @@
         linear-gradient(180deg, rgba(232, 232, 237, 0.25), rgba(232, 232, 237, 0.28)),
         radial-gradient(circle at 12% 18%, rgba(91, 140, 90, 0.05) 0 1.5px, transparent 1.8px),
         radial-gradient(circle at 78% 9%, rgba(91, 140, 90, 0.04) 0 2px, transparent 2.3px),
-        url("/resource/美景2.png");
+        url("/resource/美景2.webp");
     background-size: auto, 480px 480px, cover;
     background-position: center, center, center 55%;
     background-repeat: repeat, repeat, no-repeat;

@@ -427,7 +427,7 @@ const SERVER_HOST = 'mossymc.top';
    隐秘彩蛋（FIM）：不可逆，触发后只能刷新恢复
    触发方式：1.4 秒内连点导航 Logo 5 次
    效果：循环播放 resource/fim.mp3
-         resource/fim.png 铺满全屏，由全透明在 60 秒内逐渐显现
+         resource/fim.webp 铺满全屏，由全透明在 60 秒内逐渐显现
          整页套上黑白滤镜，所有文字变为 FRIEND INSIDE ME
    =========================== */
 (function initFimEasterEgg() {
@@ -505,11 +505,11 @@ const SERVER_HOST = 'mossymc.top';
         play();
         fadeIn();
 
-        // fim.png 覆盖层：先插入 DOM，下一帧再加 .show 触发动画
+        // fim.webp 覆盖层：先插入 DOM，下一帧再加 .show 触发动画
         const overlay = document.createElement('div');
         overlay.className = 'fim-overlay';
         const img = document.createElement('img');
-        img.src = 'resource/fim.png';
+        img.src = 'resource/fim.webp';
         img.alt = '';
         overlay.appendChild(img);
         document.body.appendChild(overlay);

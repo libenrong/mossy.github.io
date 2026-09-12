@@ -81,7 +81,7 @@ body::before {
         /* 苔藓斑点纹理叠加 */
         radial-gradient(circle at 12% 18%, rgba(91, 140, 90, 0.05) 0 1.5px, transparent 1.8px),
         radial-gradient(circle at 78% 9%, rgba(91, 140, 90, 0.04) 0 2px, transparent 2.3px),
-        url("resource/美景2.png");
+        url("resource/美景2.webp");
     background-size: auto, 480px 480px, cover;
     background-position: center, center, center 55%;
     background-repeat: repeat, repeat, no-repeat;
@@ -202,7 +202,7 @@ a {
             rgba(12, 20, 16, 0.55) 65%,
             rgba(232, 232, 237, 0.96) 96%,
             var(--bg) 100%),
-        url("resource/美景1.png");
+        url("resource/美景1.webp");
     background-size: cover;
     background-position: center 30%;
     background-repeat: no-repeat;
@@ -1284,7 +1284,7 @@ body {
         linear-gradient(180deg, rgba(20, 20, 24, 0.8), rgba(20, 20, 24, 0.9)),
         radial-gradient(circle at 12% 18%, rgba(143, 191, 140, 0.06) 0 1.5px, transparent 1.8px),
         radial-gradient(circle at 78% 9%, rgba(143, 191, 140, 0.05) 0 2px, transparent 2.3px),
-        url("resource/美景2.png");
+        url("resource/美景2.webp");
     background-size: auto, 480px 480px, cover;
     background-position: center, center, center 55%;
     background-repeat: repeat, repeat, no-repeat;
@@ -1335,7 +1335,7 @@ body {
             rgba(12, 16, 14, 0.66) 65%,
             rgba(27, 27, 32, 0.96) 96%,
             var(--bg) 100%),
-        url("resource/美景1.png");
+        url("resource/美景1.webp");
 }
 
 /* 大面磨砂玻璃卡片：白玻璃 → 深色玻璃 */
@@ -1423,7 +1423,7 @@ body.fim-active::before {
     transition: filter 2.5s ease;
 }
 
-/* 覆盖层：无底色，fim.png 一开始即铺满全屏、全透明，60 秒内逐渐显现 */
+/* 覆盖层：无底色，fim.webp 一开始即铺满全屏、全透明，60 秒内逐渐显现 */
 .fim-overlay {
     position: fixed;
     inset: 0;

@@ -158,7 +158,7 @@
       <div class="gallery-grid">
         <figure class="gallery-item gallery-featured neu-frame">
           <div class="gallery-img-wrap">
-            <img :src="baseUrl + 'resource/特色建筑.png'" alt="特色建筑" loading="lazy">
+            <img :src="baseUrl + 'resource/特色建筑.webp'" alt="特色建筑" loading="lazy">
           </div>
           <figcaption>
             <span class="caption-title">特色建筑</span>
@@ -168,7 +168,7 @@
 
         <figure class="gallery-item neu-frame">
           <div class="gallery-img-wrap">
-            <img :src="baseUrl + 'resource/美景1.png'" alt="美景一" loading="lazy">
+            <img :src="baseUrl + 'resource/美景1.webp'" alt="美景一" loading="lazy">
           </div>
           <figcaption>
             <span class="caption-title">晨曦之境</span>
@@ -178,7 +178,7 @@
 
         <figure class="gallery-item neu-frame">
           <div class="gallery-img-wrap">
-            <img :src="baseUrl + 'resource/美景2.png'" alt="美景二" loading="lazy">
+            <img :src="baseUrl + 'resource/美景2.webp'" alt="美景二" loading="lazy">
           </div>
           <figcaption>
             <span class="caption-title">静谧之地</span>
@@ -188,7 +188,7 @@
 
         <figure class="gallery-item neu-frame">
           <div class="gallery-img-wrap">
-            <img :src="baseUrl + 'resource/美景3.png'" alt="美景三" loading="lazy">
+            <img :src="baseUrl + 'resource/美景3.webp'" alt="美景三" loading="lazy">
           </div>
           <figcaption>
             <span class="caption-title">远眺之峰</span>
@@ -628,7 +628,7 @@ onMounted(() => {
       rgba(12, 20, 16, 0.55) 65%,
       rgba(232, 232, 237, 0.96) 96%,
       var(--bg) 100%),
-    url("/resource/美景1.png");
+    url("/resource/美景1.webp");
   background-size: cover;
   background-position: center 30%;
   background-repeat: no-repeat;
