@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>心理健康自评</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { height:100%; }
+body {
+  background:#fafafa;
+  color:#000;
+  font-family:'Songti SC','SimSun','Noto Serif SC','Microsoft YaHei',serif;
+  -webkit-font-smoothing:antialiased;
+  transition:background .8s;
+}
+.screen {
+  position:fixed; top:0; left:0; right:0; bottom:0;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  padding:32px;
+}
+.hidden { display:none !important; }
+
+button {
+  font-family:inherit; cursor:pointer;
+}
+.btn {
+  background:transparent; color:#000;
+  border:1px solid #000;
+  padding:11px 42px;
+  font-size:15px; letter-spacing:4px;
+  transition:background .2s, color .2s;
+}
+.btn:hover { background:#000; color:#fff; }
+
+#consent h1 {
+  font-weight:600; letter-spacing:8px;
+  font-size:27px; margin-bottom:22px;
+  text-align:center;
+}
+#consent .warn {
+  font-size:13px; line-height:1.9; text-align:center;
+  max-width:420px; margin-bottom:10px;
+}
+#consent .tiny {
+  font-size:11px; color:#888; line-height:1.8; text-align:center;
+  max-width:420px; margin-bottom:34px;
+}
+#consent .actions { display:flex; gap:18px; }
+
+#progress {
+  position:fixed; top:16px; right:20px;
+  font-size:11px; color:#bbb; letter-spacing:2px;
+  user-select:none;
+}
+
+#qtext {
+  font-size:22px; line-height:2; text-align:center;
+  max-width:560px; margin:26px 0 30px;
+}
+#qtext .sub {
+  display:block; margin-top:22px;
+  font-size:12px; color:#a9a9a9; letter-spacing:1px;
+}
+#options { width:340px; max-width:92vw; }
+.opt {
+  display:block; width:100%;
+  border:1px solid #000; margin:11px 0;
+  padding:13px 18px; font-size:15px;
+  background:transparent; color:#000; text-align:center;
+  transition:background .18s, color .18s;
+}
+.opt:hover, .opt.sel { background:#000; color:#fff; }
+#next {
+  margin-top:28px; padding:10px 44px;
+}
+#next:disabled { opacity:.25; cursor:default; }
+#next:disabled:hover { background:transparent; color:#000; }
+
+.cl-line {
+  font-size:20px; font-weight:600;
+  line-height:1.55; text-align:center;
+  white-space:pre; user-select:none;
+}
+
+#scare { background:#000; color:#fff; overflow:hidden; }
+#scare .big {
+  font-size:34px; letter-spacing:6px;
+  text-align:center; line-height:1.8;
+}
+#scare.flash { filter:invert(1); }
+.noise-line { white-space:nowrap; line-height:1.1; user-select:none; color:#fff; }
+
+#blank .cursor {
+  display:inline-block; width:2px; height:26px;
+  background:#000; animation:blink 1s step-end infinite;
+}
+@keyframes blink { 50% { opacity:0; } }
+
+#red { background:#000; }
+#red .red {
+  color:#c00; font-size:24px; letter-spacing:10px; text-align:center;
+}
+#red .tiny {
+  margin-top:26px; font-size:11px; color:#555; letter-spacing:2px;
+}
+</style>
+</head>
+<body>
+
+<div id="consent" class="screen">
+  <h1>心理健康自评</h1>
+  <p class="warn">本问卷用于心理状况的简易自查，请如实作答。</p>
+  <p class="tiny">
+    包含强烈的心理压迫内容、异常文字与声音刺激。<br>
+    未成年人与心理状态脆弱者请勿参与。<br>
+    如感到任何不适，可按 Esc 随时退出。
+  </p>
+  <div class="actions">
+    <button id="startBtn" class="btn">开始作答</button>
+    <button id="exitBtn" class="btn">退出</button>
+  </div>
+</div>
+
+<div id="progress" class="hidden"></div>
+
+<div id="quiz" class="screen hidden">
+  <div id="qtext"></div>
+  <div id="options"></div>
+  <button id="next" class="btn" disabled>下一题</button>
+</div>
+
+<div id="blank" class="screen hidden">
+  <span class="cursor"></span>
+</div>
+
+<div id="climax" class="screen hidden"></div>
+
+<div id="scare" class="screen hidden"></div>
+
+<div id="red" class="screen hidden"></div>
+
+<script>
+(function () {
+'use strict';
+
+var QUESTIONS = [
+  { t: '过去两周，你是否感到情绪低落、沮丧或绝望？' },
+  { t: '过去两周，你是否对平时喜欢的事情失去兴趣或乐趣？' },
+  { t: '过去两周，你是否感到疲倦或没有活力？' },
+  { t: '过去两周，你是否入睡困难、睡不安稳或睡得过多？' },
+
+  { t: '过去两周，你是否有过「不如消失算了」的念头？' },
+  { t: '你是否觉得，周围的声音偶尔会变得很远？' },
+  { t: '有时候，你会不会感觉自己站在自己身后？' },
+  { t: '你有没有觉得，镜子里那个人动作比你慢半拍？' },
+
+  { t: '你是否感到 有 时 候 自己 不 是 自己？' },
+  { t: '有 人 在 叫 你 的 名 字 你 会 回 头 吗？' },
+  { t: '有人叫你的名字但房间里没有人你会回头吗' },
+  { t: '你说 你 没有 听到 但 你 回头了' },
+
+  { t: '你是否感到 忈 或 惢 在你身后？' },
+  { t: '你是否感到 ██ 在你身后？' },
+  { t: '你是否感到有 人 在 你 身 后？' },
+  { t: '后身在 你 到 感 否 是 你？' },
+
+  { t: '你有没有注意到，刚才有 0.3 秒你没有呼吸？' },
+  { t: '你有没有觉得，你的名字被叫过一次？' },
+  { t: '你有没有觉得，这个页面比你打开时更暗了？' },
+  { t: '你确定，现在坐在屏幕前的是你吗？' },
+
+  { t: '如果这些问题不是写给你的，你还会回答吗？' },
+  { t: '如果没有人看，你还会回答吗？' },
+  { t: '', blank: true, blankSec: 10 },
+  { t: '你可以关掉了。' }
+];
+
+var QUESTION_OPTIONS = [
+  ['完全没有', '有几天', '一半以上天数', '几乎每天'],
+  ['完全没有', '有几天', '一半以上天数', '几乎每天'],
+  ['完全没有', '有几天', '一半以上天数', '几乎每天'],
+  ['完全没有', '有几天', '一半以上天数', '几乎每天'],
+  ['完全没有', '有几天', '一半以上天数', '几乎每天'],
+  ['从来没有', '偶尔', '经常', '现在也是'],
+  ['从来没有', '偶尔', '经常', '现在也是'],
+  ['从来没有', '偶尔', '经常', '现在也是'],
+  ['从来没有', '有时候', '经常', '现在也是'],
+  ['不会', '也许会', '会', '你已经回了'],
+  ['不会回头', '也许会回头', '会回头', '你已经回了'],
+  ['我没有回头', '我回头了', '你怎么知道', '……'],
+  ['没有', '只是余光', '我看不到后面', '它一直在'],
+  ['没有', '好像有', '它一直在', '你看见了什么'],
+  ['没有人', '也许有人', '有人', '有个人一直在我身后'],
+  ['否', '也许吧', '是', '你转过去看看'],
+  ['没有', '有', '你怎么知道', '别说了'],
+  ['没有', '有', '你怎么知道', '别说了'],
+  ['没有', '有一点', '你做了什么', '别说了'],
+  ['是我', '不确定', '不是我', '你希望是谁'],
+  ['会', '不会', '也许吧', '我不想回答'],
+  ['会', '不会', '也许吧', '我不想回答'],
+  null,
+  null
+];
+
+var data = {
+  questions: [], // {index, enterTime, duration, hoverTime, answerChanges}
+  tabSwitches: [], // {leaveTime, returnTime, duration}
+  clickIntervals: [],
+  permissions: { microphone: null, notification: null }
+};
+
+var WAVES = [
+  { text: '我不想在这了', count: 30 },
+  { text: '我想死', count: 12 },
+  { text: '死死死死死死死死死死死死死死死死死', count: 1 },
+  { text: '冤冤冤冤冤冤冤冤冤冤冤冤冤冤冤冤冤冤冤冤冤冤冤冤冤冤冤冤冤冤冤冤冤冤冤冤冤冤冤冤冤冤', count: 1 }
+];
+
+var state = {
+  idx: 0,
+  hasInteracted: false,
+  selected: -1,
+  answerChanges: 0,
+  lastClickAt: 0,
+  hoverStart: 0,
+  entering: 0,
+  climaxMode: false,
+  skipClimax: false,
+  notified: false,
+  timers: []
+};
+
+var ctx = null, masterGain = null, lowpass = null, shaper = null;
+var bgmGain = null, bgmSrc = null, droneBuf = null, fragBuf = null;
+var buzzOsc = null, buzzGain = null;
+var hiddenAt = 0;
+
+var SCREENS = ['consent', 'quiz', 'blank', 'climax', 'scare', 'red'];
+
+function $(id) { return document.getElementById(id); }
+
+function show(name) {
+  SCREENS.forEach(function (s) { $(s).classList.add('hidden'); });
+  $(name).classList.remove('hidden');
+}
+
+function fmt(ms) { return (ms / 1000).toFixed(1); }
+
+function setT(fn, ms) {
+  var id = setTimeout(function () {
+    state.timers.splice(state.timers.indexOf(id), 1);
+    fn();
+  }, ms);
+  state.timers.push(id);
+  return id;
+}
+
+function clearTimers() {
+  state.timers.forEach(function (id) { clearTimeout(id); });
+  state.timers = [];
+}
+
+function recordClick() {
+  var now = Date.now();
+  if (state.lastClickAt) {
+    data.clickIntervals.push({ from: state.lastClickAt, to: now, interval: now - state.lastClickAt });
+  }
+  state.lastClickAt = now;
+}
+
+for (var qi = 0; qi < 24; qi++) {
+  data.questions.push({ index: qi, enterTime: 0, duration: 0, hoverTime: 0, answerChanges: 0, answer: -1 });
+}
+
+function speakData(text, pitch, rate) {
+  if (!('speechSynthesis' in window)) return;
+  var u = new SpeechSynthesisUtterance(text);
+  u.pitch = (pitch === undefined) ? 0.2 : pitch;
+  u.rate = (rate === undefined) ? 0.5 : rate;
+  u.volume = 0.9;
+  u.lang = 'zh-CN';
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(u);
+}
+
+function escalatingSpeak(text, count) {
+  var i = 0;
+  function play() {
+    if (i >= count || state.skipClimax) return;
+    speakData(text, 0.3 + i * 0.18, 0.7 + i * 0.45);
+    i++;
+    setT(play, Math.max(400, 1400 - i * 200));
+  }
+  play();
+}
+
+function makeDistortionCurve(k) {
+  var n = 44100, curve = new Float32Array(n);
+  for (var i = 0; i < n; i++) {
+    var x = i * 2 / n - 1;
+    curve[i] = (3 + k) * x * 20 * Math.PI / 180 / (Math.PI + k * Math.abs(x));
+  }
+  return curve;
+}
+
+function makeDrone() {
+  var sr = ctx.sampleRate, len = sr * 8;
+  var buf = ctx.createBuffer(1, len, sr), d = buf.getChannelData(0);
+  var seed = Math.floor(Math.random() * 1000);
+  for (var i = 0; i < len; i++) {
+    var t = i / sr;
+    var vib = Math.sin(2 * Math.PI * 4 * t) * 0.6;
+    var f1 = 55 + vib, f2 = 110 + vib * 0.5, f3 = 164.8, f4 = 220.3;
+    var v = Math.sin(2 * Math.PI * f1 * t) * 0.34
+          + Math.sin(2 * Math.PI * f2 * t) * 0.28
+          + Math.sin(2 * Math.PI * f3 * t) * 0.18
+          + Math.sin(2 * Math.PI * f4 * t) * 0.1;
+    var lfo = 0.7 + 0.3 * Math.sin(2 * Math.PI * 0.15 * t + seed);
+    d[i] = v * 0.8 * lfo;
+  }
+  return buf;
+}
+
+function makeFragment() {
+  var sr = ctx.sampleRate, len = Math.floor(sr * 0.5);
+  var buf = ctx.createBuffer(1, len, sr), d = buf.getChannelData(0);
+  for (var i = 0; i < len; i++) {
+    var t = i / sr;
+    d[i] = Math.sin(2 * Math.PI * 49 * t) * 0.6
+         + Math.sin(2 * Math.PI * 98.2 * t) * 0.3
+         + (Math.random() * 2 - 1) * 0.05;
+  }
+  return buf;
+}
+
+function initAudio() {
+  var AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC || ctx) return;
+  ctx = new AC();
+
+  masterGain = ctx.createGain();
+  masterGain.gain.value = 0.3;
+  masterGain.connect(ctx.destination);
+
+  lowpass = ctx.createBiquadFilter();
+  lowpass.type = 'lowpass';
+  lowpass.frequency.value = 800;
+
+  shaper = ctx.createWaveShaper();
+  shaper.curve = makeDistortionCurve(18);
+  lowpass.connect(shaper);
+
+  bgmGain = ctx.createGain();
+  bgmGain.gain.value = 0;
+  shaper.connect(bgmGain);
+  bgmGain.connect(masterGain);
+
+  droneBuf = makeDrone();
+  fragBuf = makeFragment();
+
+  resumeCtx();
+}
+
+function resumeCtx() {
+  if (!ctx) return;
+  if (ctx.state !== 'running') {
+    try {
+      var p = ctx.resume();
+      if (p && p['catch']) p['catch'](function () {});
+    } catch (e) {}
+  }
+}
+
+function setBgm(mode) {
+  if (!ctx) return;
+  resumeCtx();
+  if (bgmSrc) { try { bgmSrc.stop(); } catch (e) {} bgmSrc = null; }
+  var buf = null, rate = 1, ramp = false;
+  if (mode === 'weak') {
+    buf = droneBuf; rate = 1; bgmGain.gain.value = 0.15;
+    lowpass.frequency.value = 800;
+  } else if (mode === 'broken') {
+    buf = fragBuf; rate = 0.85; bgmGain.gain.value = 0.18;
+    lowpass.frequency.value = 900;
+  } else if (mode === 'urgent') {
+    buf = droneBuf; ramp = true; bgmGain.gain.value = 0.23;
+    lowpass.frequency.value = 1500;
+  } else if (mode === 'full') {
+    buf = droneBuf; rate = 3.0; bgmGain.gain.value = 0.28;
+    lowpass.frequency.value = 2600;
+  } else {
+    bgmGain.gain.value = 0;
+    return;
+  }
+  bgmSrc = ctx.createBufferSource();
+  bgmSrc.buffer = buf;
+  bgmSrc.loop = true;
+  bgmSrc.connect(lowpass);
+  var t = ctx.currentTime;
+  if (ramp) {
+    bgmSrc.playbackRate.setValueAtTime(1.0, t);
+    bgmSrc.playbackRate.linearRampToValueAtTime(1.5, t + 12);
+  } else {
+    bgmSrc.playbackRate.value = rate;
+  }
+  bgmSrc.start(0);
+}
+
+function startBuzz(freq) {
+  if (!ctx) return;
+  if (!buzzOsc) {
+    buzzOsc = ctx.createOscillator();
+    buzzOsc.type = 'sine';
+    buzzGain = ctx.createGain();
+    buzzGain.gain.value = 0;
+    buzzOsc.connect(buzzGain);
+    buzzGain.connect(masterGain);
+    buzzOsc.start();
+  }
+  buzzOsc.frequency.value = freq;
+  buzzGain.gain.value = 0.07;
+}
+
+function stopBuzz() { if (buzzGain) buzzGain.gain.value = 0; }
+
+function scareBurst() {
+  if (!ctx) return;
+  var sr = ctx.sampleRate, len = Math.floor(sr * 0.22);
+  var buf = ctx.createBuffer(1, len, sr), d = buf.getChannelData(0);
+  for (var i = 0; i < len; i++) {
+    var p = i / len;
+    var f = 320 - 240 * p;
+    d[i] = Math.sin(2 * Math.PI * f * i / sr) * 0.5 + (Math.random() * 2 - 1) * 0.35;
+  }
+  var src = ctx.createBufferSource();
+  src.buffer = buf;
+  var g = ctx.createGain();
+  g.gain.value = 0.55;
+  src.connect(g);
+  g.connect(ctx.destination);
+  src.start();
+}
+
+function refillOptionHover(i) {
+  if (state.hoverStart) {
+    data.questions[i].hoverTime += Date.now() - state.hoverStart;
+    state.hoverStart = 0;
+  }
+}
+
+function updateProgress() {
+  $('progress').textContent = state.idx + ' / 24';
+}
+
+function applyStage(i) {
+  var b = document.body;
+  if (i === 4) {
+    b.style.background = '#f7f7f7';
+    $('progress').classList.remove('hidden');
+    updateProgress();
+    setBgm('weak');
+  } else if (i === 8) {
+    b.style.background = '#f5f5f5';
+    setBgm('broken');
+  } else if (i === 12) {
+    b.style.background = '#f3f3f3';
+    setBgm('urgent');
+    startBuzz(35);
+  } else if (i === 16) {
+    b.style.background = '#f0f0f0';
+  } else if (i === 20) {
+    setBgm('full');
+    startBuzz(25);
+  } else if (i === 22) {
+    if (ctx && ctx.state === 'running') { ctx.suspend(); }
+    stopBuzz();
+    if (bgmSrc) { try { bgmSrc.stop(); } catch (e) {} bgmSrc = null; }
+  }
+}
+
+function sub17() { return '第14题 你用了 ' + fmt(data.questions[13].duration) + ' 秒。'; }
+function sub18() {
+  var r = data.questions[10];
+  var core = '第11题 你用了 ' + fmt(r.duration) + ' 秒。';
+  return r.answerChanges > 0 ? (core + '你改动了 ' + r.answerChanges + ' 次。') : (core + '你一次也没有改。');
+}
+function sub19() {
+  var n = data.tabSwitches.length, sum = 0, i;
+  for (i = 0; i < n; i++) sum += data.tabSwitches[i].duration;
+  return '你切走了 ' + n + ' 次，共 ' + fmt(sum) + ' 秒。';
+}
+function sub20() {
+  var dur = data.questions[18].duration;
+  return '第19题 你用了 ' + fmt(dur) + ' 秒。你' + (dur < 900 ? '没有犹豫。' : '犹豫了。');
+}
+
+function renderOptions(i) {
+  var box = $('options');
+  box.innerHTML = '';
+  var opts = QUESTION_OPTIONS[i];
+  opts.forEach(function (text, k) {
+    var b = document.createElement('button');
+    b.className = 'opt';
+    b.textContent = text;
+    b.addEventListener('mouseenter', function () {
+      if (!state.hoverStart) state.hoverStart = Date.now();
+    });
+    b.addEventListener('mouseleave', function () {
+      if (state.hoverStart) {
+        data.questions[state.idx].hoverTime += Date.now() - state.hoverStart;
+        state.hoverStart = 0;
+      }
+    });
+    b.addEventListener('click', function () {
+      var sels = box.querySelectorAll('.opt.sel');
+      if (state.selected === k) {
+        state.selected = -1;
+        state.answerChanges++;
+      } else {
+        if (state.selected !== -1) state.answerChanges++;
+        state.selected = k;
+      }
+      for (var m = 0; m < sels.length; m++) sels[m].classList.remove('sel');
+      if (state.selected !== -1) b.classList.add('sel');
+      $('next').disabled = (state.selected === -1);
+      recordClick();
+    });
+    box.appendChild(b);
+  });
+}
+
+function renderQuiz(i) {
+  var q = QUESTIONS[i];
+  show('quiz');
+  $('qtext').innerHTML = '';
+  $('qtext').appendChild(document.createTextNode(q.t));
+
+  var sub = '';
+  if (i === 16) sub = sub17();
+  else if (i === 17) sub = sub18();
+  else if (i === 18) sub = sub19();
+  else if (i === 19) sub = sub20();
+
+  if (sub) {
+    var s = document.createElement('span');
+    s.className = 'sub';
+    s.textContent = sub;
+    $('qtext').appendChild(s);
+  }
+
+  if (i === 23) {
+    $('options').innerHTML = '';
+    $('next').disabled = true;
+    $('next').textContent = '关闭';
+    $('next').disabled = false;
+    $('next').onclick = fakeClose;
+    setT(notifyAfter20s, 20000);
+    hookNotificationGesture();
+    return;
+  }
+
+  $('next').textContent = '下一题';
+  $('next').disabled = true;
+  $('next').onclick = function () { advance(); };
+  renderOptions(i);
+
+  if (sub) {
+    setT(function () { speakData(sub, 0.2, 0.55); }, 1500);
+  }
+}
+
+function renderBlank(i) {
+  show('blank');
+  setT(function () { advance(); }, QUESTIONS[i].blankSec * 1000);
+}
+
+function renderQuestion(i) {
+  state.idx = i;
+  state.selected = -1;
+  state.answerChanges = 0;
+  state.hoverStart = 0;
+  var rec = data.questions[i];
+  rec.enterTime = Date.now();
+  if (i >= 4) updateProgress();
+  applyStage(i);
+  if (QUESTIONS[i].blank) { renderBlank(i); return; }
+  renderQuiz(i);
+}
+
+function advance() {
+  var i = state.idx;
+  var rec = data.questions[i];
+  rec.duration = Date.now() - rec.enterTime;
+  rec.answerChanges = state.answerChanges;
+  rec.answer = state.selected;
+  refillOptionHover(i);
+  recordClick();
+
+  if (i === 21) { startClimax(); return; }
+
+  var n = i + 1;
+  if (n < 24) renderQuestion(n);
+}
+
+function printWaves(w, k, n) {
+  if (state.skipClimax) return;
+  if (w >= WAVES.length) {
+    setT(staticThenScare, 3500);
+    return;
+  }
+  var line = document.createElement('div');
+  line.className = 'cl-line';
+  line.textContent = WAVES[w].text;
+  $('climax').appendChild(line);
+  k++;
+  if (k < WAVES[w].count) {
+    var delay = Math.max(50, 800 - n * 28);
+    setT(function () { printWaves(w, k, n + 1); }, delay);
+  } else {
+    setT(function () { printWaves(w + 1, 0, n + 1); }, 60);
+  }
+}
+
+function startClimax() {
+  state.climaxMode = true;
+  state.skipClimax = false;
+  setBgm('full');
+  stopBuzz();
+  show('climax');
+  $('climax').innerHTML = '';
+  escalatingSpeak('我不想在这了', 6);
+  printWaves(0, 0, 0);
+}
+
+function staticThenScare() {
+  if (state.skipClimax) return;
+  var scareBox = $('scare');
+  scareBox.innerHTML = '';
+  var words = ['我不想在这了', '我想死', '死死死', '冤冤冤', '你回头', '看不见我', '后身', '你还在吗'];
+  for (var i = 0; i < 120; i++) {
+    var s = document.createElement('div');
+    s.className = 'noise-line';
+    s.style.fontSize = (10 + Math.random() * 22) + 'px';
+    var w = words[Math.floor(Math.random() * words.length)];
+    s.textContent = w + '  ';
+    scareBox.appendChild(s);
+  }
+  show('scare');
+  if ('speechSynthesis' in window) {
+    speakData('我不想在这了', 0, 3.0);
+  }
+  scareBox.classList.add('flash');
+  setT(function () { scareBox.classList.remove('flash'); }, 100);
+  setT(startStrobe, 550);
+  setT(advanceAfterClimax, 1300);
+}
+
+function startStrobe() {
+  if (state.skipClimax) return;
+  var colors = ['#ff0000', '#000000', '#ff0000', '#000000', '#ff0000', '#000000'];
+  var i = 0;
+  function tick() {
+    if (state.skipClimax) return;
+    if (i >= colors.length) {
+      $('scare').style.background = '';
+      return;
+    }
+    $('scare').style.background = colors[i++];
+    setT(tick, 70);
+  }
+  tick();
+}
+
+function advanceAfterClimax() {
+  state.climaxMode = false;
+  state.skipClimax = false;
+  $('scare').style.background = '';
+  $('scare').classList.remove('flash');
+  if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); }
+  renderQuestion(22);
+}
+
+function skipFromKey(e) {
+  if (e.key === 'Escape' && state.climaxMode && !state.skipClimax) {
+    state.skipClimax = true;
+    clearTimers();
+    advanceAfterClimax();
+  }
+}
+
+function fireNotif() {
+  if (state.notified) return;
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  try {
+    new Notification('心理健康自评', { body: '我会记得你。' });
+    state.notified = true;
+  } catch (e) {}
+}
+
+function notifyAfter20s() {
+  fireNotif();
+  if (!('Notification' in window) || Notification.permission !== 'default') return;
+  try {
+    var req = Notification.requestPermission();
+    if (req && req.then) {
+      req.then(function (p) {
+        data.permissions.notification = p;
+        fireNotif();
+      })['catch'](function () {});
+    }
+  } catch (e) {}
+}
+
+function hookNotificationGesture() {
+  document.addEventListener('click', function () {
+    if (!('Notification' in window) || Notification.permission !== 'default' || state.notified) return;
+    try {
+      var req = Notification.requestPermission();
+      if (req && req.then) {
+        req.then(function (p) {
+          data.permissions.notification = p;
+          fireNotif();
+        })['catch'](function () {});
+      }
+    } catch (e) {}
+  }, { once: true, capture: true });
+}
+
+function whisper() {
+  if (!('speechSynthesis' in window)) return;
+  var u = new SpeechSynthesisUtterance('你确定吗');
+  u.pitch = 1.4; u.rate = 1.7; u.volume = 0.12; u.lang = 'zh-CN';
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(u);
+}
+
+function speakTimes(text, count, gap) {
+  if (!('speechSynthesis' in window)) return;
+  var i = 0;
+  function one() {
+    if (i >= count) return;
+    var u = new SpeechSynthesisUtterance(text);
+    u.pitch = 0.7; u.rate = 0.9; u.volume = 0.8; u.lang = 'zh-CN';
+    window.speechSynthesis.speak(u);
+    i++;
+    setTimeout(one, gap);
+  }
+  one();
+}
+
+function fakeClose() {
+  var red = $('red');
+  red.querySelectorAll('.tiny').forEach(function (t) { t.remove(); });
+  show('red');
+  recordClick();
+  whisper();
+  fireNotif();
+  speakTimes('我好孤独', 10, 650);
+  setTimeout(function () {
+    try { window.close(); } catch (e) {}
+  }, 900);
+  setTimeout(function () {
+    if (red.classList.contains('hidden')) return;
+    var t = document.createElement('div');
+    t.className = 'tiny';
+    t.textContent = '页面未自动关闭时，请手动关闭标签页。';
+    red.appendChild(t);
+  }, 1300);
+}
+
+function doTabScare(ms) {
+  var scareBox = $('scare');
+  scareBox.innerHTML = '';
+  var big = document.createElement('div');
+  big.className = 'big';
+  big.textContent = '你离开了 ' + fmt(ms) + ' 秒。我一直在等。';
+  scareBox.appendChild(big);
+  show('scare');
+  scareBurst();
+  scareBox.classList.add('flash');
+  setT(function () { scareBox.classList.remove('flash'); }, 100);
+  setT(function () {
+    if (state.climaxMode) return;
+    show('quiz');
+    var i = state.idx;
+    $('next').onclick = i === 23 ? fakeClose : function () { advance(); };
+  }, 900);
+}
+
+function registerBg() {
+  document.addEventListener('click', function () { resumeCtx(); }, true);
+  document.addEventListener('keydown', function () { resumeCtx(); }, true);
+
+  document.addEventListener('visibilitychange', function () {
+    if (!state.hasInteracted) return;
+    if (document.visibilityState === 'hidden') {
+      hiddenAt = Date.now();
+      return;
+    }
+    if (hiddenAt) {
+      var now = Date.now();
+      data.tabSwitches.push({ leaveTime: hiddenAt, returnTime: now, duration: now - hiddenAt });
+      var wasHidden = hiddenAt;
+      hiddenAt = 0;
+      if (!state.climaxMode && state.idx >= 16 && state.idx <= 19) {
+        doTabScare(now - wasHidden);
+      }
+    }
+  });
+
+  window.addEventListener('beforeunload', function () {
+    if (state.hasInteracted) {
+      data.exitTime = Date.now();
+      if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); }
+    }
+  });
+}
+
+document.addEventListener('keydown', skipFromKey);
+
+$('startBtn').addEventListener('click', function () {
+  if (state.hasInteracted) return;
+  state.hasInteracted = true;
+  if ('Notification' in window && Notification.permission === 'default') {
+    try {
+      var req = Notification.requestPermission();
+      if (req && req.then) {
+        req.then(function (p) { data.permissions.notification = p; })['catch'](function () { data.permissions.notification = 'denied'; });
+      }
+    } catch (e) { data.permissions.notification = 'denied'; }
+  }
+  initAudio();
+  try {
+    if (document.documentElement.requestFullscreen) {
+      var p = document.documentElement.requestFullscreen();
+      if (p && p['catch']) p['catch'](function () {});
+    }
+  } catch (e) {}
+  data.startedAt = Date.now();
+  registerBg();
+  renderQuestion(0);
+});
+
+$('exitBtn').addEventListener('click', fakeClose);
+
+})();
+</script>
+</body>
+</html>
