@@ -233,7 +233,8 @@ var state = {
 };
 
 var ctx = null, masterGain = null, lowpass = null, shaper = null;
-var bgmGain = null, bgmSrc = null, droneBuf = null, fragBuf = null;
+var bgmGain = null, bgmSrc = null, mp3Buf = null;
+var lowOsc = null, lowOscGain = null;
 var buzzOsc = null, buzzGain = null;
 var hiddenAt = 0;
 
@@ -305,36 +306,6 @@ function makeDistortionCurve(k) {
   return curve;
 }
 
-function makeDrone() {
-  var sr = ctx.sampleRate, len = sr * 8;
-  var buf = ctx.createBuffer(1, len, sr), d = buf.getChannelData(0);
-  var seed = Math.floor(Math.random() * 1000);
-  for (var i = 0; i < len; i++) {
-    var t = i / sr;
-    var vib = Math.sin(2 * Math.PI * 4 * t) * 0.6;
-    var f1 = 55 + vib, f2 = 110 + vib * 0.5, f3 = 164.8, f4 = 220.3;
-    var v = Math.sin(2 * Math.PI * f1 * t) * 0.34
-          + Math.sin(2 * Math.PI * f2 * t) * 0.28
-          + Math.sin(2 * Math.PI * f3 * t) * 0.18
-          + Math.sin(2 * Math.PI * f4 * t) * 0.1;
-    var lfo = 0.7 + 0.3 * Math.sin(2 * Math.PI * 0.15 * t + seed);
-    d[i] = v * 0.8 * lfo;
-  }
-  return buf;
-}
-
-function makeFragment() {
-  var sr = ctx.sampleRate, len = Math.floor(sr * 0.5);
-  var buf = ctx.createBuffer(1, len, sr), d = buf.getChannelData(0);
-  for (var i = 0; i < len; i++) {
-    var t = i / sr;
-    d[i] = Math.sin(2 * Math.PI * 49 * t) * 0.6
-         + Math.sin(2 * Math.PI * 98.2 * t) * 0.3
-         + (Math.random() * 2 - 1) * 0.05;
-  }
-  return buf;
-}
-
 function initAudio() {
   var AC = window.AudioContext || window.webkitAudioContext;
   if (!AC || ctx) return;
@@ -357,10 +328,28 @@ function initAudio() {
   shaper.connect(bgmGain);
   bgmGain.connect(masterGain);
 
-  droneBuf = makeDrone();
-  fragBuf = makeFragment();
+  lowOscGain = ctx.createGain();
+  lowOscGain.gain.value = 0;
+  lowOscGain.connect(lowpass);
+
+  lowOsc = ctx.createOscillator();
+  lowOsc.type = 'sine';
+  lowOsc.frequency.value = 55;
+  lowOsc.connect(lowOscGain);
+  lowOsc.start();
 
   resumeCtx();
+
+  try {
+    fetch('resource/began.mp3')
+      .then(function (r) {
+        if (!r.ok) throw new Error('fetch failed');
+        return r.arrayBuffer();
+      })
+      .then(function (buf) { return ctx.decodeAudioData(buf); })
+      .then(function (decoded) { mp3Buf = decoded; })
+      ['catch'](function () { mp3Buf = null; });
+  } catch (e) { mp3Buf = null; }
 }
 
 function resumeCtx() {
@@ -377,35 +366,65 @@ function setBgm(mode) {
   if (!ctx) return;
   resumeCtx();
   if (bgmSrc) { try { bgmSrc.stop(); } catch (e) {} bgmSrc = null; }
-  var buf = null, rate = 1, ramp = false;
+  var rate = 1, ramp = false;
   if (mode === 'weak') {
-    buf = droneBuf; rate = 1; bgmGain.gain.value = 0.15;
+    bgmGain.gain.value = 0.15;
     lowpass.frequency.value = 800;
+    lowOscGain.gain.value = 0.04;
   } else if (mode === 'broken') {
-    buf = fragBuf; rate = 0.85; bgmGain.gain.value = 0.18;
+    bgmGain.gain.value = 0.18;
     lowpass.frequency.value = 900;
+    lowOscGain.gain.value = 0.06;
+    rate = 0.85;
   } else if (mode === 'urgent') {
-    buf = droneBuf; ramp = true; bgmGain.gain.value = 0.23;
+    bgmGain.gain.value = 0.23;
     lowpass.frequency.value = 1500;
+    lowOscGain.gain.value = 0.08;
+    ramp = true;
   } else if (mode === 'full') {
-    buf = droneBuf; rate = 3.0; bgmGain.gain.value = 0.28;
+    bgmGain.gain.value = 0.28;
     lowpass.frequency.value = 2600;
+    lowOscGain.gain.value = 0.08;
+    rate = 3.0;
   } else {
     bgmGain.gain.value = 0;
+    lowOscGain.gain.value = 0;
     return;
   }
-  bgmSrc = ctx.createBufferSource();
-  bgmSrc.buffer = buf;
-  bgmSrc.loop = true;
-  bgmSrc.connect(lowpass);
-  var t = ctx.currentTime;
-  if (ramp) {
-    bgmSrc.playbackRate.setValueAtTime(1.0, t);
-    bgmSrc.playbackRate.linearRampToValueAtTime(1.5, t + 12);
-  } else {
-    bgmSrc.playbackRate.value = rate;
+
+  lowOsc.frequency.value = (mode === 'full') ? 50 : 55;
+
+  if (mp3Buf) {
+    bgmSrc = ctx.createBufferSource();
+    bgmSrc.buffer = mp3Buf;
+    bgmSrc.loop = true;
+
+    if (mode === 'broken') {
+      var sr = ctx.sampleRate;
+      var off = Math.min(Math.floor(sr * 2), Math.floor(sr * mp3Buf.duration * 0.4));
+      var len = Math.floor(sr * 0.5);
+      if (len > 0 && off + len <= mp3Buf.length) {
+        var frag = ctx.createBuffer(mp3Buf.numberOfChannels, len, sr);
+        for (var ch = 0; ch < mp3Buf.numberOfChannels; ch++) {
+          var src = mp3Buf.getChannelData(ch);
+          var dst = frag.getChannelData(ch);
+          for (var i = 0; i < len; i++) dst[i] = src[off + i];
+        }
+        bgmSrc.buffer = frag;
+        bgmSrc.loop = true;
+      }
+    }
+
+    var t = ctx.currentTime;
+    if (ramp) {
+      bgmSrc.playbackRate.setValueAtTime(1.0, t);
+      bgmSrc.playbackRate.linearRampToValueAtTime(1.5, t + 12);
+    } else {
+      bgmSrc.playbackRate.value = rate;
+    }
+    bgmSrc.connect(lowpass);
+    bgmSrc.start(0);
   }
-  bgmSrc.start(0);
 }
 
 function startBuzz(freq) {
