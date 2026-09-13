@@ -1092,6 +1092,8 @@ function advance() {
   refillOptionHover(i);
   recordClick();
 
+  if (i === 0) stopRepeatSpeak();
+
   if (i === 21) { startClimax(); return; }
 
   var n = i + 1;
