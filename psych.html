@@ -242,6 +242,7 @@ var state = {
   notified: false,
   returnCount: 1,
   repeatId: 0,
+  speech: 'tts',
   timers: []
 };
 
@@ -288,7 +289,63 @@ for (var qi = 0; qi < 24; qi++) {
   data.questions.push({ index: qi, enterTime: 0, duration: 0, hoverTime: 0, answerChanges: 0, answer: -1 });
 }
 
+function probeSpeech(cb) {
+  if (!('speechSynthesis' in window)) { cb(false); return; }
+  var V = window.speechSynthesis;
+  var resolved = false;
+  function done(ok) { if (!resolved) { resolved = true; cb(ok); } }
+  try {
+    var voices = (V.getVoices ? V.getVoices() : []);
+    if (voices.length) { done(true); return; }
+  } catch (e) {}
+  try {
+    var u = new SpeechSynthesisUtterance(' ');
+    u.onstart = function () { done(true); };
+    u.onend = function () { done(true); };
+    u.onerror = function () {};
+    V.speak(u);
+  } catch (e) {}
+  if (V.addEventListener) {
+    var h = function () {
+      try {
+        if (V.getVoices && V.getVoices().length) {
+          if (V.removeEventListener) V.removeEventListener('voiceschanged', h);
+          done(true);
+        }
+      } catch (e) {}
+    };
+    V.addEventListener('voiceschanged', h);
+  }
+  setT(function () { done(false); }, 800);
+}
+
+var VOICE_FALLBACK = {
+  '陪陪我吧': 'resource/voice/peipeiwo.mp3',
+  '我好孤独': 'resource/voice/haogudu.mp3',
+  '我不想在这了': 'resource/voice/buxiang.mp3'
+};
+var voicePlayers = {};
+
+function playVoiceMp3(text, rate) {
+  var src = VOICE_FALLBACK[text] || 'resource/voice/heng.mp3';
+  var a = voicePlayers[src];
+  if (!a) {
+    a = new Audio(src);
+    a.preload = 'auto';
+    a.volume = 0.9;
+    voicePlayers[src] = a;
+  }
+  try {
+    a.currentTime = 0;
+    if (rate) a.playbackRate = Math.max(0.5, Math.min(1.4, rate));
+    var p = a.play();
+    if (p && p['catch']) p['catch'](function () {});
+  } catch (e) {}
+  return a;
+}
+
 function speakData(text, pitch, rate) {
+  if (state.speech === 'mp3') { playVoiceMp3(text, rate); return; }
   if (!('speechSynthesis' in window)) return;
   var u = new SpeechSynthesisUtterance(text);
   u.pitch = (pitch === undefined) ? 0.2 : pitch;
@@ -816,6 +873,7 @@ function hookNotificationGesture() {
 }
 
 function whisper() {
+  if (state.speech === 'mp3') { playVoiceMp3('', 0.3); return; }
   if (!('speechSynthesis' in window)) return;
   var u = new SpeechSynthesisUtterance('你确定吗');
   u.pitch = 1.4; u.rate = 1.7; u.volume = 0.12; u.lang = 'zh-CN';
@@ -824,6 +882,17 @@ function whisper() {
 }
 
 function speakTimes(text, count, gap) {
+  if (state.speech === 'mp3') {
+    var i = 0;
+    function oneMp3() {
+      if (i >= count) return;
+      playVoiceMp3(text, 1);
+      i++;
+      setTimeout(oneMp3, (gap || 650) + 450);
+    }
+    oneMp3();
+    return;
+  }
   if (!('speechSynthesis' in window)) return;
   var i = 0;
   function one() {
@@ -838,6 +907,15 @@ function speakTimes(text, count, gap) {
 }
 
 function repeatSpeak(text, gap) {
+  if (state.speech === 'mp3') {
+    function oneMp3() {
+      if (state.skipClimax) return;
+      playVoiceMp3(text, 0.9);
+      state.repeatId = setTimeout(oneMp3, (gap || 1600) + 600);
+    }
+    oneMp3();
+    return;
+  }
   if (!('speechSynthesis' in window)) return;
   function one() {
     if (state.skipClimax) return;
@@ -852,6 +930,7 @@ function repeatSpeak(text, gap) {
 
 function stopRepeatSpeak() {
   if (state.repeatId) { clearTimeout(state.repeatId); state.repeatId = 0; }
+  if (state.speech === 'mp3') { return; }
   if ('speechSynthesis' in window) window.speechSynthesis.cancel();
 }
 
@@ -963,7 +1042,10 @@ $('startBtn').addEventListener('click', function () {
   } catch (e) {}
   data.startedAt = Date.now();
   registerBg();
-  renderQuestion(0);
+  probeSpeech(function (ok) {
+    state.speech = ok ? 'tts' : 'mp3';
+    renderQuestion(0);
+  });
 });
 
 $('exitBtn').addEventListener('click', fakeClose);
