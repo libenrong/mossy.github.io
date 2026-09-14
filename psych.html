@@ -596,17 +596,17 @@ function stopBuzz() { if (buzzGain) buzzGain.gain.value = 0; }
 
 function scareBurst() {
   if (!ctx) return;
-  var sr = ctx.sampleRate, len = Math.floor(sr * 0.22);
+  var sr = ctx.sampleRate, len = Math.floor(sr * 0.25);
   var buf = ctx.createBuffer(1, len, sr), d = buf.getChannelData(0);
   for (var i = 0; i < len; i++) {
     var p = i / len;
-    var f = 320 - 240 * p;
-    d[i] = Math.sin(2 * Math.PI * f * i / sr) * 0.5 + (Math.random() * 2 - 1) * 0.35;
+    var f = 400 - 300 * p;
+    d[i] = Math.sin(2 * Math.PI * f * i / sr) * 0.5 + (Math.random() * 2 - 1) * 0.3 * (1 - p);
   }
   var src = ctx.createBufferSource();
   src.buffer = buf;
   var g = ctx.createGain();
-  g.gain.value = 0.55;
+  g.gain.value = 0.45;
   src.connect(g);
   g.connect(ctx.destination);
   src.start();
@@ -614,7 +614,7 @@ function scareBurst() {
 
 function humanRoar() {
   if (!ctx) return;
-  var sr = ctx.sampleRate, dur = 1.1, len = Math.floor(sr * dur);
+  var sr = ctx.sampleRate, dur = 0.5, len = Math.floor(sr * dur);
   var buf = ctx.createBuffer(1, len, sr), d = buf.getChannelData(0);
   var t0 = ctx.currentTime + 0.03;
   var phase = 0;
@@ -629,13 +629,13 @@ function humanRoar() {
     var growl = Math.sin(2 * Math.PI * (55 + 35 * p) * t) * 0.5;
     var v = vibr * 0.72 + growl * 0.5 + harsh * (0.85 - 0.4 * p);
     v = Math.tanh(v * 2.2);
-    var env = Math.min(1, p / 0.08) * (1 - (p > 0.7 ? (p - 0.7) / 0.3 : 0)) * 0.9;
+    var env = Math.min(1, p / 0.04) * (1 - (p > 0.7 ? (p - 0.7) / 0.3 : 0)) * 0.9;
     d[i] = v * env;
   }
   var src = ctx.createBufferSource();
   src.buffer = buf;
   var g = ctx.createGain();
-  g.gain.value = 1.0;
+  g.gain.value = 0.6;
   src.connect(g);
   g.connect(ctx.destination);
   src.start(t0);
@@ -685,9 +685,17 @@ function stopHeart() {
 }
 
 function heartBpmFor(i) {
-  if (i >= 20) return 140;
-  if (i >= 16) return 120;
-  if (i >= 12) return 100;
+  var avgSpeed = 0, n = 0;
+  for (var j = Math.max(0, i - 4); j < i; j++) {
+    if (data.questions[j].duration) {
+      avgSpeed += data.questions[j].duration;
+      n++;
+    }
+  }
+  if (n) avgSpeed = avgSpeed / n;
+  if (avgSpeed < 1000) return 130;
+  if (avgSpeed < 2000) return 110;
+  if (avgSpeed < 4000) return 90;
   return 72;
 }
 
@@ -745,20 +753,26 @@ function applyStage(i) {
   }
 }
 
-function sub17() { return '第14题 你用了 ' + fmt(data.questions[13].duration) + ' 秒。'; }
+function sub17() {
+  var d = data.questions[13].duration;
+  var avg = 1400;
+  var diff = d > avg ? '慢了 ' + fmt(d - avg) + ' 秒' : '快了 ' + fmt(avg - d) + ' 秒';
+  return '第14题 你用了 ' + fmt(d) + ' 秒。平均用时 1.4 秒。你' + diff + '。';
+}
 function sub18() {
   var r = data.questions[10];
-  var core = '第11题 你用了 ' + fmt(r.duration) + ' 秒。';
-  return r.answerChanges > 0 ? (core + '你改动了 ' + r.answerChanges + ' 次。') : (core + '你一次也没有改。');
+  var avg = 3;
+  var core = '第11题 你改动了 ' + r.answerChanges + ' 次。平均 3 次。';
+  return r.answerChanges > avg ? core + '你比别人犹豫。' : core + '你比别人果断。';
 }
 function sub19() {
   var n = data.tabSwitches.length, sum = 0, i;
   for (i = 0; i < n; i++) sum += data.tabSwitches[i].duration;
-  return '你切走了 ' + n + ' 次，共 ' + fmt(sum) + ' 秒。';
+  return '你切走了 ' + n + ' 次，共 ' + fmt(sum) + ' 秒。没有人切走这么多次。';
 }
 function sub20() {
   var dur = data.questions[18].duration;
-  return '第19题 你用了 ' + fmt(dur) + ' 秒。你' + (dur < 900 ? '没有犹豫。' : '犹豫了。');
+  return '第19题 你用了 ' + fmt(dur) + ' 秒。' + (dur < 900 ? '你甚至没有犹豫。' : '你犹豫了。别人都很快。');
 }
 
 function renderOptions(i, usedOpts) {
@@ -893,7 +907,18 @@ function renderQuiz(i) {
   show('quiz');
   if (i === 0 && state.returnCount > 1) {
     $('qtext').innerHTML = '';
-    $('qtext').appendChild(document.createTextNode('果然你还会回来'));
+    var returnTexts = ['', '果然你还会回来', '你又来了。', '你离不开这里。', '你还想试几次？'];
+    var txt = returnTexts[Math.min(state.returnCount - 1, 4)];
+    $('qtext').appendChild(document.createTextNode(txt));
+    try {
+      var lastTime = localStorage.getItem('psych-last-time');
+      if (lastTime) {
+        var sub = document.createElement('span');
+        sub.className = 'sub';
+        sub.textContent = '上次你用了 ' + lastTime + ' 秒。';
+        $('qtext').appendChild(sub);
+      }
+    } catch (e) {}
     $('next').textContent = '下一题';
     $('next').disabled = true;
     $('next').onclick = function () { advance(); };
@@ -932,6 +957,29 @@ function renderQuiz(i) {
     $('qtext').appendChild(s);
   }
 
+  if (i >= 12 && i <= 15) {
+    setT(function () {
+      var qt = $('qtext');
+      var node = qt.childNodes[0];
+      if (!node || !node.nodeValue) return;
+      var original = node.nodeValue;
+      var disguised = original.replace('忈', '望').replace('惢', '惧').replace('██', '绝');
+      if (disguised === original) return;
+      node.nodeValue = disguised;
+      var flickerCount = 0;
+      var flicker = setInterval(function () {
+        node.nodeValue = flickerCount % 2 === 0 ? original : disguised;
+        flickerCount++;
+        if (flickerCount > 6) {
+          clearInterval(flicker);
+          node.nodeValue = original;
+          qt.style.textShadow = '0 0 8px rgba(0,0,0,0.15), 1px 0 0 rgba(0,0,0,0.08), -1px 0 0 rgba(0,0,0,0.08)';
+          setT(function () { qt.style.textShadow = ''; }, 2000);
+        }
+      }, 80);
+    }, 2000);
+  }
+
   if (i === 23) {
     $('options').innerHTML = '';
     $('next').disabled = true;
@@ -940,6 +988,7 @@ function renderQuiz(i) {
     $('next').onclick = fakeClose;
     setT(notifyAfter20s, 20000);
     hookNotificationGesture();
+    try { localStorage.setItem('psych-last-time', fmt(Date.now() - data.startedAt)); } catch (e) {}
     renderReport();
     return;
   }
@@ -1069,14 +1118,16 @@ function staticThenScare() {
     scareBox.appendChild(s);
   }
   show('scare');
-  humanRoar();
-  if ('speechSynthesis' in window) {
-    speakData('我不想在这了', 0, 3.0);
-  }
+  setT(function () {
+    humanRoar();
+    if ('speechSynthesis' in window) {
+      speakData('我不想在这了', 0, 3.0);
+    }
+  }, 400);
   scareBox.classList.add('flash');
   setT(function () { scareBox.classList.remove('flash'); }, 100);
-  setT(startStrobe, 550);
-  setT(advanceAfterClimax, 1300);
+  setT(startStrobe, 950);
+  setT(advanceAfterClimax, 1700);
 }
 
 function startStrobe() {
@@ -1324,17 +1375,35 @@ function registerBg() {
       hiddenAt = 0;
       restoreBgm();
       showWatch(false);
-      if (!state.climaxMode && state.idx >= 16 && state.idx <= 19) {
-        doTabScare(now - wasHidden);
+      if (!state.climaxMode && state.idx >= 4) {
+        var prob = (state.idx >= 16 && state.idx <= 19) ? 0.45 : 0.15;
+        if (Math.random() < prob) {
+          doTabScare(now - wasHidden);
+        }
       }
     }
   });
 
-  window.addEventListener('beforeunload', function () {
-    if (state.hasInteracted) {
-      data.exitTime = Date.now();
-      if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); }
-    }
+  window.addEventListener('beforeunload', function (e) {
+    if (!state.hasInteracted) return;
+    data.exitTime = Date.now();
+    if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); }
+    stopHeart();
+    if (bgmSrc) { try { bgmSrc.stop(); } catch (err) {} bgmSrc = null; }
+    var black = document.createElement('div');
+    black.style.cssText = 'position:fixed;inset:0;background:#000;z-index:9999;display:flex;align-items:center;justify-content:center;';
+    black.innerHTML = '<span style="color:#333;font-size:14px;letter-spacing:8px;">.</span>';
+    document.body.appendChild(black);
+    setTimeout(function () {
+      try {
+        var u = new SpeechSynthesisUtterance('你确定吗');
+        u.pitch = 0.1; u.rate = 0.4; u.volume = 0.6; u.lang = 'zh-CN';
+        window.speechSynthesis.speak(u);
+      } catch (err) {}
+    }, 500);
+    e.preventDefault();
+    e.returnValue = '';
+    return '';
   });
   scheduleJitter();
 }
