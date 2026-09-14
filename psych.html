@@ -1058,7 +1058,6 @@ function renderReport() {
   }
   box.innerHTML = lines.join('');
   $('qtext').appendChild(box);
-  pulseRed(3000);
 }
 
 function totalChanges() {
@@ -1348,6 +1347,7 @@ function fakeClose() {
     who.className = 'red';
     who.textContent = '你在找什么？';
     red.insertBefore(who, red.firstChild);
+    pulseRed(3000);
     whisper();
     fireNotif();
     speakTimes('我好孤独', 10, 650);
