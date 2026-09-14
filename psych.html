@@ -170,7 +170,7 @@ body.skew-shake { animation:skewJitter .3s ease-out; }
 
 #redFlash {
   position:fixed; inset:0; z-index:99;
-  background:#c00;
+  background:#8b0000;
   opacity:0; pointer-events:none;
   display:flex; align-items:center; justify-content:center;
 }
@@ -179,22 +179,22 @@ body.skew-shake { animation:skewJitter .3s ease-out; }
   position:absolute; z-index:1;
   left:50%; bottom:72vh; width:14vmin; height:14vmin;
   transform:translateX(-50%);
-  background:#0a0008; border-radius:50%;
-  opacity:.9;
+  background:#050005; border-radius:50%;
+  opacity:.85;
 }
 #redFlash .rf-body {
   position:absolute; z-index:1;
   left:50%; bottom:0; width:34vh; height:74vh;
   transform:translateX(-50%);
-  background:#0a0008;
+  background:#050005;
   -webkit-clip-path:polygon(42% 8%, 58% 8%, 66% 24%, 76% 32%, 74% 52%, 60% 52%, 60% 70%, 78% 100%, 22% 100%, 40% 70%, 40% 52%, 26% 52%, 24% 32%, 34% 24%);
   clip-path:polygon(42% 8%, 58% 8%, 66% 24%, 76% 32%, 74% 52%, 60% 52%, 60% 70%, 78% 100%, 22% 100%, 40% 70%, 40% 52%, 26% 52%, 24% 32%, 34% 24%);
-  opacity:.9;
+  opacity:.85;
 }
 #redFlash img.rf-photo {
   position:relative; z-index:3;
   max-width:100%; max-height:100%;
-  filter:sepia(1) saturate(12) hue-rotate(-45deg) brightness(.9) contrast(1.15);
+  filter:sepia(.3) saturate(5) hue-rotate(-35deg) brightness(1.1) contrast(1.05);
 }
 
 #qtext .swap-flash { color:#900; }
