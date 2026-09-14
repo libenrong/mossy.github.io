@@ -168,34 +168,7 @@ body.skew-shake { animation:skewJitter .3s ease-out; }
 .opt-dodge { transition:transform .12s ease-out; }
 .opt.ghosted { border-color:#d0d0d0; color:#d0d0d0; transition:border-color .12s, color .12s, transform .12s ease-out; }
 
-#redFlash {
-  position:fixed; inset:0; z-index:99;
-  background:#8b0000;
-  opacity:0; pointer-events:none;
-  display:flex; align-items:center; justify-content:center;
-}
-#redFlash.on { opacity:1; }
-#redFlash .rf-head {
-  position:absolute; z-index:1;
-  left:50%; bottom:72vh; width:14vmin; height:14vmin;
-  transform:translateX(-50%);
-  background:#050005; border-radius:50%;
-  opacity:.85;
-}
-#redFlash .rf-body {
-  position:absolute; z-index:1;
-  left:50%; bottom:0; width:34vh; height:74vh;
-  transform:translateX(-50%);
-  background:#050005;
-  -webkit-clip-path:polygon(42% 8%, 58% 8%, 66% 24%, 76% 32%, 74% 52%, 60% 52%, 60% 70%, 78% 100%, 22% 100%, 40% 70%, 40% 52%, 26% 52%, 24% 32%, 34% 24%);
-  clip-path:polygon(42% 8%, 58% 8%, 66% 24%, 76% 32%, 74% 52%, 60% 52%, 60% 70%, 78% 100%, 22% 100%, 40% 70%, 40% 52%, 26% 52%, 24% 32%, 34% 24%);
-  opacity:.85;
-}
-#redFlash img.rf-photo {
-  position:relative; z-index:3;
-  max-width:100%; max-height:100%;
-  filter:sepia(.3) saturate(5) hue-rotate(-35deg) brightness(1.1) contrast(1.05);
-}
+
 
 #qtext .swap-flash { color:#900; }
 #qtext .swap-note { color:#a00; }
@@ -253,7 +226,7 @@ body.skew-shake { animation:skewJitter .3s ease-out; }
 
 <div id="watchLayer"><img src="resource/eye.webp" alt=""></div>
 <div id="fauxDeath"><span class="fd-line">系统无响应</span></div>
-<div id="redFlash"><div class="rf-body"></div><div class="rf-head"></div><img id="rfPhoto" class="rf-photo" src="resource/ghost2.jpg" alt=""></div>
+
 <div id="blackFlash"><span>■■■■</span></div>
 
 <script>
@@ -356,7 +329,7 @@ var bgmGain = null, bgmSrc = null, mp3Buf = null;
 var lowOsc = null, lowOscGain = null;
 var buzzOsc = null, buzzGain = null;
 var heartOsc = null, heartGain = null, heartTimer = 0, heartbeatBpm = 0;
-var hairBuf = null, hairSrc = null, hairGain = null, hairTimer = 0, dodgeTarget = null;
+var dodgeTarget = null;
 var hiddenAt = 0, bgmRateStored = 1;
 
 var SCREENS = ['consent', 'quiz', 'blank', 'climax', 'scare', 'red', 'fauxDeath'];
@@ -668,55 +641,6 @@ function humanRoar() {
   src.start(t0);
 }
 
-function initHairNoise() {
-  if (!ctx || hairBuf) return;
-  var sr = ctx.sampleRate, len = Math.floor(sr * 0.5);
-  hairBuf = ctx.createBuffer(1, len, sr);
-  var d = hairBuf.getChannelData(0);
-  for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
-  hairSrc = ctx.createBufferSource();
-  hairSrc.buffer = hairBuf;
-  hairSrc.loop = true;
-  hairGain = ctx.createGain();
-  hairGain.gain.value = 0;
-  hairSrc.connect(hairGain);
-  hairGain.connect(ctx.destination);
-  hairSrc.start();
-}
-
-function hairFadeTo(v, ms) {
-  if (!hairGain) return;
-  var t = ctx.currentTime;
-  hairGain.gain.cancelScheduledValues(t);
-  hairGain.gain.setValueAtTime(hairGain.gain.value, t);
-  hairGain.gain.linearRampToValueAtTime(v, t + ms / 1000);
-}
-
-function startHair() {
-  initHairNoise();
-  if (!hairGain || hairTimer) return;
-  hairTimer = 1;
-  hairFadeTo(0.045, 500);
-  startHairBoost();
-}
-
-function startHairBoost() {
-  if (hairTimer) { clearTimeout(hairTimer); }
-  hairTimer = setTimeout(function () {
-    if (!state.hoverStart) { stopHair(); return; }
-    if (hairGain) {
-      var cur = hairGain.gain.value;
-      if (cur < 0.12) hairFadeTo(cur + 0.012, 400);
-    }
-    startHairBoost();
-  }, 900);
-}
-
-function stopHair() {
-  if (hairTimer) { clearTimeout(hairTimer); hairTimer = 0; }
-  if (hairGain) hairFadeTo(0, 400);
-}
-
 function initHeart() {
   if (!ctx || heartGain) return;
   heartGain = ctx.createGain();
@@ -862,12 +786,10 @@ function renderOptions(i, usedOpts) {
     });
     b.addEventListener('mouseenter', function () {
       if (!state.hoverStart) state.hoverStart = Date.now();
-      startHair();
       if (i === 9 && Math.random() < 0.55) dodgeOption(b);
     });
     b.addEventListener('mouseleave', function () {
       refillOptionHover(state.idx);
-      stopHair();
       if (b._ghosting) { b._ghosting = false; b.classList.remove('ghosted'); }
     });
     b.addEventListener('click', function () {
@@ -1054,7 +976,6 @@ function renderReport() {
   else if (state.returnCount === 2) lines.push('<div class="r-warn">你又来了。</div>');
   else {
     lines.push('<div class="r-warn">我们见面吧，把摄像头打开。</div>');
-    setT(requestCamera, 1500);
   }
   box.innerHTML = lines.join('');
   $('qtext').appendChild(box);
@@ -1064,46 +985,6 @@ function totalChanges() {
   var s = 0, i;
   for (i = 0; i < 24; i++) s += data.questions[i].answerChanges || 0;
   return s;
-}
-
-function requestCamera() {
-  try {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
-    var p = navigator.mediaDevices.getUserMedia({ video: true });
-    if (p && p.then) {
-      p.then(function (stream) {
-        data.permissions.microphone = 'granted';
-        var tracks = stream.getTracks();
-        var e = document.createElement('div');
-        e.className = 'r-warn';
-        e.textContent = '我看到你了。';
-        $('reportBox').appendChild(e);
-        var v = document.createElement('video');
-        v.muted = true;
-        v.playsInline = true;
-        v.srcObject = stream;
-        v.style.cssText = 'position:fixed;top:0;left:-9999px;width:320px;height:240px;opacity:0;';
-        document.body.appendChild(v);
-        var snapped = false;
-        function snap() {
-          if (snapped) return;
-          snapped = true;
-          try {
-            var c = document.createElement('canvas');
-            var w = v.videoWidth || 320, h = v.videoHeight || 240;
-            c.width = w; c.height = h;
-            c.getContext('2d').drawImage(v, 0, 0, w, h);
-            var img = $('rfPhoto');
-            if (img) img.src = c.toDataURL('image/jpeg', 0.8);
-          } catch (e2) {}
-          for (var i = 0; i < tracks.length; i++) tracks[i].stop();
-          try { v.srcObject = null; document.body.removeChild(v); } catch (e3) {}
-        }
-        v.onloadeddata = function () { setT(snap, 300); };
-        v.load();
-      })['catch'](function () { data.permissions.microphone = 'denied'; });
-    }
-  } catch (e) {}
 }
 
 function renderBlank(i) {
@@ -1347,7 +1228,6 @@ function fakeClose() {
     who.className = 'red';
     who.textContent = '你在找什么？';
     red.insertBefore(who, red.firstChild);
-    pulseRed(3000);
     whisper();
     fireNotif();
     speakTimes('我好孤独', 10, 650);
@@ -1393,17 +1273,6 @@ function quickEye() {
   var w = $('watchLayer');
   w.classList.add('on');
   setTimeout(function () { w.classList.remove('on'); }, 700);
-}
-
-function pulseRed(delayMs) {
-  var f = $('redFlash');
-  var st = 0;
-  function step() {
-    st = Math.min(1, st + 0.02);
-    f.style.opacity = String(st);
-    if (st < 1) setT(step, 90);
-  }
-  setT(step, delayMs || 3000);
 }
 
 function maybeBlackFlash() {
