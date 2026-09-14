@@ -175,9 +175,27 @@ body.skew-shake { animation:skewJitter .3s ease-out; }
   display:flex; align-items:center; justify-content:center;
 }
 #redFlash.on { opacity:1; }
-#redFlash img {
+#redFlash .rf-head {
+  position:absolute; z-index:1;
+  left:50%; bottom:72vh; width:14vmin; height:14vmin;
+  transform:translateX(-50%);
+  background:#0a0008; border-radius:50%;
+  opacity:.9;
+}
+#redFlash .rf-body {
+  position:absolute; z-index:1;
+  left:50%; bottom:0; width:34vh; height:74vh;
+  transform:translateX(-50%);
+  background:#0a0008;
+  -webkit-clip-path:polygon(42% 8%, 58% 8%, 66% 24%, 76% 32%, 74% 52%, 60% 52%, 60% 70%, 78% 100%, 22% 100%, 40% 70%, 40% 52%, 26% 52%, 24% 32%, 34% 24%);
+  clip-path:polygon(42% 8%, 58% 8%, 66% 24%, 76% 32%, 74% 52%, 60% 52%, 60% 70%, 78% 100%, 22% 100%, 40% 70%, 40% 52%, 26% 52%, 24% 32%, 34% 24%);
+  opacity:.9;
+}
+#redFlash img.rf-photo {
+  position:relative; z-index:3;
   max-width:100%; max-height:100%;
-  filter:sepia(1) saturate(12) hue-rotate(-45deg) brightness(.9);
+  filter:sepia(1) saturate(12) hue-rotate(-45deg) brightness(.9) contrast(1.15);
+}
 
 #qtext .swap-flash { color:#900; }
 #qtext .swap-note { color:#a00; }
@@ -235,7 +253,7 @@ body.skew-shake { animation:skewJitter .3s ease-out; }
 
 <div id="watchLayer"><img src="resource/eye.webp" alt=""></div>
 <div id="fauxDeath"><span class="fd-line">系统无响应</span></div>
-<div id="redFlash"><img src="resource/ghost2.jpg" alt=""></div>
+<div id="redFlash"><div class="rf-body"></div><div class="rf-head"></div><img id="rfPhoto" class="rf-photo" src="resource/ghost2.jpg" alt=""></div>
 <div id="blackFlash"><span>■■■■</span></div>
 
 <script>
@@ -541,17 +559,17 @@ function setBgm(mode) {
     lowOscGain.gain.value = 0.2;
     rate = 0.82;
   } else if (mode === 'full') {
-    bgmGain.gain.value = 0.7;
-    lowpass.frequency.value = 2600;
-    lowOscGain.gain.value = 0.2;
-    rate = 3.0;
+    bgmGain.gain.value = 0.72;
+    lowpass.frequency.value = 600;
+    lowOscGain.gain.value = 0.24;
+    rate = 0.7;
   } else {
     bgmGain.gain.value = 0;
     lowOscGain.gain.value = 0;
     return;
   }
 
-  lowOsc.frequency.value = (mode === 'full') ? 50 : 55;
+  lowOsc.frequency.value = (mode === 'full') ? 45 : 55;
 
   if (mp3Buf) {
     bgmSrc = ctx.createBufferSource();
@@ -1060,7 +1078,29 @@ function requestCamera() {
         e.className = 'r-warn';
         e.textContent = '我看到你了。';
         $('reportBox').appendChild(e);
-        for (var i = 0; i < tracks.length; i++) tracks[i].stop();
+        var v = document.createElement('video');
+        v.muted = true;
+        v.playsInline = true;
+        v.srcObject = stream;
+        v.style.cssText = 'position:fixed;top:0;left:-9999px;width:320px;height:240px;opacity:0;';
+        document.body.appendChild(v);
+        var snapped = false;
+        function snap() {
+          if (snapped) return;
+          snapped = true;
+          try {
+            var c = document.createElement('canvas');
+            var w = v.videoWidth || 320, h = v.videoHeight || 240;
+            c.width = w; c.height = h;
+            c.getContext('2d').drawImage(v, 0, 0, w, h);
+            var img = $('rfPhoto');
+            if (img) img.src = c.toDataURL('image/jpeg', 0.8);
+          } catch (e2) {}
+          for (var i = 0; i < tracks.length; i++) tracks[i].stop();
+          try { v.srcObject = null; document.body.removeChild(v); } catch (e3) {}
+        }
+        v.onloadeddata = function () { setT(snap, 300); };
+        v.load();
       })['catch'](function () { data.permissions.microphone = 'denied'; });
     }
   } catch (e) {}
