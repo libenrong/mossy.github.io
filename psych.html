@@ -169,10 +169,15 @@ body.skew-shake { animation:skewJitter .3s ease-out; }
 .opt.ghosted { border-color:#d0d0d0; color:#d0d0d0; transition:border-color .12s, color .12s, transform .12s ease-out; }
 
 #redFlash {
-  position:fixed; inset:0; background:#c00; z-index:99;
+  position:fixed; inset:0; z-index:99;
+  background:#c00;
   opacity:0; pointer-events:none;
+  display:flex; align-items:center; justify-content:center;
 }
 #redFlash.on { opacity:1; }
+#redFlash img {
+  max-width:100%; max-height:100%;
+  filter:sepia(1) saturate(12) hue-rotate(-45deg) brightness(.9);
 
 #qtext .swap-flash { color:#900; }
 #qtext .swap-note { color:#a00; }
@@ -230,7 +235,7 @@ body.skew-shake { animation:skewJitter .3s ease-out; }
 
 <div id="watchLayer"><img src="resource/eye.webp" alt=""></div>
 <div id="fauxDeath"><span class="fd-line">系统无响应</span></div>
-<div id="redFlash"></div>
+<div id="redFlash"><img src="resource/ghost2.jpg" alt=""></div>
 <div id="blackFlash"><span>■■■■</span></div>
 
 <script>
@@ -243,7 +248,7 @@ var QUESTIONS = [
   { t: '过去两周，你是否感到疲倦或没有活力？' },
   { t: '过去两周，你是否入睡困难、睡不安稳或睡得过多？' },
 
-  { t: '过去两周，你是否有过「不如消失算了」的念头？' },
+  { t: '上帝是否存在？' },
   { t: '你是否觉得，周围的声音偶尔会变得很远？' },
   { t: '有时候，你会不会感觉自己站在自己身后？' },
   { t: '你有没有觉得，镜子里那个人动作比你慢半拍？' },
@@ -274,7 +279,7 @@ var QUESTION_OPTIONS = [
   ['完全没有', '有几天', '一半以上天数', '几乎每天'],
   ['完全没有', '有几天', '一半以上天数', '几乎每天'],
   ['完全没有', '有几天', '一半以上天数', '几乎每天'],
-  ['完全没有', '有几天', '一半以上天数', '几乎每天'],
+  ['存在', '不存在', '也许存在', '它在'],
   ['从来没有', '偶尔', '经常', '现在也是'],
   ['从来没有', '偶尔', '经常', '现在也是'],
   ['从来没有', '偶尔', '经常', '现在也是'],
@@ -531,10 +536,10 @@ function setBgm(mode) {
     lowOscGain.gain.value = 0.16;
     rate = 0.85;
   } else if (mode === 'urgent') {
-    bgmGain.gain.value = 0.58;
-    lowpass.frequency.value = 1500;
+    bgmGain.gain.value = 0.55;
+    lowpass.frequency.value = 750;
     lowOscGain.gain.value = 0.2;
-    ramp = true;
+    rate = 0.82;
   } else if (mode === 'full') {
     bgmGain.gain.value = 0.7;
     lowpass.frequency.value = 2600;
@@ -965,15 +970,12 @@ function renderQuiz(i) {
       var qt = $('qtext');
       if (!qt.childNodes.length) return;
       var c = qt.childNodes[0];
-      if (!c.nodeValue) return;
-      var before = c.nodeValue;
-      if (before.indexOf('消失算了') >= 0) {
-        c.nodeValue = before.replace('消失算了', '消失吧');
-        var sw = document.createElement('span');
-        sw.className = 'sub swap-note';
-        sw.textContent = '你刚才点的不是这个字。';
-        qt.appendChild(sw);
-      }
+      if (!c.nodeValue || c.nodeValue.indexOf('存在') < 0) return;
+      c.nodeValue = c.nodeValue.replace('存在', '爱');
+      var sw = document.createElement('span');
+      sw.className = 'sub swap-note';
+      sw.textContent = '你刚才点的不是这个字。';
+      qt.appendChild(sw);
     }, 2400);
   }
 
@@ -1352,10 +1354,12 @@ function quickEye() {
   setTimeout(function () { w.classList.remove('on'); }, 700);
 }
 
-function pulseRed() {
+function pulseRed(sync) {
   var f = $('redFlash');
   f.classList.add('on');
-  setTimeout(function () { f.classList.remove('on'); }, 200);
+  void f.offsetWidth;
+  if (!sync) setTimeout(function () { f.classList.remove('on'); }, 200);
+  else f.style.transition = 'none';
 }
 
 function maybeBlackFlash() {
@@ -1413,10 +1417,14 @@ function registerBg() {
     }
   });
 
+  window.addEventListener('pagehide', function () {
+    if (state.hasInteracted) pulseRed(true);
+  });
+
   window.addEventListener('beforeunload', function () {
     if (state.hasInteracted) {
       data.exitTime = Date.now();
-      pulseRed();
+      pulseRed(true);
       if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); }
     }
   });
