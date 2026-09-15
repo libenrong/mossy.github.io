@@ -330,6 +330,9 @@ var bgmGain = null, bgmSrc = null, mp3Buf = null;
 var lowOsc = null, lowOscGain = null;
 var buzzOsc = null, buzzGain = null;
 var heartOsc = null, heartGain = null, heartTimer = 0, heartbeatBpm = 0;
+var pitchLfo = null, pitchLfoGain = null;
+var dissonanceOsc = null, dissonanceGain = null;
+var whisperDelay = null;
 var dodgeTarget = null;
 var hiddenAt = 0, bgmRateStored = 1;
 
@@ -429,7 +432,8 @@ function speakData(text, pitch, rate) {
   if (state.speech === 'mp3') { playVoiceMp3(text, rate); return; }
   if (!('speechSynthesis' in window)) return;
   var u = new SpeechSynthesisUtterance(text);
-  u.pitch = (pitch === undefined) ? 0.2 : pitch;
+  var basePitch = (pitch === undefined) ? 0.2 : pitch;
+  u.pitch = basePitch + (Math.random() - 0.5) * 0.15;
   u.rate = (rate === undefined) ? 0.5 : rate;
   u.volume = 0.9;
   u.lang = 'zh-CN';
@@ -466,12 +470,20 @@ function initAudio() {
   masterGain.gain.value = 0.5;
   masterGain.connect(ctx.destination);
 
+  whisperDelay = ctx.createDelay(1.0);
+  whisperDelay.delayTime.value = 0.4;
+  var whisperFb = ctx.createGain();
+  whisperFb.gain.value = 0.35;
+  whisperDelay.connect(whisperFb);
+  whisperFb.connect(whisperDelay);
+  whisperDelay.connect(masterGain);
+
   lowpass = ctx.createBiquadFilter();
   lowpass.type = 'lowpass';
   lowpass.frequency.value = 800;
 
   shaper = ctx.createWaveShaper();
-  shaper.curve = makeDistortionCurve(18);
+  shaper.curve = makeDistortionCurve(28);
   lowpass.connect(shaper);
 
   bgmGain = ctx.createGain();
@@ -488,6 +500,23 @@ function initAudio() {
   lowOsc.frequency.value = 55;
   lowOsc.connect(lowOscGain);
   lowOsc.start();
+
+  pitchLfo = ctx.createOscillator();
+  pitchLfo.type = 'sine';
+  pitchLfo.frequency.value = 0.15;
+  pitchLfoGain = ctx.createGain();
+  pitchLfoGain.gain.value = 0.025;
+  pitchLfo.connect(pitchLfoGain);
+  pitchLfo.start();
+
+  dissonanceOsc = ctx.createOscillator();
+  dissonanceOsc.type = 'sine';
+  dissonanceOsc.frequency.value = 58;
+  dissonanceGain = ctx.createGain();
+  dissonanceGain.gain.value = 0;
+  dissonanceOsc.connect(dissonanceGain);
+  dissonanceGain.connect(lowpass);
+  dissonanceOsc.start();
 
   resumeCtx();
 
@@ -527,7 +556,11 @@ function playRandomWhisper() {
       var g = ctx.createGain();
       g.gain.value = 0.18 + Math.random() * 0.12;
       src.connect(g);
-      g.connect(masterGain);
+      if (whisperDelay) {
+        g.connect(whisperDelay);
+      } else {
+        g.connect(masterGain);
+      }
       src.start();
     })['catch'](function () {});
 }
@@ -644,6 +677,8 @@ function setBgm(mode) {
       bgmSrc.playbackRate.value = rate;
     }
     bgmSrc.connect(lowpass);
+    pitchLfoGain.connect(bgmSrc.playbackRate);
+    dissonanceGain.gain.value = (mode === 'full') ? 0.08 : (mode === 'urgent') ? 0.05 : 0.03;
     bgmSrc.start(0);
   }
 }
@@ -1288,7 +1323,8 @@ function whisper() {
   if (state.speech === 'mp3') { playVoiceMp3('', 0.3); return; }
   if (!('speechSynthesis' in window)) return;
   var u = new SpeechSynthesisUtterance('你确定吗');
-  u.pitch = 1.4; u.rate = 1.7; u.volume = 0.12; u.lang = 'zh-CN';
+  u.pitch = 1.4 + (Math.random() - 0.5) * 0.3;
+  u.rate = 1.7; u.volume = 0.12; u.lang = 'zh-CN';
   window.speechSynthesis.cancel();
   window.speechSynthesis.speak(u);
 }
