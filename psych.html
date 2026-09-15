@@ -329,7 +329,6 @@ var ctx = null, masterGain = null, lowpass = null, shaper = null;
 var bgmGain = null, bgmSrc = null, mp3Buf = null;
 var lowOsc = null, lowOscGain = null;
 var buzzOsc = null, buzzGain = null;
-var breathSrc = null, breathGain = null, breathLfo = null;
 var heartOsc = null, heartGain = null, heartTimer = 0, heartbeatBpm = 0;
 var dodgeTarget = null;
 var hiddenAt = 0, bgmRateStored = 1;
@@ -512,50 +511,6 @@ function resumeCtx() {
       if (p && p['catch']) p['catch'](function () {});
     } catch (e) {}
   }
-}
-
-function initBreathing() {
-  if (!ctx) return;
-  var sr = ctx.sampleRate, len = Math.floor(sr * 2);
-  var buf = ctx.createBuffer(1, len, sr), d = buf.getChannelData(0);
-  for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
-  breathSrc = ctx.createBufferSource();
-  breathSrc.buffer = buf;
-  breathSrc.loop = true;
-  var bp = ctx.createBiquadFilter();
-  bp.type = 'bandpass';
-  bp.frequency.value = 800;
-  bp.Q.value = 1.2;
-  breathGain = ctx.createGain();
-  breathGain.gain.value = 0;
-  breathLfo = ctx.createOscillator();
-  breathLfo.type = 'sine';
-  breathLfo.frequency.value = 0.25;
-  var lfoGain = ctx.createGain();
-  lfoGain.gain.value = 1;
-  breathLfo.connect(lfoGain);
-  lfoGain.connect(breathGain.gain);
-  breathSrc.connect(bp);
-  bp.connect(breathGain);
-  breathGain.connect(masterGain);
-  breathSrc.start();
-  breathLfo.start();
-}
-
-function startBreathing(target, rampSec) {
-  if (!breathGain) return;
-  var t = ctx.currentTime;
-  breathGain.gain.cancelScheduledValues(t);
-  breathGain.gain.setValueAtTime(breathGain.gain.value, t);
-  breathGain.gain.linearRampToValueAtTime(target || 0.03, t + (rampSec || 2));
-}
-
-function stopBreathing(rampSec) {
-  if (!breathGain) return;
-  var t = ctx.currentTime;
-  breathGain.gain.cancelScheduledValues(t);
-  breathGain.gain.setValueAtTime(breathGain.gain.value, t);
-  breathGain.gain.linearRampToValueAtTime(0, t + (rampSec || 1));
 }
 
 var WHISPER_LIST = ['resource/voice/whisper1.mp3','resource/voice/whisper2.mp3','resource/voice/whisper3.mp3','resource/voice/whisper4.mp3','resource/voice/whisper5.mp3'];
@@ -1155,7 +1110,6 @@ function totalChanges() {
 function renderBlank(i) {
   show('blank');
   stopRepeatSpeak();
-  startBreathing(0.12, 8);
   var remnant = document.createElement('div');
   remnant.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:13px;color:rgba(0,0,0,0.06);letter-spacing:6px;white-space:nowrap;pointer-events:none;z-index:1;';
   remnant.textContent = '你还在吗';
@@ -1166,7 +1120,6 @@ function renderBlank(i) {
   setT(function () {
     try { clearInterval(flickerR); remnant.style.opacity = '0'; } catch (e) {}
     try { document.body.removeChild(remnant); } catch (e) {}
-    startBreathing(0.03, 2);
     advance();
   }, QUESTIONS[i].blankSec * 1000);
   setT(function () { if (Math.random() < 0.6) playRandomWhisper(); }, 5000);
@@ -1569,8 +1522,6 @@ $('startBtn').addEventListener('click', function () {
   } catch (e) {}
   data.startedAt = Date.now();
   registerBg();
-  initBreathing();
-  startBreathing(0.03, 3);
   scheduleRandomWhispers();
   scheduleCursorJitter();
   initTitleGlitch();
