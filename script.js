@@ -87,43 +87,69 @@ const SERVER_HOST = 'mossymc.top';
 })();
 
 /* ===========================
-   横向轮播图
+   横向轮播图：无缝无限循环（手动）
+   做法：前后各克隆一整组卡片作为缓冲，滑进克隆区后静默平移一个整组宽度，
+        视觉上等于回到原位，因此首尾相接、永远滑不到尽头
    =========================== */
 (function initCarousel() {
     const track = document.getElementById('carouselTrack');
     const prevBtn = document.getElementById('prevBtn');
     const nextBtn = document.getElementById('nextBtn');
     const dotsContainer = document.getElementById('carouselDots');
-    const cards = track.querySelectorAll('.feature-card');
+    if (!track || !prevBtn || !nextBtn || !dotsContainer) return;
 
-    // 生成指示点
-    cards.forEach((_, i) => {
-        const dot = document.createElement('button');
-        dot.className = 'dot' + (i === 0 ? ' active' : '');
-        dot.setAttribute('aria-label', `跳转到第 ${i + 1} 张`);
-        dot.addEventListener('click', () => scrollToCard(i));
-        dotsContainer.appendChild(dot);
+    const originals = Array.from(track.querySelectorAll('.feature-card'));
+    const COUNT = originals.length;
+    if (!COUNT) return;
+
+    let programmatic = false;   // 按钮 / 指示点触发的平滑滚动是否进行中
+    let userInteracted = false; // 用户是否已经操作过轮播
+    let rafId = null;
+    let dotsTimer = null;
+    let settleTimer = null;
+
+    // 前后各克隆一组，长度足够让两个方向都滑不到物理尽头
+    const fragmentBefore = document.createDocumentFragment();
+    const fragmentAfter = document.createDocumentFragment();
+    originals.forEach((card) => {
+        const cloneBefore = card.cloneNode(true);
+        cloneBefore.setAttribute('aria-hidden', 'true');
+        cloneBefore.setAttribute('data-clone', 'true');
+        fragmentBefore.appendChild(cloneBefore);
+
+        const cloneAfter = card.cloneNode(true);
+        cloneAfter.setAttribute('aria-hidden', 'true');
+        cloneAfter.setAttribute('data-clone', 'true');
+        fragmentAfter.appendChild(cloneAfter);
     });
+    track.insertBefore(fragmentBefore, track.firstChild);
+    track.appendChild(fragmentAfter);
 
-    const dots = dotsContainer.querySelectorAll('.dot');
+    const allCards = Array.from(track.querySelectorAll('.feature-card'));
 
-    // 滚动到指定卡片
-    function scrollToCard(index) {
-        const card = cards[index];
-        const trackRect = track.getBoundingClientRect();
-        const cardRect = card.getBoundingClientRect();
-        const offset = cardRect.left - trackRect.left - (track.clientWidth - card.clientWidth) / 2;
-        track.scrollBy({ left: offset, behavior: 'smooth' });
+    /* 位置计算统一以 track 的滚动内容为参照系，
+       避免 offsetParent（.carousel-wrapper）带来的固定偏差 */
+    function posInTrack(card) {
+        return card.offsetLeft - track.offsetLeft;
     }
 
-    // 获取当前居中的卡片索引
+    // 让第 index 张卡片居中所需的 scrollLeft
+    function cardOffset(index) {
+        const card = allCards[index];
+        return Math.round(posInTrack(card) - (track.clientWidth - card.clientWidth) / 2);
+    }
+
+    // 相邻两组中同一张卡片的间距 = 一个整组的宽度
+    function groupWidth() {
+        return posInTrack(allCards[COUNT]) - posInTrack(allCards[0]);
+    }
+
     function getCenterIndex() {
         const trackCenter = track.scrollLeft + track.clientWidth / 2;
         let closest = 0;
         let minDist = Infinity;
-        cards.forEach((card, i) => {
-            const cardCenter = card.offsetLeft + card.clientWidth / 2;
-            const dist = Math.abs(cardCenter - trackCenter);
+        allCards.forEach((card, i) => {
+            const dist = Math.abs(posInTrack(card) + card.clientWidth / 2 - trackCenter);
             if (dist < minDist) {
                 minDist = dist;
                 closest = i;
@@ -132,32 +158,76 @@ const SERVER_HOST = 'mossymc.top';
         return closest;
     }
 
-    // 更新指示点
-    function updateDots() {
-        const idx = getCenterIndex();
-        dots.forEach((dot, i) => {
-            dot.classList.toggle('active', i === idx);
-        });
+    // 瞬时定位：临时关闭 CSS 平滑滚动，归位时不会出现可见动画
+    function jumpTo(left) {
+        const prevBehavior = track.style.scrollBehavior;
+        track.style.scrollBehavior = 'auto';
+        track.scrollLeft = left;
+        track.style.scrollBehavior = prevBehavior;
     }
 
-    // 按钮事件
-    nextBtn.addEventListener('click', () => {
+    function scrollToCard(index) {
+        programmatic = true;
+        track.scrollTo({ left: cardOffset(index), behavior: 'smooth' });
+        scheduleSettle();
+    }
+
+    // 滑进克隆区就静默平移一个整组，视觉上等同回到原位
+    function normalize() {
         const idx = getCenterIndex();
-        if (idx < cards.length - 1) scrollToCard(idx + 1);
-        else scrollToCard(0); // 循环
+        if (idx < COUNT) jumpTo(track.scrollLeft + groupWidth());
+        else if (idx >= COUNT * 2) jumpTo(track.scrollLeft - groupWidth());
+    }
+
+    // 指示点：把克隆位置映射回对应的原始卡片
+    function updateDots() {
+        const idx = getCenterIndex();
+        const dotIndex = ((idx - COUNT) % COUNT + COUNT) % COUNT;
+        dots.forEach((dot, i) => dot.classList.toggle('active', i === dotIndex));
+    }
+
+    // 平滑滚动结束（停止滚动 140ms）后归位并校正指示点
+    function scheduleSettle() {
+        clearTimeout(settleTimer);
+        settleTimer = setTimeout(() => {
+            programmatic = false;
+            normalize();
+            updateDots();
+        }, 140);
+    }
+
+    // 生成指示点（只对应原始卡片）
+    originals.forEach((_, i) => {
+        const dot = document.createElement('button');
+        dot.className = 'dot' + (i === 0 ? ' active' : '');
+        dot.setAttribute('aria-label', `跳转到第 ${i + 1} 张`);
+        dot.addEventListener('click', () => scrollToCard(COUNT + i));
+        dotsContainer.appendChild(dot);
+    });
+
+    const dots = dotsContainer.querySelectorAll('.dot');
+
+    // 滚动：手动拖动时实时归位；程序化动画期间交给 settle 处理，避免打断动画
+    track.addEventListener('scroll', () => {
+        if (!programmatic && !rafId) {
+            rafId = requestAnimationFrame(() => {
+                rafId = null;
+                normalize();
+            });
+        }
+        clearTimeout(dotsTimer);
+        dotsTimer = setTimeout(updateDots, 80);
+    }, { passive: true });
+
+    // 按钮：不需要再手写绕回逻辑，克隆区负责无缝衔接
+    nextBtn.addEventListener('click', () => {
+        userInteracted = true;
+        scrollToCard(getCenterIndex() + 1);
     });
 
     prevBtn.addEventListener('click', () => {
-        const idx = getCenterIndex();
-        if (idx > 0) scrollToCard(idx - 1);
-        else scrollToCard(cards.length - 1); // 循环
-    });
-
-    // 滚动时更新指示点（节流）
-    let scrollTimer;
-    track.addEventListener('scroll', () => {
-        clearTimeout(scrollTimer);
-        scrollTimer = setTimeout(updateDots, 80);
+        userInteracted = true;
+        scrollToCard(getCenterIndex() - 1);
     });
 
     // 键盘左右键控制
@@ -166,6 +236,25 @@ const SERVER_HOST = 'mossymc.top';
         if (e.key === 'ArrowRight') { e.preventDefault(); nextBtn.click(); }
         if (e.key === 'ArrowLeft') { e.preventDefault(); prevBtn.click(); }
     });
+
+    // 用户一旦操作过轮播就不再强制对齐初始位置
+    ['pointerdown', 'wheel', 'touchstart'].forEach((evt) => {
+        track.addEventListener(evt, () => { userInteracted = true; }, { passive: true, once: true });
+    });
+
+    // 初始居中到中间一组的第一张，保证两个方向都有缓冲
+    const centerOnFirst = () => jumpTo(cardOffset(COUNT));
+    centerOnFirst();
+    requestAnimationFrame(() => requestAnimationFrame(centerOnFirst));
+    window.addEventListener('load', () => { if (!userInteracted) centerOnFirst(); });
+
+    // 窗口尺寸变化后重新对齐当前卡片
+    window.addEventListener('resize', () => {
+        clearTimeout(settleTimer);
+        jumpTo(cardOffset(getCenterIndex()));
+    });
+
+    updateDots();
 })();
 
 /* ===========================
@@ -352,9 +441,9 @@ const SERVER_HOST = 'mossymc.top';
    滚动错峰揭示（带 --i 索引延迟）
    =========================== */
 (function initScrollReveal() {
-    // 给同组元素打上错峰索引
+    // 给同组元素打上错峰索引（轮播的克隆卡片不参与，避免滑入克隆区时闪烁）
     const groups = [
-        '.feature-card',
+        '.feature-card:not([data-clone])',
         '.gallery-item'
     ];
     groups.forEach(sel => {

@@ -96,3 +96,168 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.4);
     box-shadow: 0 1px 12px rgba(0, 0, 0, 0.04);
 }
+
+/* ===========================
+   首页深色模式
+   VitePress 的深浅色开关会切换 <html class="dark">
+   =========================== */
+html.dark {
+    /* 深色拟态底色 */
+    --bg: #1B1B20;
+    --bg-light: #232329;
+    --bg-card: #202027;
+
+    /* 深色拟态阴影：高光面反向变暗 */
+    --shadow-light: #2B2B33;
+    --shadow-dark: #0F0F13;
+
+    /* 文字 */
+    --text-primary: #F1F1F3;
+    --text-secondary: #ABABB2;
+    --text-tertiary: #73737C;
+
+    /* 苔藓绿提亮，保证深底对比度 */
+    --moss: #8FBF8C;
+    --moss-soft: #A9D5A6;
+    --moss-deep: #5E9A5C;
+}
+
+/* 全站背景层：深色蒙版压暗图片 */
+html.dark .home-page-body-bg::before {
+    background-image:
+        linear-gradient(180deg, rgba(20, 20, 24, 0.8), rgba(20, 20, 24, 0.9)),
+        radial-gradient(circle at 12% 18%, rgba(143, 191, 140, 0.06) 0 1.5px, transparent 1.8px),
+        radial-gradient(circle at 78% 9%, rgba(143, 191, 140, 0.05) 0 2px, transparent 2.3px),
+        url("/resource/美景2.png");
+    background-size: auto, 480px 480px, cover;
+    background-position: center, center, center 55%;
+    background-repeat: repeat, repeat, no-repeat;
+    background-attachment: fixed, scroll, fixed;
+    filter: blur(3px) saturate(0.7) brightness(0.6);
+}
+
+/* 顶部导航：深色毛玻璃（覆盖上面的浅色定义） */
+html.dark .VPNavBar {
+    background: rgba(27, 27, 32, 0.6) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 1px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* 英雄区底部渐变衔接深色页面底色 */
+html.dark .home-page .hero {
+    background-image:
+        linear-gradient(180deg,
+            rgba(8, 12, 10, 0.82) 0%,
+            rgba(10, 14, 12, 0.72) 45%,
+            rgba(12, 16, 14, 0.66) 65%,
+            rgba(27, 27, 32, 0.96) 96%,
+            var(--bg) 100%),
+        url("/resource/美景1.png");
+}
+
+/* 大面磨砂玻璃卡片：白玻璃 → 深色玻璃 */
+html.dark .home-page .feature-card,
+html.dark .home-page .neu-frame,
+html.dark .home-page .join-card {
+    background: rgba(255, 255, 255, 0.055);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.42),
+                inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+html.dark .home-page .feature-card:hover,
+html.dark .home-page .gallery-item:hover {
+    background: rgba(255, 255, 255, 0.085);
+    box-shadow: 0 20px 52px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+html.dark .home-page .feature-card::after {
+    background: radial-gradient(circle 180px at var(--mx) var(--my),
+                rgba(255, 255, 255, 0.12), transparent 70%);
+}
+
+/* 图标圆盘 / 轮播箭头 / 复制按钮 */
+html.dark .home-page .neu-icon,
+html.dark .home-page .carousel-btn,
+html.dark .home-page .copy-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.13);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35),
+                inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+html.dark .home-page .carousel-btn:hover,
+html.dark .home-page .copy-btn:hover {
+    background: rgba(255, 255, 255, 0.14);
+    color: var(--blue-soft);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+html.dark .home-page .feature-card:hover .neu-icon {
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* 服务器地址输入框：深色凹陷 */
+html.dark .home-page .server-address {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+/* 轮播指示点 */
+html.dark .home-page .dot {
+    background: rgba(255, 255, 255, 0.22);
+}
+
+/* 页脚分隔线 */
+html.dark .home-page .footer {
+    border-top-color: rgba(255, 255, 255, 0.09);
+}
+
+/* ===========================
+   隐秘彩蛋（FIM）：触发后不可逆
+   连点页脚 Logo 5 次触发
+   =========================== */
+
+/* 全站黑白滤镜：作用于页面内容与背景层，但不动覆盖层 */
+body.fim-active > *:not(.fim-overlay) {
+    filter: grayscale(1);
+    transition: filter 2.5s ease;
+}
+
+body.fim-active .home-page-body-bg::before {
+    filter: grayscale(1) blur(2px) saturate(0.85) brightness(1.05);
+    transition: filter 2.5s ease;
+}
+
+/* 覆盖层：无底色，fim.png 一开始即铺满全屏、全透明，60 秒内逐渐显现 */
+.fim-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.fim-overlay.show {
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.fim-overlay.show img {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    /* 拉伸铺满浏览器可视区，不裁剪、不保持比例 */
+    object-fit: fill;
+    opacity: 0;
+    animation: fimFadeIn 60s linear forwards;
+}
+
+@keyframes fimFadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
