@@ -48,11 +48,12 @@ function copy(src, dest) {
 cpSync(join(root, 'resource'), join(dist, 'resource'), { recursive: true })
 console.log('[build-static] resource/ -> resource/')
 
-// 2) 静态站整体移到 /site/
+// 2) 静态站整体移到 /site/，同时覆盖站根 index（根路径 / 即新官网首页）
 const siteDir = join(dist, 'site')
 mkdirSync(siteDir, { recursive: true })
 for (const file of ['index.html', 'script.js', 'styles.css']) {
   copy(file, join(siteDir, file))
+  copy(file, join(dist, file))
 }
 
 // 3) 静态站自身的相对资源引用（resource/...）在 /site/ 下需要一份副本
