@@ -1,49 +1,47 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MossyMC — 苔生方块世界</title>
-    <!-- 首屏前应用主题，避免刷新闪烁 -->
+    <title>苔石 MOSSYMC — Java × 基岩 双端互通生存服</title>
+    <meta name="description" content="苔石Server（MossyMC）：Java ↔ Bedrock 双端互通生存服，原版多人游戏直连进服。服务端 Leaf 26.2，Java 1.21.7–26.3 / 基岩 26.30–26.5x。">
     <script>
         (function () {
             try {
                 var saved = localStorage.getItem('mossy-theme');
-                var dark = saved ? saved === 'dark'
-                                 : window.matchMedia('(prefers-color-scheme: dark)').matches;
-                if (dark) document.documentElement.setAttribute('data-theme', 'dark');
-            } catch (e) {}
+                var theme = saved || 'dark';   // 新站默认暗色（体素/控制台）
+                document.documentElement.setAttribute('data-theme', theme);
+            } catch (e) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
         })();
     </script>
     <link rel="stylesheet" href="styles.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
 </head>
 <body>
-    <!-- 顶部导航 -->
-    <nav class="nav-bar">
+
+    <!-- 顶栏 -->
+    <nav class="nav">
         <div class="nav-inner">
-            <div class="nav-logo">
-                <span class="logo-mark">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                        <path d="M3 3h7v7H3V3zm11 0h7v7h-7V3zM3 14h7v7H3v-7zm11 0h7v7h-7v-7z" fill="currentColor"/>
-                    </svg>
-                    <span class="logo-moss"></span>
-                </span>
-                <span>Mossy<span class="moss-accent">MC</span></span>
-            </div>
+            <a class="brand nav-logo" href="#top" aria-label="苔石 MOSSYMC">
+                <span class="brand-block" aria-hidden="true"></span>
+                <span class="brand-name">苔石<span class="brand-sep">//</span>MOSSYMC</span>
+            </a>
             <div class="nav-right">
                 <ul class="nav-links">
-                    <li><a href="#features">特性</a></li>
-                    <li><a href="#gallery">画廊</a></li>
-                    <li><a href="#join">加入</a></li>
+                    <li><a href="#crossplay">[ 互通 ]</a></li>
+                    <li><a href="#spec">[ 规格 ]</a></li>
+                    <li><a href="#gameplay">[ 玩法 ]</a></li>
+                    <li><a href="#gallery">[ 画廊 ]</a></li>
+                    <li><a href="#join">[ 加入 ]</a></li>
                 </ul>
                 <button class="theme-toggle" id="themeToggle" type="button"
-                        aria-label="切换到深色模式" title="切换到深色模式">
-                    <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        aria-label="切换主题" title="切换日/夜">
+                    <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                         <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/>
                         <path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M19.1 4.9l-1.8 1.8M6.7 17.3l-1.8 1.8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                     </svg>
-                    <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                         <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
                     </svg>
                 </button>
@@ -51,254 +49,266 @@
         </div>
     </nav>
 
-    <!-- 英雄区域：动态计数器 -->
-    <header class="hero">
-        <div class="hero-content">
-            <p class="hero-eyebrow moss-eyebrow">苔生方块 · 无限可能</p>
-            <h1 class="hero-title">
-                造你所想<br>
-                <span class="title-accent-blue">探索</span>无界
-            </h1>
-            <p class="hero-subtitle">在由方块构成的无尽世界中，建造、冒险、生存。<br>让每一寸苔藓，都生长出新的可能。</p>
-
-            <!-- 动态计数器：数据来自真实服务器状态接口 -->
-            <div class="counter-card" id="counterCard">
-                <div class="counter-item">
-                    <div class="counter-label">当前在线</div>
-                    <div class="counter-value" id="onlineCount">—</div>
-                </div>
-                <div class="counter-divider"></div>
-                <div class="counter-item">
-                    <div class="counter-label">最大容量</div>
-                    <div class="counter-value coral" id="maxCount">—</div>
-                </div>
-                <div class="counter-divider"></div>
-                <div class="counter-item">
-                    <div class="counter-label">服务器状态</div>
-                    <div class="counter-status" id="serverStatus">
-                        <span class="status-dot status-dot-pending"></span>
-                        <span class="status-text">连接中…</span>
-                    </div>
+    <!-- 首屏：左侧标题 + 右侧服务器控制台 -->
+    <header class="hero" id="top">
+        <div class="hero-inner">
+            <div class="hero-copy">
+                <h1 class="hero-title">Java 和基岩，<br><span class="hl">同一个苔石世界</span></h1>
+                <p class="hero-sub">
+                    手机、主机、PC 基岩版玩家与 Java 版玩家同图生存。<br>
+                    为朋友联机 / 团建 / 养老搭建，困难难度原版生存。
+                </p>
+                <div class="hero-cta">
+                    <a class="btn btn-primary" href="#join" id="joinBtnHero">
+                        <span>&gt; 加入服务器</span>
+                    </a>
+                    <a class="btn" href="#crossplay"><span>[ 双端互通说明 ]</span></a>
                 </div>
             </div>
 
-            <!-- 胶囊按钮 -->
-            <div class="hero-cta">
-                <a href="#join" class="capsule-btn capsule-primary" id="joinBtnHero">
-                    <span>加入服务器</span>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                        <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </a>
-                <a href="#features" class="capsule-btn capsule-secondary">
-                    <span>了解特性</span>
-                </a>
+            <!-- 服务器控制台：真实状态数据 -->
+            <div class="console" id="consoleCard" aria-live="polite">
+                <div class="console-bar">
+                    <span class="console-dot"></span>
+                    <span class="console-dot"></span>
+                    <span class="console-dot"></span>
+                    <span class="console-title">mossymc.top — server console</span>
+                </div>
+                <div class="console-body">
+                    <div class="cline">
+                        <span class="ckey">status</span>
+                        <span class="cdot">.........</span>
+                        <span class="cval status" id="serverStatus">
+                            <span class="led led-pending"></span><span class="status-text">CONNECTING…</span>
+                        </span>
+                    </div>
+                    <div class="cline">
+                        <span class="ckey">players</span>
+                        <span class="cdot">.........</span>
+                        <span class="cval players">
+                            <b id="onlineCount">--</b><i>/</i><span id="maxCount">--</span>
+                        </span>
+                    </div>
+                    <div class="cline">
+                        <span class="ckey">version</span>
+                        <span class="cdot">.........</span>
+                        <span class="cval" id="serverVersion">--</span>
+                    </div>
+                    <div class="cline">
+                        <span class="ckey">motd</span>
+                        <span class="cdot">.........</span>
+                        <span class="cval motd" id="motdLine">苔石Server</span>
+                    </div>
+                    <div class="cline quote-row">
+                        <span class="ckey">quote</span>
+                        <span class="cdot">.........</span>
+                        <span class="cval quote" id="motdQuote">「实事求是」</span>
+                    </div>
+                    <div class="console-foot">
+                        <code class="addr" id="addrText">mossymc.top</code>
+                        <button class="btn btn-mini" id="copyBtn"><span>复制</span></button>
+                    </div>
+                    <div class="console-caret" aria-hidden="true">█</div>
+                </div>
             </div>
         </div>
+        <div class="hero-scan" aria-hidden="true"></div>
     </header>
 
-    <!-- 核心玩法：横向滑动轮播 -->
-    <section class="features-section" id="features">
-        <div class="section-header">
-            <p class="section-eyebrow">核心玩法</p>
-            <h2 class="section-title">每一种玩法，都是一种态度</h2>
-            <p class="section-desc">滑动探索 Minecraft 的多维世界</p>
-        </div>
+    <!-- 双端互通 -->
+    <section class="section" id="crossplay">
+        <header class="section-head" data-reveal>
+            <p class="eyebrow">// 双端互通</p>
+            <h2>一台服务器，两种客户端</h2>
+            <p class="section-desc">Geyser + Floodgate 打通协议层，不需要登录器，直连服务器地址。</p>
+        </header>
 
-        <!-- 轮播图 -->
-        <div class="carousel-wrapper">
-            <button class="carousel-btn carousel-prev" id="prevBtn" aria-label="上一个">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-            </button>
+        <div class="bridge" data-reveal>
+            <article class="panel">
+                <div class="panel-bar"><span class="panel-tag tag-java">JAVA</span><span class="panel-title">java-edition</span></div>
+                <ul class="kv">
+                    <li><span>支持版本</span><b>1.21.7 — 26.3（推荐）</b></li>
+                    <li><span>接入方式</span><b>原版多人游戏</b></li>
+                    <li><span>登录</span><b>正版 / 离线均可</b></li>
+                    <li><span>跨版本</span><b>ViaVersion 降级支持</b></li>
+                </ul>
+                <p class="panel-note">因 Dialog 界面限制推荐 1.21.7 起；1.20 — 1.21.6 仍可进服。</p>
+            </article>
 
-            <div class="carousel-track" id="carouselTrack">
-                <!-- 探索 -->
-                <div class="feature-card neu-card">
-                    <div class="feature-icon neu-icon blue-icon">
-                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-                            <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
-                            <path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                    </div>
-                    <h3 class="feature-name">探索</h3>
-                    <p class="feature-tag blue">EXPLORATION</p>
-                    <p class="feature-desc">穿越繁茂洞穴、深邃黑暗，丈量从基岩到天空的每一寸可能。</p>
-                </div>
-
-                <!-- 战斗 -->
-                <div class="feature-card neu-card">
-                    <div class="feature-icon neu-icon coral-icon">
-                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-                            <path d="M14.5 3.5L19 8l-9 9-4.5-4.5 9-9z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                            <path d="M5 17l-2 4 4-2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M9 11l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                    </div>
-                    <h3 class="feature-name">战斗</h3>
-                    <p class="feature-tag coral">COMBAT</p>
-                    <p class="feature-desc">挥剑迎击末影龙，在下界要塞中与凋灵展开生死对决。</p>
-                </div>
-
-                <!-- 采集 -->
-                <div class="feature-card neu-card">
-                    <div class="feature-icon neu-icon blue-icon">
-                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-                            <path d="M3 21l6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            <path d="M9 15l5-5 5 5-5 5-5-5z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                            <path d="M14 10l3-3a2 2 0 013 3l-3 3" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                        </svg>
-                    </div>
-                    <h3 class="feature-name">采集</h3>
-                    <p class="feature-tag blue">GATHERING</p>
-                    <p class="feature-desc">挥动钻石镐，挖掘远古残骸，收集构建文明的每一块基石。</p>
-                </div>
-
-                <!-- 建造 -->
-                <div class="feature-card neu-card">
-                    <div class="feature-icon neu-icon coral-icon">
-                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-                            <path d="M4 20h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            <path d="M6 20V8l6-4 6 4v12" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                            <path d="M10 20v-5h4v5" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                        </svg>
-                    </div>
-                    <h3 class="feature-name">建造</h3>
-                    <p class="feature-tag coral">BUILDING</p>
-                    <p class="feature-desc">从红石机械到摩天城堡，将想象力浇筑进每一个方块。</p>
-                </div>
-
-                <!-- 合成 -->
-                <div class="feature-card neu-card">
-                    <div class="feature-icon neu-icon blue-icon">
-                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-                            <path d="M14.7 6.3a4 4 0 00-5.4 5.4l-6 6 2 2 6-6a4 4 0 005.4-5.4l-2.5 2.5-2-2 2.5-2.5z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                        </svg>
-                    </div>
-                    <h3 class="feature-name">合成</h3>
-                    <p class="feature-tag blue">CRAFTING</p>
-                    <p class="feature-desc">在工作台中调配万物，从木剑到附魔装备，创造你的工具谱系。</p>
-                </div>
-
-                <!-- 红石 -->
-                <div class="feature-card neu-card">
-                    <div class="feature-icon neu-icon coral-icon">
-                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-                            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
-                            <path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l2.5 2.5M16.5 16.5L19 19M19 5l-2.5 2.5M7.5 16.5L5 19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                    </div>
-                    <h3 class="feature-name">红石</h3>
-                    <p class="feature-tag coral">REDSTONE</p>
-                    <p class="feature-desc">用红石电路编织自动化机械，让方块世界拥有心跳与脉搏。</p>
-                </div>
+            <div class="bridge-mid" aria-hidden="true">
+                <span class="bridge-line"></span>
+                <span class="bridge-chip">GEYSER<br>+FLOODGATE</span>
+                <span class="bridge-line"></span>
             </div>
 
-            <button class="carousel-btn carousel-next" id="nextBtn" aria-label="下一个">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-            </button>
-        </div>
-
-        <!-- 轮播指示器 -->
-        <div class="carousel-dots" id="carouselDots"></div>
-    </section>
-
-    <!-- 世界掠影画廊 -->
-    <section class="gallery-section" id="gallery">
-        <div class="section-header">
-            <p class="section-eyebrow moss-eyebrow">世界掠影</p>
-            <h2 class="section-title">来自苔生世界的真实瞬间</h2>
-            <p class="section-desc">由 MossyMC 玩家共同建造与捕捉</p>
-        </div>
-
-        <div class="gallery-grid">
-            <!-- 特色建筑：主图 -->
-            <figure class="gallery-item gallery-featured neu-frame">
-                <div class="gallery-img-wrap">
-                    <img src="resource/特色建筑.webp" alt="特色建筑" loading="lazy">
-                </div>
-                <figcaption>
-                    <span class="caption-title">特色建筑</span>
-                    <span class="caption-sub">玩家匠心之作</span>
-                </figcaption>
-            </figure>
-
-            <!-- 美景1 -->
-            <figure class="gallery-item neu-frame">
-                <div class="gallery-img-wrap">
-                    <img src="resource/美景1.webp" alt="美景一" loading="lazy">
-                </div>
-                <figcaption>
-                    <span class="caption-title">晨曦之境</span>
-                    <span class="caption-sub">方块世界的日出</span>
-                </figcaption>
-            </figure>
-
-            <!-- 美景2 -->
-            <figure class="gallery-item neu-frame">
-                <div class="gallery-img-wrap">
-                    <img src="resource/美景2.webp" alt="美景二" loading="lazy">
-                </div>
-                <figcaption>
-                    <span class="caption-title">静谧之地</span>
-                    <span class="caption-sub">无人打扰的角落</span>
-                </figcaption>
-            </figure>
-
-            <!-- 美景3 -->
-            <figure class="gallery-item neu-frame">
-                <div class="gallery-img-wrap">
-                    <img src="resource/美景3.webp" alt="美景三" loading="lazy">
-                </div>
-                <figcaption>
-                    <span class="caption-title">远眺之峰</span>
-                    <span class="caption-sub">登顶方知天地广</span>
-                </figcaption>
-            </figure>
+            <article class="panel">
+                <div class="panel-bar"><span class="panel-tag tag-bedrock">BEDROCK</span><span class="panel-title">bedrock-edition</span></div>
+                <ul class="kv">
+                    <li><span>支持版本</span><b>26.30 — 26.5x</b></li>
+                    <li><span>接入方式</span><b>添加服务器直连</b></li>
+                    <li><span>登录</span><b>Floodgate 免正版</b></li>
+                    <li><span>菜单</span><b>自动转兼容样式</b></li>
+                </ul>
+                <p class="panel-note">若被误判为 Java 玩家，退出重进即可（Floodgate 已知问题）。</p>
+            </article>
         </div>
     </section>
 
-    <!-- 加入区 -->
-    <section class="join-section" id="join">
-        <div class="join-card neu-card">
-            <p class="section-eyebrow moss-eyebrow">立即开始</p>
-            <h2 class="join-title">你的方块冒险，<br>从此刻启程</h2>
-            <p class="join-desc">复制服务器地址，进入游戏多人模式，加入全球玩家的方块宇宙。</p>
+    <!-- 服务器规格：F3 调试屏 -->
+    <section class="section section-alt" id="spec">
+        <header class="section-head" data-reveal>
+            <p class="eyebrow">// 服务器规格</p>
+            <h2>F3 打开，参数全在这</h2>
+            <p class="section-desc">不堆术语——只写玩家进服前真正想知道的事。</p>
+        </header>
 
-            <div class="server-address neu-inset">
-                <span class="address-text">mossymc.top</span>
-                <button class="copy-btn" id="copyBtn">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                        <rect x="8" y="8" width="12" height="12" rx="2" stroke="currentColor" stroke-width="2"/>
-                        <path d="M16 8V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2h2" stroke="currentColor" stroke-width="2"/>
-                    </svg>
-                    <span>复制</span>
-                </button>
+        <div class="debug" data-reveal>
+            <div class="debug-line"><span class="dkey">difficulty</span><span class="dsep">:</span><span class="dval">hard — 困难生存，死了真的掉</span></div>
+            <div class="debug-line"><span class="dkey">slots</span><span class="dsep">:</span><span class="dval">20 人小服 · 满员前随便进</span></div>
+            <div class="debug-line"><span class="dkey">engine</span><span class="dsep">:</span><span class="dval">Leaf 26.2 — Purpur 全部补丁都在，日志不臃肿</span></div>
+            <div class="debug-line"><span class="dkey">memory</span><span class="dsep">:</span><span class="dval">16G 专机 · 人多了也不卡</span></div>
+            <div class="debug-line"><span class="dkey">chunks</span><span class="dsep">:</span><span class="dval">视距 8 · 低配客户端也流畅</span></div>
+            <div class="debug-line"><span class="dkey">world</span><span class="dsep">:</span><span class="dval">主世界 · 地形经 datapack 调整</span></div>
+            <div class="debug-line"><span class="dkey">logs</span><span class="dsep">:</span><span class="dval">方块箱子全留档 · 被偷一查就回滚</span></div>
+            <div class="debug-line"><span class="dkey">join</span><span class="dsep">:</span><span class="dval">mossymc.top · 原版多人游戏直连</span></div>
+        </div>
+    </section>
+
+    <!-- 玩法 -->
+    <section class="section" id="gameplay">
+        <header class="section-head" data-reveal>
+            <p class="eyebrow">// 玩法特色</p>
+            <h2>原版之上，多一层深度</h2>
+        </header>
+
+        <div class="cards" data-reveal>
+            <article class="card">
+                <span class="card-no">01</span>
+                <h3>双端互通</h3>
+                <p class="card-tag">CROSS-PLATFORM</p>
+                <p class="card-desc">Java 与基岩同图生存，装备、聊天、传送全部互通。</p>
+            </article>
+            <article class="card">
+                <span class="card-no">02</span>
+                <h3>科技魔法</h3>
+                <p class="card-tag">SLIMEFUN</p>
+                <p class="card-desc">数百道自动化与魔法配方，从手搓电路攀到量子设备。</p>
+            </article>
+            <article class="card">
+                <span class="card-no">03</span>
+                <h3>经济商店</h3>
+                <p class="card-tag">ECONOMY</p>
+                <p class="card-desc">商店收购 + 玩家市场双向定价，摆摊上架各凭本事。</p>
+            </article>
+            <article class="card">
+                <span class="card-no">04</span>
+                <h3>公会阵营</h3>
+                <p class="card-tag">GUILDS</p>
+                <p class="card-desc">建会共享领地与仓库，等级解锁权限与加成。</p>
+            </article>
+            <article class="card">
+                <span class="card-no">05</span>
+                <h3>战令签到</h3>
+                <p class="card-tag">BATTLE PASS</p>
+                <p class="card-desc">每日签到累积进度，赛季战令解锁称号外观。</p>
+            </article>
+            <article class="card">
+                <span class="card-no">06</span>
+                <h3>个性称号</h3>
+                <p class="card-tag">TITLES</p>
+                <p class="card-desc">菜单自由切换，聊天栏与 TAB 里一眼认出老玩家。</p>
+            </article>
+            <article class="card">
+                <span class="card-no">07</span>
+                <h3>多世界</h3>
+                <p class="card-tag">MULTIVERSE</p>
+                <p class="card-desc">主世界 / 资源世界 / 活动世界分线，背包独立存取。</p>
+            </article>
+            <article class="card">
+                <span class="card-no">08</span>
+                <h3>体验优化</h3>
+                <p class="card-tag">QUALITY</p>
+                <p class="card-desc">坐下躺下、随机传送、公共垃圾桶、方块变动回溯。</p>
+            </article>
+        </div>
+    </section>
+
+    <!-- 画廊：窗口化 -->
+    <section class="section section-alt" id="gallery">
+        <header class="section-head" data-reveal>
+            <p class="eyebrow">// 世界掠影</p>
+            <h2>来自苔石世界的真实瞬间</h2>
+            <p class="section-desc">由苔石Server 玩家共同建造与捕捉。</p>
+        </header>
+
+        <div class="shots" data-reveal>
+            <figure class="shot shot-wide">
+                <div class="shot-bar"><span class="shot-name">build_01.png</span></div>
+                <img src="resource/特色建筑.webp" alt="特色建筑" loading="lazy">
+                <figcaption>特色建筑 — 玩家匠心之作</figcaption>
+            </figure>
+            <figure class="shot">
+                <div class="shot-bar"><span class="shot-name">scenery_01.png</span></div>
+                <img src="resource/美景1.webp" alt="美景一" loading="lazy">
+                <figcaption>晨曦之境 — 方块世界的日出</figcaption>
+            </figure>
+            <figure class="shot">
+                <div class="shot-bar"><span class="shot-name">scenery_02.png</span></div>
+                <img src="resource/美景2.webp" alt="美景二" loading="lazy">
+                <figcaption>静谧之地 — 无人打扰的角落</figcaption>
+            </figure>
+            <figure class="shot shot-wide">
+                <div class="shot-bar"><span class="shot-name">scenery_03.png</span></div>
+                <img src="resource/美景3.webp" alt="美景三" loading="lazy">
+                <figcaption>远眺之峰 — 登顶方知天地广</figcaption>
+            </figure>
+        </div>
+    </section>
+
+    <!-- 加入 -->
+    <section class="section" id="join">
+        <header class="section-head" data-reveal>
+            <p class="eyebrow">// 立即开始</p>
+            <h2>复制地址，直接进服</h2>
+        </header>
+
+        <div class="join" data-reveal>
+            <div class="join-cmd">
+                <span class="cmd-prompt">&gt;</span>
+                <code class="cmd-addr" id="addrText2">join mossymc.top</code>
+                <button class="btn btn-primary btn-mini" id="copyBtn2"><span>复制地址</span></button>
             </div>
 
-            <a href="#" class="capsule-btn capsule-primary capsule-large" id="joinBtnMain">
-                <span>加入服务器</span>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                    <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-            </a>
-            <p class="join-hint">支持 Java 版 1.20+ · 基岩版同步开放</p>
+            <ol class="steps">
+                <li>
+                    <span class="step-no">01</span>
+                    <h4>Java 版</h4>
+                    <p>多人游戏 → 添加服务器 → 填入 <code>mossymc.top</code>，无需端口（SRV 已配置）。</p>
+                </li>
+                <li>
+                    <span class="step-no">02</span>
+                    <h4>基岩版</h4>
+                    <p>服务器 → 添加 → 同一地址；或直连 <code>play.simpfun.cn:30843</code>。</p>
+                </li>
+                <li>
+                    <span class="step-no">03</span>
+                    <h4>帮助文档</h4>
+                    <p>进服遇到问题，先看 <a href="https://doc.ideafox.top/docs/Midnight/zeronight/zeronight-introduction" target="_blank" rel="noopener">文档 / 常见问题</a>。</p>
+                </li>
+            </ol>
+
+            <div class="join-meta">
+                <span>SRV: <code>mossymc.top → play.simpfun.cn:30843</code></span>
+                <span>版本: Java 1.21.7—26.3 / 基岩 26.30—26.5x</span>
+                <span>QQ 群: <code>391425109</code></span>
+            </div>
         </div>
     </section>
 
-    <!-- 页脚 -->
     <footer class="footer">
         <div class="footer-inner">
-            <div class="footer-logo">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path d="M3 3h7v7H3V3zm11 0h7v7h-7V3zM3 14h7v7H3v-7zm11 0h7v7h-7v-7z" fill="currentColor"/>
-                </svg>
-                <span>Mossy<span class="moss-accent">MC</span></span>
-            </div>
-            <p class="footer-text">© 2026 MossyMC · 苔生方块，致敬无限创造。</p>
+            <span class="brand-name">苔石<span class="brand-sep">//</span>MOSSYMC</span>
+            <span class="footer-text">© 2026 苔石Server · MossyMC</span>
         </div>
     </footer>
 

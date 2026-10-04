@@ -1,537 +1,276 @@
-/* ===========================
-   服务器配置
-   把 SERVER_HOST 改成你的真实 Minecraft 服务器地址（host:port）。
-   留空则计数器如实显示「未连接」，不编造任何数据。
-   数据源：mcsrvstat.us 公共状态接口
-   =========================== */
-const SERVER_HOST = 'mossymc.top';
+/* =========================================================
+   苔石 MOSSYMC 官网脚本（全新）
+   - 状态卡：双数据源真实状态（mcsrvstat + mcstatus），在线/容量/版本/MOTD/语录轮播
+   - 地址复制、主题切换、滚动揭示、FIM 彩蛋
+   ========================================================= */
 
-/* ===========================
-   动态计数器：从真实服务器状态接口获取
-   =========================== */
-(function initCounter() {
+/* ================= 服务器配置 ================= */
+const SERVER_HOST = 'mossymc.top';          // 状态接口查询目标（SRV 已配置）
+const SERVER_ADDR = 'mossymc.top';          // 玩家复制的进服地址
+const DIRECT_ADDR = 'play.simpfun.cn:30843';
+
+/* 游戏内 MiniMOTD 语录兜底（离线时轮播） */
+const MOTD_FALLBACK = [
+    '「实事求是」',
+    '「星星之火，可以燎原」',
+    '「枪杆子里面出政权」',
+    '「一万年太久，只争朝夕」',
+    '「好好学习，天天向上」',
+    '「谦虚使人进步，骄傲使人落后」',
+    '「下定决心，排除万难，去争取胜利」'
+];
+
+/* ================= 状态控制台 ================= */
+(function initConsole() {
     const onlineEl = document.getElementById('onlineCount');
     const maxEl = document.getElementById('maxCount');
     const statusEl = document.getElementById('serverStatus');
+    const versionEl = document.getElementById('serverVersion');
+    const motdLineEl = document.getElementById('motdLine');
+    const motdQuoteEl = document.getElementById('motdQuote');
+    const card = document.getElementById('consoleCard');
+    if (!onlineEl || !statusEl) return;
 
-    // 弹簧式数字滚动（带轻微回弹）
+    let liveQuotes = null;
+    let quoteIdx = 0;
+    let lastOnline = 0;
+    let hasData = false;
+    let failStreak = 0;
+
+    function setStatus(text, state) {
+        const t = statusEl.querySelector('.status-text');
+        const led = statusEl.querySelector('.led');
+        if (t) t.textContent = text;
+        if (led) led.className = 'led led-' + state;
+    }
+
+    function setCard(cls) {
+        if (!card) return;
+        card.classList.remove('is-offline', 'is-stale');
+        if (cls) card.classList.add(cls);
+    }
+
+    function placeholders() {
+        onlineEl.textContent = '--';
+        maxEl.textContent = '--';
+        if (versionEl) versionEl.textContent = '--';
+        if (motdLineEl) motdLineEl.textContent = '--';
+    }
+
+    function showOffline() {
+        placeholders();
+        setStatus('OFFLINE', 'offline');
+        setCard('is-offline');
+    }
+
+    function showNoData() {
+        if (!hasData) placeholders();
+        setStatus('NO DATA', 'pending');
+        setCard('is-stale');
+    }
+
     function animateNumber(el, from, to, duration) {
         if (Number.isNaN(from)) from = 0;
         const start = performance.now();
         const step = (now) => {
-            const progress = Math.min((now - start) / duration, 1);
-            // easeOutBack 弹簧缓动
-            const c1 = 1.4, c3 = c1 + 1;
-            const eased = 1 + c3 * Math.pow(progress - 1, 3) + c1 * Math.pow(progress - 1, 2);
-            const value = Math.round(from + (to - from) * Math.max(0, eased));
-            el.textContent = value.toLocaleString();
-            if (progress < 1) requestAnimationFrame(step);
-            else el.textContent = to.toLocaleString();
+            const p = Math.min((now - start) / duration, 1);
+            const eased = 1 - Math.pow(1 - p, 3);
+            el.textContent = Math.round(from + (to - from) * eased);
+            if (p < 1) requestAnimationFrame(step);
+            else el.textContent = String(to);
         };
         requestAnimationFrame(step);
     }
 
-    function setStatus(text, state) {
-        statusEl.querySelector('.status-text').textContent = text;
-        const dot = statusEl.querySelector('.status-dot');
-        dot.className = 'status-dot status-dot-' + state;
-    }
+    /* MOTD：首行拆标题与版本，其余行做语录轮播 */
+    function applyMotd(lines, version) {
+        const first = lines[0] ? lines[0].split('|').map(s => s.trim()).filter(Boolean) : [];
 
-    function showOffline() {
-        onlineEl.textContent = '—';
-        maxEl.textContent = '—';
-        setStatus('未连接', 'offline');
-    }
+        if (motdLineEl) motdLineEl.textContent = first[0] || '--';
 
-    // 未配置服务器地址：如实显示未连接，不编造数据
-    if (!SERVER_HOST) {
-        setTimeout(() => setStatus('未配置', 'offline'), 600);
-        return;
-    }
-
-    let lastOnline = 0;
-
-    async function fetchStatus() {
-        try {
-            setStatus('连接中…', 'pending');
-            const res = await fetch(`https://api.mcsrvstat.us/3/${SERVER_HOST}`);
-            if (!res.ok) throw new Error('接口异常');
-            const data = await res.json();
-
-            if (!data.online) {
-                showOffline();
-                return;
-            }
-
-            const online = data.players?.online ?? 0;
-            const max = data.players?.max ?? 0;
-            setStatus('运行中', 'online');
-
-            animateNumber(onlineEl, lastOnline, online, 1200);
-            animateNumber(maxEl, 0, max, 1200);
-
-            // 在线人数变化时短暂高亮
-            if (lastOnline && online > lastOnline) {
-                onlineEl.classList.add('bump');
-                setTimeout(() => onlineEl.classList.remove('bump'), 700);
-            }
-            lastOnline = online;
-        } catch (err) {
-            showOffline();
+        const verFromMotd = first.find(s => /版本|version/i.test(s));
+        if (versionEl) {
+            versionEl.textContent = verFromMotd
+                ? verFromMotd.replace(/^.*版本[:：]?\s*/i, '')
+                : (version || '--');
         }
+
+        const rest = lines.slice(1)
+            .flatMap(l => l.split(/\s*\|\s*/))
+            .map(s => s.trim())
+            .filter(s => s && !/QQ群/i.test(s) && !/版本|version/i.test(s));
+        if (rest.length) liveQuotes = rest;
     }
 
-    fetchStatus();
-    // 每 30 秒刷新一次真实数据
-    setInterval(fetchStatus, 30000);
-})();
-
-/* ===========================
-   横向轮播图：无缝无限循环（手动）
-   做法：前后各克隆一整组卡片作为缓冲，滑进克隆区后静默平移一个整组宽度，
-        视觉上等于回到原位，因此首尾相接、永远滑不到尽头
-   =========================== */
-(function initCarousel() {
-    const track = document.getElementById('carouselTrack');
-    const prevBtn = document.getElementById('prevBtn');
-    const nextBtn = document.getElementById('nextBtn');
-    const dotsContainer = document.getElementById('carouselDots');
-    if (!track || !prevBtn || !nextBtn || !dotsContainer) return;
-
-    const originals = Array.from(track.querySelectorAll('.feature-card'));
-    const COUNT = originals.length;
-    if (!COUNT) return;
-
-    let programmatic = false;   // 按钮 / 指示点触发的平滑滚动是否进行中
-    let userInteracted = false; // 用户是否已经操作过轮播
-    let rafId = null;
-    let dotsTimer = null;
-    let settleTimer = null;
-
-    // 前后各克隆一组，长度足够让两个方向都滑不到物理尽头
-    const fragmentBefore = document.createDocumentFragment();
-    const fragmentAfter = document.createDocumentFragment();
-    originals.forEach((card) => {
-        const cloneBefore = card.cloneNode(true);
-        cloneBefore.setAttribute('aria-hidden', 'true');
-        cloneBefore.setAttribute('data-clone', 'true');
-        fragmentBefore.appendChild(cloneBefore);
-
-        const cloneAfter = card.cloneNode(true);
-        cloneAfter.setAttribute('aria-hidden', 'true');
-        cloneAfter.setAttribute('data-clone', 'true');
-        fragmentAfter.appendChild(cloneAfter);
-    });
-    track.insertBefore(fragmentBefore, track.firstChild);
-    track.appendChild(fragmentAfter);
-
-    const allCards = Array.from(track.querySelectorAll('.feature-card'));
-
-    /* 位置计算统一以 track 的滚动内容为参照系，
-       避免 offsetParent（.carousel-wrapper）带来的固定偏差 */
-    function posInTrack(card) {
-        return card.offsetLeft - track.offsetLeft;
-    }
-
-    // 让第 index 张卡片居中所需的 scrollLeft
-    function cardOffset(index) {
-        const card = allCards[index];
-        return Math.round(posInTrack(card) - (track.clientWidth - card.clientWidth) / 2);
-    }
-
-    // 相邻两组中同一张卡片的间距 = 一个整组的宽度
-    function groupWidth() {
-        return posInTrack(allCards[COUNT]) - posInTrack(allCards[0]);
-    }
-
-    function getCenterIndex() {
-        const trackCenter = track.scrollLeft + track.clientWidth / 2;
-        let closest = 0;
-        let minDist = Infinity;
-        allCards.forEach((card, i) => {
-            const dist = Math.abs(posInTrack(card) + card.clientWidth / 2 - trackCenter);
-            if (dist < minDist) {
-                minDist = dist;
-                closest = i;
-            }
-        });
-        return closest;
-    }
-
-    // 瞬时定位：临时关闭 CSS 平滑滚动，归位时不会出现可见动画
-    function jumpTo(left) {
-        const prevBehavior = track.style.scrollBehavior;
-        track.style.scrollBehavior = 'auto';
-        track.scrollLeft = left;
-        track.style.scrollBehavior = prevBehavior;
-    }
-
-    function scrollToCard(index) {
-        programmatic = true;
-        track.scrollTo({ left: cardOffset(index), behavior: 'smooth' });
-        scheduleSettle();
-    }
-
-    // 滑进克隆区就静默平移一个整组，视觉上等同回到原位
-    function normalize() {
-        const idx = getCenterIndex();
-        if (idx < COUNT) jumpTo(track.scrollLeft + groupWidth());
-        else if (idx >= COUNT * 2) jumpTo(track.scrollLeft - groupWidth());
-    }
-
-    // 指示点：把克隆位置映射回对应的原始卡片
-    function updateDots() {
-        const idx = getCenterIndex();
-        const dotIndex = ((idx - COUNT) % COUNT + COUNT) % COUNT;
-        dots.forEach((dot, i) => dot.classList.toggle('active', i === dotIndex));
-    }
-
-    // 平滑滚动结束（停止滚动 140ms）后归位并校正指示点
-    function scheduleSettle() {
-        clearTimeout(settleTimer);
-        settleTimer = setTimeout(() => {
-            programmatic = false;
-            normalize();
-            updateDots();
-        }, 140);
-    }
-
-    // 生成指示点（只对应原始卡片）
-    originals.forEach((_, i) => {
-        const dot = document.createElement('button');
-        dot.className = 'dot' + (i === 0 ? ' active' : '');
-        dot.setAttribute('aria-label', `跳转到第 ${i + 1} 张`);
-        dot.addEventListener('click', () => scrollToCard(COUNT + i));
-        dotsContainer.appendChild(dot);
-    });
-
-    const dots = dotsContainer.querySelectorAll('.dot');
-
-    // 滚动：手动拖动时实时归位；程序化动画期间交给 settle 处理，避免打断动画
-    track.addEventListener('scroll', () => {
-        if (!programmatic && !rafId) {
-            rafId = requestAnimationFrame(() => {
-                rafId = null;
-                normalize();
-            });
-        }
-        clearTimeout(dotsTimer);
-        dotsTimer = setTimeout(updateDots, 80);
-    }, { passive: true });
-
-    // 按钮：不需要再手写绕回逻辑，克隆区负责无缝衔接
-    nextBtn.addEventListener('click', () => {
-        userInteracted = true;
-        scrollToCard(getCenterIndex() + 1);
-    });
-
-    prevBtn.addEventListener('click', () => {
-        userInteracted = true;
-        scrollToCard(getCenterIndex() - 1);
-    });
-
-    // 键盘左右键控制
-    track.setAttribute('tabindex', '0');
-    track.addEventListener('keydown', (e) => {
-        if (e.key === 'ArrowRight') { e.preventDefault(); nextBtn.click(); }
-        if (e.key === 'ArrowLeft') { e.preventDefault(); prevBtn.click(); }
-    });
-
-    // 用户一旦操作过轮播就不再强制对齐初始位置
-    ['pointerdown', 'wheel', 'touchstart'].forEach((evt) => {
-        track.addEventListener(evt, () => { userInteracted = true; }, { passive: true, once: true });
-    });
-
-    // 初始居中到中间一组的第一张，保证两个方向都有缓冲
-    const centerOnFirst = () => jumpTo(cardOffset(COUNT));
-    centerOnFirst();
-    requestAnimationFrame(() => requestAnimationFrame(centerOnFirst));
-    window.addEventListener('load', () => { if (!userInteracted) centerOnFirst(); });
-
-    // 窗口尺寸变化后重新对齐当前卡片
-    window.addEventListener('resize', () => {
-        clearTimeout(settleTimer);
-        jumpTo(cardOffset(getCenterIndex()));
-    });
-
-    updateDots();
-})();
-
-/* ===========================
-   复制服务器地址
-   =========================== */
-(function initCopy() {
-    const copyBtn = document.getElementById('copyBtn');
-    const address = 'mossymc.top';
-
-    copyBtn.addEventListener('click', async () => {
-        try {
-            await navigator.clipboard.writeText(address);
-        } catch {
-            // 降级方案
-            const ta = document.createElement('textarea');
-            ta.value = address;
-            document.body.appendChild(ta);
-            ta.select();
-            document.execCommand('copy');
-            document.body.removeChild(ta);
-        }
-        const label = copyBtn.querySelector('span');
-        const original = label.textContent;
-        label.textContent = '已复制';
-        copyBtn.classList.add('copied');
+    function rotateQuote() {
+        if (!motdQuoteEl) return;
+        const pool = liveQuotes && liveQuotes.length ? liveQuotes : MOTD_FALLBACK;
+        const next = pool[quoteIdx % pool.length];
+        quoteIdx++;
+        motdQuoteEl.classList.add('swap');
         setTimeout(() => {
-            label.textContent = original;
-            copyBtn.classList.remove('copied');
-        }, 1800);
-    });
-})();
+            motdQuoteEl.textContent = next;
+            motdQuoteEl.classList.remove('swap');
+        }, 350);
+    }
+    if (motdQuoteEl) setInterval(rotateQuote, 5000);
 
-/* ===========================
-   胶囊按钮波纹反馈
-   =========================== */
-(function initRipple() {
-    document.querySelectorAll('.capsule-primary').forEach(btn => {
-        btn.addEventListener('click', function (e) {
-            const rect = this.getBoundingClientRect();
-            const ripple = document.createElement('span');
-            const size = Math.max(rect.width, rect.height);
-            ripple.style.cssText = `
-                position: absolute;
-                width: ${size}px;
-                height: ${size}px;
-                left: ${e.clientX - rect.left - size / 2}px;
-                top: ${e.clientY - rect.top - size / 2}px;
-                background: rgba(255,255,255,0.4);
-                border-radius: 50%;
-                transform: scale(0);
-                animation: rippleAnim 0.6s ease-out;
-                pointer-events: none;
-            `;
-            this.appendChild(ripple);
-            setTimeout(() => ripple.remove(), 600);
-        });
-    });
-
-    // 注入波纹动画样式
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes rippleAnim {
-            to { transform: scale(2.5); opacity: 0; }
-        }
-    `;
-    document.head.appendChild(style);
-})();
-
-/* ===========================
-   导航栏滚动收缩（Apple 风格）
-   =========================== */
-(function initNavCondense() {
-    const nav = document.querySelector('.nav-bar');
-    let lastY = 0;
-    let ticking = false;
-
-    function update() {
-        const y = window.scrollY;
-        nav.classList.toggle('condensed', y > 40);
-        ticking = false;
+    /* ---- 双数据源解析 ---- */
+    function parseMcsrvstat(p) {
+        if (!p || typeof p.online !== 'boolean') return null;
+        if (!p.online) return { online: false };
+        return {
+            online: true,
+            count: (p.players && p.players.online) || 0,
+            max: (p.players && p.players.max) || 0,
+            version: typeof p.version === 'string' ? p.version : '',
+            lines: ((p.motd && p.motd.clean) || []).map(s => String(s).trim()).filter(Boolean)
+        };
     }
 
-    window.addEventListener('scroll', () => {
-        if (!ticking) {
-            requestAnimationFrame(update);
-            ticking = true;
-        }
-    }, { passive: true });
-})();
-
-/* ===========================
-   英雄区视差滚动：内容上移 + 渐隐 + 缩放
-   =========================== */
-(function initHeroParallax() {
-    const hero = document.querySelector('.hero-content');
-    const counter = document.getElementById('counterCard');
-    if (!hero) return;
-    let ticking = false;
-
-    function update() {
-        const y = window.scrollY;
-        if (y < window.innerHeight) {
-            // 主内容：向上移 + 渐隐（去掉 scale，避免与计数器 backdrop-filter 冲突导致文字模糊）
-            const opacity = Math.max(0, 1 - y / (window.innerHeight * 0.7));
-            const translate = y * 0.35;
-            hero.style.opacity = opacity;
-            hero.style.transform = `translateY(${translate}px)`;
-
-            // 计数器不再单独 transform（避免重复合成层导致毛玻璃采样异常）
-        }
-        ticking = false;
+    function parseMcstatus(p) {
+        if (!p || typeof p.online !== 'boolean') return null;
+        if (!p.online) return { online: false };
+        const clean = (p.motd && p.motd.clean) ? String(p.motd.clean) : '';
+        return {
+            online: true,
+            count: (p.players && p.players.online) || 0,
+            max: (p.players && p.players.max) || 0,
+            version: (p.version && (p.version.name_clean || p.version.name_raw)) || '',
+            lines: clean.split(/\r?\n/).map(s => s.trim()).filter(Boolean)
+        };
     }
 
-    window.addEventListener('scroll', () => {
-        if (!ticking) {
-            requestAnimationFrame(update);
-            ticking = true;
+    async function grab(url, parse) {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 7000);
+        try {
+            const res = await fetch(url, { signal: ctrl.signal });
+            if (!res.ok) return null;
+            return parse(await res.json());
+        } catch (e) {
+            return null;
+        } finally {
+            clearTimeout(timer);
         }
-    }, { passive: true });
+    }
+
+    function applyOnline(res) {
+        applyMotd(res.lines, res.version);
+        setStatus('ONLINE', 'online');
+        setCard(null);
+        animateNumber(onlineEl, lastOnline, res.count, 900);
+        animateNumber(maxEl, 0, res.max, 900);
+        lastOnline = res.count;
+        hasData = true;
+        failStreak = 0;
+    }
+
+    async function poll() {
+        const results = (await Promise.all([
+            grab(`https://api.mcsrvstat.us/3/${SERVER_HOST}`, parseMcsrvstat),
+            grab(`https://api.mcstatus.io/v2/status/java/${SERVER_HOST}`, parseMcstatus)
+        ])).filter(Boolean);
+
+        const live = results.find(r => r.online);
+        if (live) { applyOnline(live); return; }
+
+        /* 两个源都明确回复“离线”才判离线 */
+        if (results.length) { showOffline(); failStreak = 0; return; }
+
+        /* 全部请求失败：连挂 2 次才降级，中间不清屏 */
+        failStreak += 1;
+        if (failStreak >= 2) { showNoData(); return; }
+        if (!hasData) setStatus('CONNECTING…', 'pending');
+        setTimeout(poll, 3000);
+    }
+
+    if (!hasData) setStatus('CONNECTING…', 'pending');
+    poll();
+    setInterval(poll, 30000);
+    window.__mossyPoll = poll;   /* 测试钩子 */
 })();
 
-/* ===========================
-   磁吸按钮：光标靠近时按钮微移（Apple 产品页风格）
-   =========================== */
-(function initMagneticButtons() {
-    if (window.matchMedia('(pointer: coarse)').matches) return; // 触屏跳过
-
-    document.querySelectorAll('.capsule-primary, .capsule-secondary').forEach(btn => {
-        const STRENGTH = 0.25;
-        let raf;
-
-        btn.addEventListener('mousemove', (e) => {
-            const rect = btn.getBoundingClientRect();
-            const x = e.clientX - rect.left - rect.width / 2;
-            const y = e.clientY - rect.top - rect.height / 2;
-            cancelAnimationFrame(raf);
-            raf = requestAnimationFrame(() => {
-                btn.style.transform = `translate(${x * STRENGTH}px, ${y * STRENGTH}px)`;
-            });
-        });
-
-        btn.addEventListener('mouseleave', () => {
-            cancelAnimationFrame(raf);
-            // 回弹到原位
-            btn.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
-            btn.style.transform = 'translate(0, 0)';
-            setTimeout(() => { btn.style.transition = ''; }, 500);
-        });
-    });
-})();
-
-/* ===========================
-   特性卡片：光标追踪高光（不使用 3D rotate，避免与 backdrop-filter 冲突导致文字模糊）
-   =========================== */
-(function initCardTilt() {
-    if (window.matchMedia('(pointer: coarse)').matches) return;
-
-    document.querySelectorAll('.feature-card').forEach(card => {
-        let raf;
-
-        card.addEventListener('mousemove', (e) => {
-            const rect = card.getBoundingClientRect();
-            const x = ((e.clientX - rect.left) / rect.width) * 100;
-            const y = ((e.clientY - rect.top) / rect.height) * 100;
-            cancelAnimationFrame(raf);
-            raf = requestAnimationFrame(() => {
-                // 仅设置 CSS 变量驱动高光位置，不做 3D 变换，保护毛玻璃渲染
-                card.style.setProperty('--mx', x + '%');
-                card.style.setProperty('--my', y + '%');
-                card.classList.add('tilting');
-            });
-        });
-
-        card.addEventListener('mouseleave', () => {
-            cancelAnimationFrame(raf);
-            card.classList.remove('tilting');
-            card.style.removeProperty('--mx');
-            card.style.removeProperty('--my');
-        });
-    });
-})();
-
-/* ===========================
-   滚动错峰揭示（带 --i 索引延迟）
-   =========================== */
-(function initScrollReveal() {
-    // 给同组元素打上错峰索引（轮播的克隆卡片不参与，避免滑入克隆区时闪烁）
-    const groups = [
-        '.feature-card:not([data-clone])',
-        '.gallery-item'
-    ];
-    groups.forEach(sel => {
-        document.querySelectorAll(sel).forEach((el, i) => {
-            el.classList.add('reveal');
-            el.style.setProperty('--i', i);
-        });
-    });
-    document.querySelectorAll('.section-header, .join-card').forEach(el => {
-        el.classList.add('reveal');
-    });
-
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('in-view');
-                observer.unobserve(entry.target);
+/* ================= 地址复制 ================= */
+(function initCopy() {
+    function bindCopy(btnId) {
+        const btn = document.getElementById(btnId);
+        if (!btn) return;
+        btn.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(SERVER_ADDR);
+            } catch (e) {
+                const ta = document.createElement('textarea');
+                ta.value = SERVER_ADDR;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
             }
+            const label = btn.querySelector('span');
+            if (!label) return;
+            const original = label.textContent;
+            label.textContent = '已复制 ✓';
+            setTimeout(() => { label.textContent = original; }, 1800);
         });
-    }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+    }
+    bindCopy('copyBtn');
+    bindCopy('copyBtn2');
 
-    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    /* 首屏「加入服务器」顺手复制地址 */
+    const hero = document.getElementById('joinBtnHero');
+    if (hero) hero.addEventListener('click', () => {
+        try { navigator.clipboard.writeText(SERVER_ADDR); } catch (e) {}
+    });
 })();
 
-/* ===========================
-   主题切换：深色 / 浅色
-   初值由 <head> 内联脚本在首屏前应用（localStorage 或系统偏好）。
-   这里只处理按钮点击，并在用户未手动选择时跟随系统变化。
-   =========================== */
-(function initThemeToggle() {
-    const root = document.documentElement;
+/* ================= 主题切换（暗色默认） ================= */
+(function initTheme() {
     const btn = document.getElementById('themeToggle');
-    const STORAGE_KEY = 'mossy-theme';
-    const systemDark = window.matchMedia('(prefers-color-scheme: dark)');
-
-    function currentTheme() {
-        return root.hasAttribute('data-theme') ? 'dark' : 'light';
-    }
-
-    function applyTheme(theme, updateButton) {
-        if (theme === 'dark') root.setAttribute('data-theme', 'dark');
-        else root.removeAttribute('data-theme');
-
-        if (updateButton && btn) {
-            const nextLabel = theme === 'dark' ? '切换到浅色模式' : '切换到深色模式';
-            btn.setAttribute('aria-label', nextLabel);
-            btn.setAttribute('title', nextLabel);
-        }
-    }
+    const root = document.documentElement;
+    const KEY = 'mossy-theme';
 
     if (btn) {
         btn.addEventListener('click', () => {
-            const next = currentTheme() === 'dark' ? 'light' : 'dark';
-            applyTheme(next, true);
-            try { localStorage.setItem(STORAGE_KEY, next); } catch (e) {}
+            const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            root.setAttribute('data-theme', next);
+            try { localStorage.setItem(KEY, next); } catch (e) {}
         });
     }
-
-    // 仅在用户未手动选择过时跟随系统主题变化
-    systemDark.addEventListener('change', (e) => {
-        try {
-            if (!localStorage.getItem(STORAGE_KEY)) applyTheme(e.matches ? 'dark' : 'light', true);
-        } catch (err) {
-            applyTheme(e.matches ? 'dark' : 'light', true);
-        }
-    });
 })();
 
-/* ===========================
-   隐秘彩蛋（FIM）：不可逆，触发后只能刷新恢复
-   触发方式：1.4 秒内连点导航 Logo 5 次
-   效果：循环播放 resource/fim.mp3
-         resource/fim.webp 铺满全屏，由全透明在 60 秒内逐渐显现
-         整页套上黑白滤镜，所有文字变为 FRIEND INSIDE ME
-   =========================== */
+/* ================= 滚动揭示 ================= */
+(function initReveal() {
+    const targets = document.querySelectorAll('[data-reveal]');
+    if (!('IntersectionObserver' in window)) {
+        targets.forEach(el => el.classList.add('in-view'));
+        return;
+    }
+    const io = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('in-view');
+                io.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+    targets.forEach(el => io.observe(el));
+})();
+
+/* =========================================================
+   隐秘彩蛋（FIM）：不可逆，触发后刷新恢复
+   触发：1.4 秒内连点左上角 Logo 5 次
+   效果：整页黑白 + 全文改写 + fim.webp 渐显 + fim.mp3 循环
+   ========================================================= */
 (function initFimEasterEgg() {
     const logo = document.querySelector('.nav-logo');
     if (!logo) return;
 
     const CLICKS_NEEDED = 5;
     const WINDOW_MS = 1400;
-    let clicks = 0;
-    let timer = null;
-    let fired = false;
-
     const FIM_TEXT = 'FRIEND INSIDE ME';
+    let clicks = 0, timer = null, fired = false;
 
-    // 立即把所有可见文本改写为 FIM_TEXT
     function rewritePageText() {
         const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
             acceptNode(node) {
@@ -542,18 +281,19 @@ const SERVER_HOST = 'mossymc.top';
                     return NodeFilter.FILTER_REJECT;
                 }
                 if (parent.closest && parent.closest('.fim-overlay')) return NodeFilter.FILTER_REJECT;
-                return node.nodeValue && node.nodeValue.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+                return node.nodeValue && node.nodeValue.trim()
+                    ? NodeFilter.FILTER_ACCEPT
+                    : NodeFilter.FILTER_REJECT;
             }
         });
         const targets = [];
         while (walker.nextNode()) targets.push(walker.currentNode);
-        targets.forEach((n) => { n.nodeValue = FIM_TEXT; });
+        targets.forEach(n => { n.nodeValue = FIM_TEXT; });
     }
 
-    // 持续强制：之后任何 JS 写入的文本（如在线人数轮询）都会立刻被改写
     function enforceFimText() {
         const observer = new MutationObserver((mutations) => {
-            mutations.forEach((m) => {
+            mutations.forEach(m => {
                 const t = m.target;
                 if (t.nodeType === Node.TEXT_NODE && t.nodeValue && t.nodeValue.trim() && t.nodeValue !== FIM_TEXT) {
                     const parent = t.parentElement;
@@ -570,11 +310,9 @@ const SERVER_HOST = 'mossymc.top';
         fired = true;
         document.body.classList.add('fim-active');
 
-        // 所有文字变为 FRIEND INSIDE ME
         rewritePageText();
         enforceFimText();
 
-        // 循环播放 fim.mp3，音量渐入
         const audio = new Audio('resource/fim.mp3');
         audio.loop = true;
         audio.volume = 0;
@@ -587,14 +325,12 @@ const SERVER_HOST = 'mossymc.top';
         const play = () => {
             const p = audio.play();
             if (p && p.catch) p.catch(() => {
-                // 自动播放被拦截时，等下一次点击再补放
                 document.addEventListener('pointerdown', () => { audio.play().catch(() => {}); }, { once: true });
             });
         };
         play();
         fadeIn();
 
-        // fim.webp 覆盖层：先插入 DOM，下一帧再加 .show 触发动画
         const overlay = document.createElement('div');
         overlay.className = 'fim-overlay';
         const img = document.createElement('img');
@@ -602,7 +338,6 @@ const SERVER_HOST = 'mossymc.top';
         img.alt = '';
         overlay.appendChild(img);
         document.body.appendChild(overlay);
-
         requestAnimationFrame(() => {
             requestAnimationFrame(() => overlay.classList.add('show'));
         });
