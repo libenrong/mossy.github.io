@@ -343,6 +343,80 @@ body.bw #quiz, body.bw #crack, body.bw #progress { filter:grayscale(1); }
 #finalWaves.on { display:flex; }
 #finalWaves .fw-line { font-size:42px; font-weight:600; letter-spacing:6px; line-height:1.5; }
 
+/* ===== 更猛烈的持续侵入：暗角 / 残影行 / 缓慢倾斜 / 假卡死 / 预闪 / 第二指针 ===== */
+#vignette {
+  position:fixed; inset:0; z-index:50; pointer-events:none;
+  opacity:0; transition:opacity 2.4s ease, background 2s ease;
+  background:radial-gradient(ellipse at center, rgba(0,0,0,0) 46%, rgba(0,0,0,.5) 100%);
+}
+#vignette.on { opacity:1; }
+#vignette.deep { background:radial-gradient(ellipse at center, rgba(0,0,0,0) 30%, rgba(0,0,0,.72) 88%, rgba(0,0,0,.9) 100%); }
+#vignette.pulse { animation:vgPulse 3.6s ease-in-out infinite; }
+@keyframes vgPulse { 0%,100% { opacity:1; } 50% { opacity:.68; } }
+#vignette.noise::after {
+  content:''; position:absolute; inset:-60px;
+  background-image:radial-gradient(rgba(0,0,0,.16) 1px, transparent 1.2px);
+  background-size:3px 3px; opacity:.45;
+  animation:grainShift .3s steps(2) infinite;
+}
+@keyframes grainShift {
+  0% { transform:translate(0,0); }
+  50% { transform:translate(-2px,1px); }
+  100% { transform:translate(1px,-2px); }
+}
+
+/* 题干残影行：写在 #qtext 外面，题面本身一个字不动 */
+#ghostLine {
+  font-size:12px; letter-spacing:7px; color:rgba(0,0,0,.3);
+  margin:-16px 0 20px; min-height:16px; user-select:none;
+  animation:ghostBlink 2.8s ease-in-out infinite;
+}
+@keyframes ghostBlink {
+  0%,100% { opacity:0; transform:translateX(0); }
+  40% { opacity:.75; transform:translateX(-3px); }
+  52% { opacity:.06; transform:translateX(3px); }
+  64% { opacity:.55; transform:translateX(-1px); }
+}
+
+/* 题面极慢倾斜：像纸被人从下面轻轻推 */
+#quiz.creep { animation:quizCreep 22s ease-in-out infinite alternate; }
+@keyframes quizCreep {
+  from { transform:rotate(-.22deg) scale(1); }
+  to { transform:rotate(.3deg) scale(1.014); }
+}
+
+/* 第17题装死 */
+#quiz.frozen { opacity:.5; cursor:wait; }
+#quiz.frozen .opt, #quiz.frozen #next { pointer-events:none; }
+#quiz.frozen #qtext::after { content:'……'; color:#999; letter-spacing:6px; }
+
+/* 高潮前白/黑全屏帧 */
+#preFlash { position:fixed; inset:0; z-index:96; opacity:0; pointer-events:none; transition:opacity .04s; }
+#preFlash.on { opacity:1; }
+
+/* 第二只指针：落后你半拍 */
+#ghostCursor {
+  position:fixed; left:-40px; top:-40px; width:13px; height:13px; border-radius:50%;
+  border:1.5px solid rgba(0,0,0,.55); box-shadow:0 0 0 4px rgba(0,0,0,.06);
+  z-index:95; pointer-events:none; opacity:0; transition:opacity 1.1s;
+  transform:translate(-50%,-50%);
+}
+#ghostCursor.on {
+  opacity:.6;
+  animation:ghostCur 1.6s ease-in-out infinite alternate;
+}
+@keyframes ghostCur {
+  from { transform:translate(-50%,-50%) scale(1); }
+  to { transform:translate(-50%,-50%) scale(1.5); }
+}
+
+/* 频闪黑帧反相成白帧：红白闪 */
+#scare.inv { filter:invert(1); }
+
+/* 报告页：元数据行 + 自我计数行 */
+#reportBox .r-meta { font-size:10px; color:#999; letter-spacing:1px; margin-top:8px; }
+#reportBox #rGhost { color:#666; }
+
 @media (max-width:640px) {
   #finalSeq .fs-line { font-size:22px; letter-spacing:3px; }
   #fsFlash { font-size:18px; }
@@ -368,9 +442,11 @@ body.bw #quiz, body.bw #crack, body.bw #progress { filter:grayscale(1); }
 </div>
 
 <div id="progress" class="hidden"></div>
+<div id="vignette"></div>
 
 <div id="quiz" class="screen hidden">
   <div id="qtext"></div>
+  <div id="ghostLine" class="hidden"></div>
   <div id="options"></div>
   <button id="next" class="btn" disabled>下一题</button>
 </div>
@@ -406,6 +482,8 @@ body.bw #quiz, body.bw #crack, body.bw #progress { filter:grayscale(1); }
 
 <div id="crack"><svg id="crackSvg" viewBox="0 0 100 100" preserveAspectRatio="none"></svg></div>
 <div id="shatterFlash"></div>
+<div id="preFlash"></div>
+<div id="ghostCursor"></div>
 
 <div id="finalSeq">
   <div id="fsSlow"></div>
@@ -566,7 +644,10 @@ var state = {
   finalSeq: false,    // 终章（黑白锁屏/文字跳脸/最后一词）进行中
   bgRegistered: false,
   whispersScheduled: false,
-  jitterScheduled: false
+  jitterScheduled: false,
+  frozen: false,       // 第17题假卡死进行中
+  silence: false,      // 静默口袋进行中（心跳/耳语/低频全闭嘴）
+  reportArmed: false
 };
 
 var ctx = null, masterGain = null, lowpass = null, shaper = null;
@@ -579,6 +660,8 @@ var dissonanceOsc = null, dissonanceGain = null;
 var whisperDelay = null;
 var dodgeTarget = null;
 var hiddenAt = 0, bgmRateStored = 1;
+var infraOsc = null, infraGain = null;   // 19Hz 次声：听不见，但胸口能感觉到
+var ghostCurOn = false, ghostCurTimer = 0, gcx = 0, gcy = 0, gcTx = 0, gcTy = 0;
 
 var SCREENS = ['consent', 'quiz', 'blank', 'climax', 'scare', 'red', 'fauxDeath'];
 
@@ -791,20 +874,38 @@ var WHISPER_LIST = ['resource/voice/whisper1.mp3','resource/voice/whisper2.mp3',
 var whisperTimer = null;
 
 function playRandomWhisper() {
-  if (!ctx) return;
+  if (!ctx || state.silence) return;
   var url = WHISPER_LIST[Math.floor(Math.random() * WHISPER_LIST.length)];
   fetch(url).then(function (r) { return r.arrayBuffer(); })
     .then(function (ab) { return ctx.decodeAudioData(ab); })
     .then(function (buf) {
+      if (state.silence) return;
+      // 四成概率整段倒放：同一句耳语，倒过来就不像人说的了
+      if (Math.random() < 0.4) {
+        var rv = ctx.createBuffer(buf.numberOfChannels, buf.length, ctx.sampleRate);
+        for (var c = 0; c < buf.numberOfChannels; c++) {
+          var sd = buf.getChannelData(c), dd = rv.getChannelData(c);
+          for (var q = 0, w = buf.length - 1; q < buf.length; q++, w--) dd[w] = sd[q];
+        }
+        buf = rv;
+      }
       var src = ctx.createBufferSource();
       src.buffer = buf;
       var g = ctx.createGain();
       g.gain.value = 0.18 + Math.random() * 0.12;
+      var node = g;
+      // 硬声像：贴着左耳或右耳说，不留中间位置
+      if (ctx.createStereoPanner) {
+        var pan = ctx.createStereoPanner();
+        pan.pan.value = (Math.random() < 0.5 ? -1 : 1) * (0.55 + Math.random() * 0.45);
+        g.connect(pan);
+        node = pan;
+      }
       src.connect(g);
       if (whisperDelay) {
-        g.connect(whisperDelay);
+        node.connect(whisperDelay);
       } else {
-        g.connect(masterGain);
+        node.connect(masterGain);
       }
       src.start();
     })['catch'](function () {});
@@ -817,9 +918,12 @@ function scheduleRandomWhispers() {
 }
 
 function runWhisperLoop() {
-  var next = 8000 + Math.random() * 18000;
+  // 越往后耳语越密：第16题起最短 2.6 秒就可能贴你一次
+  var tight = state.idx >= 16 ? 2600 : state.idx >= 12 ? 5200 : 8000;
+  var spread = state.idx >= 16 ? 4000 : 18000;
+  var next = tight + Math.random() * spread;
   whisperTimer = setTimeout(function () {
-    if (state.hasInteracted && state.idx < 22) playRandomWhisper();
+    if (state.hasInteracted && state.idx < 22 && !state.silence) playRandomWhisper();
     if (state.whispersScheduled) runWhisperLoop();
   }, next);
 }
@@ -1009,7 +1113,7 @@ function initHeart() {
 }
 
 function thump(when) {
-  if (!ctx || !heartOsc || !heartGain) return;
+  if (!ctx || !heartOsc || !heartGain || state.silence) return;
   var t = when;
   heartOsc.frequency.setValueAtTime(58, t);
   heartOsc.frequency.linearRampToValueAtTime(40, t + 0.11);
@@ -1024,12 +1128,27 @@ function startHeart(bpm) {
   heartbeatBpm = bpm;
   if (heartTimer) clearTimeout(heartTimer);
   var iv = 60000 / bpm;
-  function loop() {
-    if (!heartGain) return;
+  function beat() {
     var now = ctx.currentTime;
     thump(now);
     thump(now + 0.24);
-    heartTimer = setTimeout(loop, iv);
+    // 心律不齐：心率越高越容易多抽一拍（早搏）
+    if (heartbeatBpm >= 118 && Math.random() < 0.24) {
+      heartTimer = setTimeout(function () {
+        if (!heartGain) return;
+        var t2 = ctx.currentTime;
+        thump(t2);
+        thump(t2 + 0.19);
+        heartTimer = setTimeout(loop, iv * 0.62);
+      }, iv * 0.48);
+      return;
+    }
+    // 每一拍的间隔都不一样：正常心跳是机器，这个不是
+    heartTimer = setTimeout(loop, iv * (0.8 + Math.random() * 0.42));
+  }
+  function loop() {
+    if (!heartGain) return;
+    beat();
   }
   heartTimer = setTimeout(loop, 300);
 }
@@ -1048,10 +1167,14 @@ function heartBpmFor(i) {
     }
   }
   if (n) avgSpeed = avgSpeed / n;
-  if (avgSpeed < 1000) return 130;
-  if (avgSpeed < 2000) return 110;
-  if (avgSpeed < 4000) return 90;
-  return 72;
+  var bpm;
+  if (avgSpeed < 1000) bpm = 130;
+  else if (avgSpeed < 2000) bpm = 110;
+  else if (avgSpeed < 4000) bpm = 90;
+  else bpm = 72;
+  // 越往后越不讲道理地往上顶：题号本身就开始吓人了
+  if (i >= 12) bpm += Math.min(26, Math.pow(i - 11, 1.6));
+  return Math.min(Math.round(bpm), 158);
 }
 
 function slowBgm() {
@@ -1075,11 +1198,24 @@ function refillOptionHover(i) {
 }
 
 function updateProgress() {
-  $('progress').textContent = state.idx + ' / 24';
+  var n = state.idx;
+  // 第16题起进度开始说谎：偶尔往回倒退两格
+  if (n >= 16 && n <= 21 && Math.random() < 0.45) {
+    n = Math.max(12, n - 1 - Math.floor(Math.random() * 3));
+  }
+  $('progress').textContent = n + ' / 24';
 }
 
 function applyStage(i) {
   var b = document.body;
+  var vg = $('vignette');
+  if (i >= 4) {
+    // 暗角侵入：越往后四角越黑，第20题起开始呼吸
+    vg.classList.add('on');
+    if (i >= 12) vg.classList.add('noise');
+    if (i >= 16) vg.classList.add('deep');
+    if (i >= 20) vg.classList.add('pulse');
+  }
   if (i === 4) {
     b.style.background = '#f7f7f7';
     $('progress').classList.remove('hidden');
@@ -1096,14 +1232,20 @@ function applyStage(i) {
   } else if (i === 16) {
     b.style.background = '#f0f0f0';
     startHeart(heartBpmFor(16));
+    startInfra();
   } else if (i === 20) {
     setBgm('full');
     startBuzz(25);
     startHeart(heartBpmFor(20));
+    // 静默口袋：热闹到顶点时突然全部闭嘴，再用一记次声把它们砸回来
+    setT(function () { silencePocket(2600); }, 700);
+  } else if (i === 21) {
+    setT(function () { silencePocket(1500); }, 500);
   } else if (i === 22) {
     if (ctx && ctx.state === 'running') { ctx.suspend(); }
     stopBuzz();
     stopHeart();
+    stopInfra();
     if (bgmSrc) { try { bgmSrc.stop(); } catch (e) {} bgmSrc = null; }
   }
 }
@@ -1162,6 +1304,7 @@ function renderOptions(i, usedOpts) {
       if (b._ghosting) { b._ghosting = false; b.classList.remove('ghosted'); }
     });
     b.addEventListener('click', function () {
+      if (state.frozen) return;   // 装死期间点哪都没反应
       var sels = box.querySelectorAll('.opt.sel');
       if (state.selected === k) {
         state.selected = -1;
@@ -1261,9 +1404,188 @@ function showContactInput() {
   }, 4200);
 }
 
+/* ================= 持续侵入层：残影行 / 假卡死 / 静默口袋 / 次声 / 预闪 ================= */
+var GHOST_LINES = ['别读了', '我在这', '你回头了吗', '它离你两步', '再往下', '你不是一个人', '别停', '我知道你在哪'];
+
+/* 题干下方的残影行：独立元素，不写进 #qtext（避免动到题面本身） */
+function updateGhostLine(i) {
+  var g = $('ghostLine');
+  if (!g) return;
+  if (i < 12 || i > 21) {
+    g.classList.add('hidden');
+    g.textContent = '';
+    var gc = $('ghostCursor');
+    if (gc && i > 21) gc.classList.remove('on');
+    return;
+  }
+  g.classList.remove('hidden');
+  g.textContent = GHOST_LINES[Math.floor(Math.random() * GHOST_LINES.length)];
+}
+
+/* 第17题：页面装死。Esc 的 clearTimers 清不掉这个（裸 setTimeout），装死就该清不掉 */
+function fakeFreeze() {
+  if (state.frozen) return;
+  state.frozen = true;
+  var q = $('quiz');
+  q.classList.add('frozen');
+  setTimeout(function () {
+    state.frozen = false;
+    q.classList.remove('frozen');
+  }, 4600);
+}
+
+/* 静默口袋：所有声源瞬间掐死，几秒后一记次声重击把它们全砸回来 */
+function silencePocket(ms) {
+  if (!ctx || state.silence) return;
+  state.silence = true;
+  resumeCtx();
+  var t = ctx.currentTime;
+  var save = {
+    bgm: bgmGain ? bgmGain.gain.value : null,
+    buzz: buzzGain ? buzzGain.gain.value : null,
+    low: lowOscGain ? lowOscGain.gain.value : null
+  };
+  function rampDown(node, v, secs) {
+    if (!node || v === null) return;
+    node.gain.cancelScheduledValues(t);
+    node.gain.setValueAtTime(v, t);
+    node.gain.linearRampToValueAtTime(0.0001, t + secs);
+  }
+  rampDown(bgmGain, save.bgm, 0.35);
+  rampDown(buzzGain, save.buzz, 0.2);
+  rampDown(lowOscGain, save.low, 0.2);
+  setTimeout(function () {
+    state.silence = false;
+    if (!ctx) return;
+    var t2 = ctx.currentTime;
+    function rampUp(node, v) {
+      if (!node || v === null) return;
+      node.gain.cancelScheduledValues(t2);
+      node.gain.setValueAtTime(node.gain.value, t2);
+      node.gain.linearRampToValueAtTime(v, t2 + 0.05);
+    }
+    rampUp(bgmGain, save.bgm);
+    rampUp(buzzGain, save.buzz);
+    rampUp(lowOscGain, save.low);
+    subHit();
+  }, ms);
+}
+
+/* 次声重击：30Hz 往下坠的低频一拳 */
+function subHit() {
+  if (!ctx) return;
+  var sr = ctx.sampleRate, len = Math.floor(sr * 1.7);
+  var buf = ctx.createBuffer(1, len, sr), d = buf.getChannelData(0);
+  for (var i = 0; i < len; i++) {
+    var tt = i / sr;
+    var f = 38 - 14 * (tt / 1.7);
+    d[i] = Math.sin(2 * Math.PI * f * tt) * Math.max(0, 1 - tt / 1.7) * 0.95;
+  }
+  var src = ctx.createBufferSource();
+  src.buffer = buf;
+  var g = ctx.createGain();
+  g.gain.value = 0.55;
+  src.connect(g);
+  g.connect(masterGain || ctx.destination);
+  src.start();
+}
+
+/* 19Hz 次声底噪：第16题起一直铺在最底层 */
+function startInfra() {
+  if (!ctx || infraOsc) return;
+  try {
+    infraOsc = ctx.createOscillator();
+    infraOsc.type = 'sine';
+    infraOsc.frequency.value = 19;
+    infraGain = ctx.createGain();
+    infraGain.gain.value = 0;
+    infraOsc.connect(infraGain);
+    infraGain.connect(ctx.destination);
+    infraOsc.start();
+    infraGain.gain.linearRampToValueAtTime(0.07, ctx.currentTime + 3);
+  } catch (e) { infraOsc = null; infraGain = null; }
+}
+
+function stopInfra() {
+  if (infraOsc) { try { infraOsc.stop(); } catch (e) {} infraOsc = null; }
+  infraGain = null;
+}
+
+/* 高潮前的白/黑全屏预闪：文字墙砸下来之前先抽你几巴掌 */
+function preFlashFrames() {
+  var f = $('preFlash');
+  var seqs = ['#ffffff', '#000000', '#ffffff', '#000000', '#ffffff'];
+  var k = 0;
+  function step() {
+    if (state.skipClimax || !state.climaxMode) {
+      f.classList.remove('on');
+      f.style.background = '';
+      return;
+    }
+    if (k >= seqs.length) {
+      f.classList.remove('on');
+      f.style.background = '';
+      return;
+    }
+    f.style.background = seqs[k++];
+    f.classList.add('on');
+    setTimeout(step, 55 + Math.random() * 60);
+  }
+  step();
+}
+
+/* 报告页元数据行：把你自己的真实环境写进报告里 */
+function reportMeta() {
+  try {
+    var d = new Date();
+    function p(n) { return (n < 10 ? '0' : '') + n; }
+    var s = '记录于 ' + d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) +
+            ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+    if (typeof navigator !== 'undefined' && navigator.language) s += ' · ' + navigator.language;
+    if (typeof screen !== 'undefined' && screen && screen.width) s += ' · ' + screen.width + '×' + screen.height;
+    if (typeof window !== 'undefined' && window.innerWidth) s += ' · 窗口 ' + window.innerWidth + 'px';
+    return s;
+  } catch (e) { return ''; }
+}
+
+/* 第二只指针：落后你半拍的那只手（真实 pointermove 驱动） */
+function ghostCursorLoop() {
+  if (ghostCurTimer) return;
+  ghostCurTimer = setInterval(function () {
+    var g = $('ghostCursor');
+    if (!g || !g.classList.contains('on')) {
+      if (ghostCurTimer) { clearInterval(ghostCurTimer); ghostCurTimer = 0; }
+      return;
+    }
+    gcx += (gcTx + 15 - gcx) * 0.055;
+    gcy += (gcTy + 11 - gcy) * 0.055;
+    g.style.left = gcx + 'px';
+    g.style.top = gcy + 'px';
+  }, 60);
+}
+
+function onPointerMove(e) {
+  if (!state.hasInteracted || state.idx < 12 || state.idx > 21) return;
+  var g = $('ghostCursor');
+  if (!g) return;
+  gcTx = e.clientX; gcTy = e.clientY;
+  if (!ghostCurOn) {
+    ghostCurOn = true;
+    gcx = e.clientX + 26;
+    gcy = e.clientY + 18;
+    g.classList.add('on');
+    ghostCursorLoop();
+  } else if (e.clientY < window.innerHeight * 0.45 && Math.random() < 0.12) {
+    // 偶尔自己动一下：跟你没关系的那种动法
+    gcTx = e.clientX + (Math.random() - 0.5) * 140;
+    gcTy = e.clientY + (Math.random() - 0.5) * 140;
+  }
+}
+
 function renderQuiz(i) {
   var q = QUESTIONS[i];
   show('quiz');
+  if (i === 17) fakeFreeze();
   if (i === 0 && state.returnCount > 1) {
     $('qtext').innerHTML = '';
     var returnTexts = ['', '果然你还会回来', '你又来了。', '你离不开这里。', '你还想试几次？'];
@@ -1350,6 +1672,10 @@ function renderQuiz(i) {
     hookNotificationGesture();
     try { localStorage.setItem('psych-last-time', fmt(Date.now() - data.startedAt)); } catch (e) {}
     renderReport();
+    // 后劲：你盯着报告读的时候，它也在读你
+    setT(function () { whisper(); }, 7000);
+    setT(function () { if (Math.random() < 0.6) quickEye(); }, 16000);
+    setT(function () { if (Math.random() < 0.4) speakData('你还在吗', 0.1, 0.5); }, 26000);
     return;
   }
 
@@ -1381,12 +1707,15 @@ function renderReport() {
   lines.push('<div class="r-line">平均每题 ' + fmt(avg) + ' 秒</div>');
   lines.push('<div class="r-line">你切走了 ' + data.tabSwitches.length + ' 次</div>');
   lines.push('<div class="r-line">你改动了 ' + totalChanges() + ' 次答案</div>');
+  lines.push('<div class="r-line" id="rGhost">这份报告被打开过 ' + (data.reportOpens || 1) + ' 次。</div>');
   if (eggSeen()) lines.push('<div class="r-line" style="color:#8a7a2a;">你翻到了不该出现的那一页。</div>');
   if (state.returnCount <= 1) lines.push('<div class="r-warn">你还好吗。</div>');
   else if (state.returnCount === 2) lines.push('<div class="r-warn">你又来了。</div>');
   else {
     lines.push('<div class="r-warn">我们见面吧，把摄像头打开。</div>');
   }
+  var meta = reportMeta();
+  if (meta) lines.push('<div class="r-line r-meta">' + meta + '</div>');
   box.innerHTML = lines.join('');
   $('qtext').appendChild(box);
 }
@@ -1400,6 +1729,8 @@ function totalChanges() {
 function renderBlank(i) {
   show('blank');
   stopRepeatSpeak();
+  // 进度条开始胡说八道：空白页比 100% 还多
+  $('progress').textContent = '26 / 24';
   var remnant = document.createElement('div');
   remnant.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:13px;color:rgba(0,0,0,0.06);letter-spacing:6px;white-space:nowrap;pointer-events:none;z-index:1;';
   remnant.textContent = state.eggMode ? QUESTIONS_KIY[22] : '你还在吗';
@@ -1424,11 +1755,16 @@ function renderQuestion(i) {
   rec.enterTime = Date.now();
   if (i >= 4) updateProgress();
   applyStage(i);
+  updateGhostLine(i);
+  // 题面从第8题开始极其缓慢地歪掉（class 驱动，不写行内样式，免得被别的逻辑清掉）
+  if (i >= 8 && i <= 21) $('quiz').classList.add('creep');
+  else $('quiz').classList.remove('creep');
   if (QUESTIONS[i].blank) { renderBlank(i); return; }
   renderQuiz(i);
 }
 
 function advance() {
+  if (state.frozen) return;   // 装死期间点了也没用
   var i = state.idx;
   var rec = data.questions[i];
   rec.duration = Date.now() - rec.enterTime;
@@ -1476,8 +1812,10 @@ function startClimax() {
   }
   show('climax');
   $('climax').innerHTML = '';
-  escalatingSpeak(state.eggMode ? 'dtl' : '我不想在这了', 6);
-  printWaves(0, 0, 0);
+  preFlashFrames();
+  // 文字墙晚半拍砸下来，先被白/黑帧抽几巴掌
+  setT(function () { escalatingSpeak(state.eggMode ? 'dtl' : '我不想在这了', 6); }, 450);
+  setT(function () { printWaves(0, 0, 0); }, 450);
 }
 
 function staticThenScare() {
@@ -1510,16 +1848,23 @@ function staticThenScare() {
 
 function startStrobe() {
   if (state.skipClimax) return;
-  var colors = ['#ff0000', '#000000', '#ff0000', '#000000', '#ff0000', '#000000'];
+  // 红/黑交替，黑帧直接反相成白帧：红白闪比单纯红黑更狠
+  var colors = ['#ff0000', '#000000', '#ff0000', '#000000', '#ff0000', '#000000',
+                '#ff0000', '#000000', '#ff0000', '#000000'];
   var i = 0;
+  var sb = $('scare');
   function tick() {
-    if (state.skipClimax) return;
+    if (state.skipClimax) { sb.classList.remove('inv'); return; }
     if (i >= colors.length) {
-      $('scare').style.background = '';
+      sb.style.background = '';
+      sb.classList.remove('inv');
       return;
     }
-    $('scare').style.background = colors[i++];
-    setT(tick, 70);
+    sb.style.background = colors[i];
+    if (colors[i] === '#000000') sb.classList.add('inv');
+    else sb.classList.remove('inv');
+    i++;
+    setT(tick, 55);
   }
   tick();
 }
@@ -1685,6 +2030,9 @@ function doTabScare(ms) {
   scareBurst();
   scareBox.classList.add('flash');
   setT(function () { scareBox.classList.remove('flash'); }, 100);
+  // 二段闪：你以为闪完了，它又来一下
+  setT(function () { if (!state.climaxMode) scareBox.classList.add('flash'); }, 260);
+  setT(function () { scareBox.classList.remove('flash'); }, 380);
   setT(function () {
     if (state.climaxMode) return;
     show('quiz');
@@ -1729,10 +2077,12 @@ function eggFace(ms) {
 }
 
 function maybeBlackFlash() {
-  if (Math.random() > 0.01) return;
+  // 越往后闪得越勤：第12题起翻倍，第16题起再翻倍
+  var p = state.idx >= 16 ? 0.05 : state.idx >= 12 ? 0.025 : 0.01;
+  if (Math.random() > p) return;
   var f = $('blackFlash');
   f.classList.add('on');
-  setTimeout(function () { f.classList.remove('on'); }, 120);
+  setTimeout(function () { f.classList.remove('on'); }, state.idx >= 16 ? 160 : 120);
 }
 
 function jitterBody() {
@@ -1769,6 +2119,8 @@ function registerBg() {
     }
   }, true);
 
+  document.addEventListener('pointermove', onPointerMove, true);
+
   document.addEventListener('visibilitychange', function () {
     if (!state.hasInteracted) return;
     if (document.visibilityState === 'hidden') {
@@ -1784,6 +2136,12 @@ function registerBg() {
       hiddenAt = 0;
       restoreBgm();
       showWatch(false);
+      // 你切走再回来：报告自己也数了一遍
+      if (state.idx >= 23 && !state.eggMode) {
+        data.reportOpens = (data.reportOpens || 1) + 1;
+        var rg = document.getElementById('rGhost');
+        if (rg) rg.textContent = '这份报告被打开过 ' + data.reportOpens + ' 次。你还在看。';
+      }
       if (!state.climaxMode && state.idx >= 4) {
         var prob = (state.idx >= 16 && state.idx <= 19) ? 0.45 : 0.15;
         if (Math.random() < prob) {
@@ -2332,6 +2690,22 @@ function resetToTitle() {
   state.whispersScheduled = false;
   state.jitterScheduled = false;
   $('crack').classList.remove('on');
+  // 侵入层全部复位
+  state.frozen = false;
+  state.silence = false;
+  $('quiz').classList.remove('frozen');
+  $('quiz').classList.remove('creep');
+  $('ghostLine').classList.add('hidden');
+  $('vignette').classList.remove('on');
+  $('vignette').classList.remove('noise');
+  $('vignette').classList.remove('deep');
+  $('vignette').classList.remove('pulse');
+  $('preFlash').classList.remove('on');
+  $('preFlash').style.background = '';
+  $('ghostCursor').classList.remove('on');
+  ghostCurOn = false;
+  if (ghostCurTimer) { clearInterval(ghostCurTimer); ghostCurTimer = 0; }
+  stopInfra();
   document.body.classList.remove('kiy-final');
   document.body.classList.remove('shake-hard');
   document.body.style.background = '';
