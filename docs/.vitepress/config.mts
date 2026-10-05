@@ -26,6 +26,7 @@ export default defineConfig({
           items: [
             { text: '新手入门', link: '/guide/getting-started' },
             { text: '核心玩法', link: '/guide/gameplay' },
+            { text: '数据包新内容', link: '/guide/datapacks' },
             { text: '常用命令', link: '/guide/commands' }
           ]
         }
