@@ -27,6 +27,7 @@ export default defineConfig({
             { text: '新手入门', link: '/guide/getting-started' },
             { text: '核心玩法', link: '/guide/gameplay' },
             { text: '数据包新内容', link: '/guide/datapacks' },
+            { text: '世界生成跑图', link: '/guide/datapacks-worldgen' },
             { text: '常用命令', link: '/guide/commands' }
           ]
         }
