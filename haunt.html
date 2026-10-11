@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-<title>设备使用情况补充调查</title>
+<title>夜间独处习惯调查</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 html, body { height:100%; }
@@ -599,10 +599,10 @@ body.silhouette-presence.has-it::before { opacity:1; }
 <body>
 
 <div id="consent" class="screen">
-  <h1>补充问卷</h1>
+  <h1>夜间习惯调查</h1>
   <p class="warn">请如实作答，本问卷不记名。</p>
   <p class="tiny">
-    用于改善网站体验，约需 15 分钟。<br>
+    了解玩家夜间上网与独处习惯，约需 15 分钟。<br>
     中途请勿刷新页面。<br>
     如有不适可随时关闭标签页。<br>
     Esc 可跳过一段过渡动画。
@@ -1133,7 +1133,7 @@ function scheduleCursorJitter() {
   }, 5000 + Math.random() * 12000);
 }
 
-var TITLE_ORIG = '设备使用情况补充调查';
+var TITLE_ORIG = '夜间独处习惯调查';
 var TITLE_GLITCHES = ['你在看什么','别回头','我在这里','你一个人吗','你在听吗','不要停','你确定吗','你能离开吗'];
 var titleTimer = null;
 
@@ -2077,7 +2077,7 @@ function fireNotif() {
   if (state.notified) return;
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
   try {
-    new Notification('设备使用情况补充调查', { body: '转过来。' });
+    new Notification('夜间独处习惯调查', { body: '转过来。' });
     state.notified = true;
   } catch (e) {}
 }
