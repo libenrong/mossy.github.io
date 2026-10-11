@@ -13,6 +13,7 @@ export default defineConfig({
     nav: [
       { text: '首页', link: '/' },
       { text: '指南', link: '/guide/getting-started' },
+      { text: '运维', link: '/ops/' },
       { text: '规则', link: '/rules' },
       { text: 'FAQ', link: '/faq' },
       { text: '功能合集', link: '/tools.html' },
@@ -29,6 +30,25 @@ export default defineConfig({
             { text: '数据包新内容', link: '/guide/datapacks' },
             { text: '世界生成跑图', link: '/guide/datapacks-worldgen' },
             { text: '常用命令', link: '/guide/commands' }
+          ]
+        }
+      ],
+      '/ops/': [
+        {
+          text: '运维文档',
+          items: [
+            { text: '总览', link: '/ops/' },
+            { text: '服务器概况', link: '/ops/01-服务器概况' },
+            { text: '启动与 JVM', link: '/ops/02-启动与JVM' },
+            { text: '更新日志', link: '/ops/03-更新日志' },
+            { text: '配置系统', link: '/ops/04-配置系统' },
+            { text: '世界与多世界', link: '/ops/05-世界与多世界' },
+            { text: '数据包手册', link: '/ops/06-数据包手册' },
+            { text: '插件手册', link: '/ops/07-插件手册' },
+            { text: '备份与恢复', link: '/ops/08-备份与恢复' },
+            { text: '性能优化记录', link: '/ops/09-性能优化记录' },
+            { text: '故障排查', link: '/ops/10-故障排查与已知问题' },
+            { text: '运维操作规程', link: '/ops/11-运维操作规程' }
           ]
         }
       ],
