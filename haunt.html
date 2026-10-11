@@ -930,107 +930,231 @@ async function startLetterScreen() {
   });
 }
 
-/* ---------- 仪式流程 ---------- */
+/* ---------- 仪式流程 v2：冷开场 / 单次按压 / 名字中盘 / 阈值真高潮 / 余震 / 追出去 ---------- */
 
+  /* 冷开场：没有「继续」按钮，页面自己开始，10 秒内必须不对劲 */
   async function actGate() {
     setPhase('门');
-    /* 深夜开场语 */
+    /* 假「恢复会话」——用户什么都没做，页面已经在读他 */
+    lineEl.classList.add('dim');
+    var span = document.createElement('span');
+    lineEl.innerHTML = '';
+    var boot = document.createElement('span');
+    boot.style.cssText = 'font-size:11px;letter-spacing:.2em;color:#4a5060;display:block;margin-bottom:20px';
+    lineEl.appendChild(boot);
+    var caret0 = document.createElement('span');
+    caret0.className = 'caret';
+    lineEl.appendChild(caret0);
+    var bootLines = [
+      '连接受试者终端……',
+      '读取本机存档……',
+      '恢复未完成仪式…… 71%'
+    ];
+    for (var bi = 0; bi < bootLines.length; bi++) {
+      for (var bc = 0; bc <= bootLines[bi].length; bc++) {
+        boot.textContent = bootLines[bi].slice(0, bc);
+        await sleep(28 + Math.random() * 40);
+      }
+      await sleep(bi === 2 ? 900 : 280);
+    }
+    /* 71% → 100% 错乱 */
+    boot.textContent = '恢复未完成仪式…… 100%';
+    flashBlack(180);
+    await sleep(500);
+    lineEl.innerHTML = '';
+    lineEl.classList.remove('dim');
+
     var h = new Date().getHours();
     var late = (h >= 23 || h < 5);
 
-    await say(late ? '现在是深夜。你还没睡。' : '你打开了这个页面。', { speed: 110 });
-    await sleep(600);
-    await say('这不是一份问卷。', { speed: 100 });
-    await sleep(400);
-    await say('这是一场仪式。', { speed: 90, hold: 2000 });
+    /* 人话，但第二句立刻不对 */
+    await say(late ? '现在是深夜。' : '你来了。', { speed: 90, hold: 1100 });
+    await say('上一次中断了。', { speed: 80, hold: 900 });
+    /* 停顿，像在等什么 */
+    await sleep(1200);
+    /* 第一刀：它「知道」一些只有访客侧才知道的事 */
+    var facts = [];
+    try {
+      var city = (Intl.DateTimeFormat().resolvedOptions().timeZone || '').split('/').pop();
+      if (city) facts.push(city);
+    } catch (e) {}
+    if (screen.width) facts.push(screen.width + '×' + screen.height);
+    if (facts.length) {
+      await say('（' + facts.join(' · ') + '）', { dim: true, speed: 55, hold: 1600 });
+      flashBlack(120);
+      await sleep(400);
+    }
+    await say('不用惊讶。', { speed: 70, hold: 800 });
+    await say('它一直看着这个端口。', { speed: 65, hold: 1400 });
 
     if (R.visited >= 2) {
-      flashBlack(300);
-      await sleep(400);
-      await say('你来过。这是第 ' + R.visited + ' 次。', { dim: true, speed: 80 });
+      flashBlack(250);
+      await sleep(300);
+      await say('第 ' + R.visited + ' 次了。', { dim: true, speed: 70 });
     }
 
-    await sleep(300);
-    actButton('继续', function () {
-      initAudio();
-      if (actx && actx.state === 'suspended') actx.resume();
-      startDrone();
-      actPrep();
+    /* 不给「继续」——自己点任何地方都算确认，降低一格戒心 */
+    await say('点一下屏幕。我们开始。', { dim: true, speed: 75, hold: 0 });
+    await new Promise(function (resolve) {
+      function go(e) {
+        if (e && e.target && e.target.tagName === 'INPUT') return;
+        document.removeEventListener('click', go, true);
+        document.removeEventListener('touchstart', go, true);
+        resolve();
+      }
+      document.addEventListener('click', go, true);
+      document.addEventListener('touchstart', go, true);
     });
+    initAudio();
+    if (actx && actx.state === 'suspended') actx.resume();
+    startDrone();
+    actPrep();
   }
 
+  /* 预备：三次按住砍成一次，按住过程中吓人（人最没防备的时候） */
   async function actPrep() {
     setPhase('准');
-    await say('先做三件事。', { speed: 90 });
-    await sleep(500);
-    await say('每一件，按住确认。', { dim: true, speed: 70, hold: 1600 });
-
-    await sleep(400);
-    clearAct();
-    await say('一。关掉你身后的灯。', { speed: 85 });
-    actHold('按住 · 已关', function () { prep2(); }, 2400);
-  }
-
-  async function prep2() {
+    await say('只做一件事。', { speed: 85 });
     await sleep(300);
-    await say('二。把手机扣在桌上。', { speed: 85 });
-    actHold('按住 · 已扣', function () { prep3(); }, 2400);
-  }
+    await say('按住。直到你觉得「可以了」。', { speed: 78 });
+    await say('中途松手，它会以为你在怕。', { dim: true, speed: 65, hold: 1200 });
 
-  async function prep3() {
-    await sleep(300);
-    await say('三。确认房间里，只有你一个人。', { speed: 80, hold: 1600 });
-    actHold('按住 · 只有我', function () { prepDone(); }, 3200);
+    /* 定制按住：中途有戏 */
+    var z = document.createElement('div');
+    z.className = 'hold-zone';
+    var fill = document.createElement('div');
+    fill.className = 'fill';
+    var sp = document.createElement('span');
+    sp.textContent = '按住';
+    z.appendChild(fill); z.appendChild(sp);
+    actEl.appendChild(z);
+    var DUR = 5200; /* 长一点，中间演戏 */
+    var start = 0, raf = 0, holding = false, cued = {};
+    function tick(ts) {
+      if (!holding) return;
+      if (!start) start = ts;
+      var p = Math.min(1, (ts - start) / DUR);
+      fill.style.width = (p * 100) + '%';
+      /* 中途戏 */
+      if (!cued.w && p >= 0.35) {
+        cued.w = 1;
+        whisperPan(Math.random() < 0.5 ? -0.8 : 0.8);
+        sp.textContent = '别松';
+        swellDrone(0.1, 1.5);
+      }
+      if (!cued.s && p >= 0.62) {
+        cued.s = 1;
+        flashBlack(100);
+        sp.textContent = '还有';
+        sysNote('后台进程', 'presence.exe — 运行中', 2000);
+      }
+      if (!cued.t && p >= 0.85) {
+        cued.t = 1;
+        sp.textContent = '它在数';
+        faceJump('resource/haunt/chair.png', { ms: 500, hold: 450, vol: 0.35, shake: false, invert: true });
+      }
+      if (p >= 1) {
+        z.classList.add('done');
+        sp.textContent = '可以了';
+        setTimeout(prepDone, 500);
+        return;
+      }
+      raf = requestAnimationFrame(tick);
+    }
+    function down(e) {
+      e.preventDefault();
+      holding = true; start = 0;
+      raf = requestAnimationFrame(tick);
+    }
+    function up() {
+      if (!holding) return;
+      holding = false;
+      cancelAnimationFrame(raf);
+      /* 松手：不重置到 0，保留进度——但加一句羞辱 */
+      R.hesitated++;
+      sp.textContent = '按住';
+      if (!cued.j && parseFloat(fill.style.width) > 10) {
+        cued.j = 1;
+        whisperPan(0);
+        note('它以为你松了。', 2200);
+      }
+    }
+    z.addEventListener('mousedown', down);
+    z.addEventListener('touchstart', down, { passive: false });
+    window.addEventListener('mouseup', up);
+    window.addEventListener('touchend', up);
   }
 
   async function prepDone() {
-    swellDrone(0.09, 3);
+    swellDrone(0.12, 2);
     await sleep(400);
-    await say('你按住了三秒。', { dim: true, speed: 75 });
+    await say('你按到了底。', { speed: 75 });
     await sleep(300);
-    await say('但你心里数到二就松了。', { speed: 70, hold: 2200 });
+    /* 揭穿：其实它没让你按满，是它自己走完了 */
+    await say('其实进度条是它在走。', { speed: 68, hold: 1600 });
     flashBlack(200);
     await sleep(500);
-    await say('现在，说一个名字。', { speed: 90 });
-    await say('一个最近没联系的人。', { dim: true, speed: 80, hold: 800 });
+    await say('现在，说一个名字。', { speed: 88 });
+    await say('一个最近没联系的人。', { dim: true, speed: 78, hold: 700 });
     actName(function () { actNameDone(); });
   }
 
+  /* 名字：中盘高潮，不是终点 */
   async function actNameDone() {
     var n = R.name;
     if (!n) {
-      flashBlack(400);
-      await sleep(600);
-      await say('你不想说。', { speed: 80 });
-      await sleep(400);
-      await say('那它替你想了一个。', { speed: 75, hold: 1800 });
+      flashBlack(350);
+      await sleep(500);
+      await say('你不想说。', { speed: 78 });
+      await sleep(300);
+      await say('那它替你想了一个。', { speed: 72, hold: 1500 });
       R.name = ['阿婆', '小棠', '陈默', '林晚'][Math.floor(Math.random() * 4)];
     }
     setPhase('名');
-    vision('vPhoto', true);
-    swellDrone(0.11, 2);
-    await sleep(800);
-    await say(R.name + '。', { speed: 140, hold: 2000 });
-    vision('vPhoto', false);
-    flashBlack(180);
-    await sleep(500);
-    faceJump('resource/haunt/photo.png', { full: true, ms: 1000, hold: 900, invert: true });
+    swellDrone(0.14, 2);
+
+    /* 它把名字打错再改对——像在「学」 */
     await sleep(400);
-    await say('它听见了。', { speed: 70, hold: 1400 });
-    sysNote('夜间独处习惯调查', '它刚才用你的名字发了一条通知。', 3000);
+    lineEl.innerHTML = '';
+    var sp2 = document.createElement('span');
+    var car = document.createElement('span');
+    car.className = 'caret';
+    lineEl.appendChild(sp2); lineEl.appendChild(car);
+    var nm = R.name;
+    /* 先打 1 个错字 */
+    var wrong = nm.slice(0, 1) + ['·', '丨', '〇'][Math.floor(Math.random() * 3)] + nm.slice(2);
+    for (var i = 0; i < wrong.length; i++) {
+      sp2.textContent += wrong[i];
+      await sleep(130);
+    }
+    await sleep(600);
+    /* 划掉重来 */
+    sp2.textContent = '';
+    for (var j = 0; j < nm.length; j++) {
+      sp2.textContent += nm[j];
+      await sleep(160);
+    }
+    await sleep(900);
+
+    vision('vPhoto', true);
+    faceJump('resource/haunt/photo.png', { full: true, ms: 1100, hold: 950, invert: true });
+    thud();
+    await sleep(500);
+    await say('它记住发音了。', { speed: 68, hold: 1400 });
+    sysNote('语音助手', '已学习新联系人：' + R.name, 2800);
     presence(true);
+    /* 名字之后立刻收，别在这泄气 */
+    await sleep(300);
+    await say('接下来，回答我三个观察。', { speed: 82 });
+    await say('不用装。它看得见你的手指。', { dim: true, speed: 72, hold: 1000 });
     actCall();
   }
 
   async function actCall() {
     setPhase('唤');
-    await say('接下来，回答我三个观察。', { speed: 85 });
-    await sleep(400);
-    await say('不用装。它看得见你的手指。', { dim: true, speed: 75, hold: 1400 });
-
-    await sleep(300);
-    await say('低头。看一眼屏幕的反光。', { speed: 80 });
-    await say('你看见了什么？', { speed: 80 });
+    await sleep(200);
+    await say('一。低头。看屏幕的反光。', { speed: 78 });
+    await say('你看见了什么？', { speed: 78 });
     actChoice(
       ['什么都没有', '有个影子', '有张脸', '是我，但表情不对'],
       function (idx) { call2(idx); }
@@ -1039,28 +1163,28 @@ async function startLetterScreen() {
 
   async function call2(choice) {
     if (choice >= 1) {
-      vision('vPortrait', true, 2400);
+      vision('vPortrait', true, 2200);
       whisperPan(choice === 3 ? 0 : (choice === 2 ? -0.7 : 0.7));
       if (choice >= 2) {
-        await sleep(900);
-        faceJump('resource/haunt/portrait.png', { ms: 850, hold: 800, vol: 0.5 });
+        await sleep(700);
+        faceJump('resource/haunt/portrait.png', { ms: 800, hold: 750, vol: 0.5 });
         thud();
       }
     }
-    await sleep(500);
+    await sleep(400);
     if (choice === 0) {
-      await say('你在骗自己。', { speed: 70, hold: 1400 });
+      await say('你在骗自己。', { speed: 68, hold: 1200 });
     } else if (choice === 3) {
-      await say('那不是你的表情。', { speed: 65, hold: 1800 });
-      flashBlack(350);
+      await say('那不是你的表情。', { speed: 62, hold: 1600 });
+      flashBlack(300);
     } else {
-      await say('它满意地点了点头。', { speed: 70, hold: 1400 });
+      await say('它满意地点了点头。', { speed: 68, hold: 1200 });
     }
     presence(true);
     scan(true);
-    await sleep(400);
-    await say('二。数三次呼吸。', { speed: 80 });
-    await say('第三下时，有没有多出一次？', { speed: 75 });
+    await sleep(300);
+    await say('二。数三次呼吸。', { speed: 78 });
+    await say('第三下时，有没有多出一次？', { speed: 72 });
     actChoice(
       ['没有', '有', '我不敢数'],
       function (idx) { call3(idx); }
@@ -1068,24 +1192,22 @@ async function startLetterScreen() {
   }
 
   async function call3(choice) {
-    await sleep(400);
+    await sleep(350);
     if (choice === 1) {
-      swellDrone(0.14, 1.5);
+      swellDrone(0.16, 1.2);
+      bigWord('多了一次', 600, true);
       await sleep(400);
-      bigWord('多了一次', 650, true);
-      await sleep(500);
-      await say('你听见了。', { speed: 70, hold: 1400 });
+      await say('你听见了。', { speed: 68, hold: 1200 });
     } else if (choice === 2) {
-      await say('不敢数，说明你已经知道了。', { speed: 72, hold: 1600 });
+      await say('不敢数，说明你已经知道了。', { speed: 70, hold: 1400 });
     } else {
-      await say('你数错了。', { speed: 70, hold: 1200 });
-      await say('它替你数了第四次。', { speed: 68, hold: 1600 });
+      await say('你数错了。', { speed: 68, hold: 1000 });
+      await say('它替你数了第四次。', { speed: 65, hold: 1400 });
     }
     mirror(true);
-    flashBlack(200);
-    await sleep(800);
-    await say('三。', { speed: 90 });
-    await say('它现在离你几步？', { speed: 80 });
+    flashBlack(180);
+    await sleep(600);
+    await say('三。它现在离你几步？', { speed: 78 });
     actChoice(
       ['一步', '三步', '贴着', '我不知道'],
       function (idx) { callDone(idx); }
@@ -1094,21 +1216,20 @@ async function startLetterScreen() {
 
   async function callDone(choice) {
     R.brave += (choice === 2 ? 1 : 0);
-    await sleep(400);
+    await sleep(350);
     if (choice === 2) {
-      await say('你答对了。', { speed: 70, hold: 1200 });
+      await say('你答对了。', { speed: 68, hold: 1000 });
       whisperPan(Math.random() < 0.5 ? -1 : 1);
-      await sleep(300);
-      faceJump('resource/haunt/chair.png', { full: true, ms: 1100, hold: 1000, vol: 0.65 });
+      await sleep(250);
+      faceJump('resource/haunt/chair.png', { full: true, ms: 1000, hold: 900, vol: 0.6 });
       thud();
       invertPulse(2, 90);
     } else if (choice === 3) {
-      await sleep(300);
       titleGlitch('转过来', '夜间独处习惯调查', 4);
-      sysNote('它', '你不知道？那更好。', 2200);
+      sysNote('它', '你不知道？那更好。', 2000);
     } else {
-      await say('差一点。', { speed: 75 });
-      await say('它再靠近一步。', { speed: 70, hold: 1600 });
+      await say('差一点。', { speed: 72 });
+      await say('它再靠近一步。', { speed: 68, hold: 1400 });
     }
     mirror(false);
     setPhase('应');
@@ -1116,37 +1237,30 @@ async function startLetterScreen() {
   }
 
   async function actRespond() {
-    /* 它开始不经过你说话 */
-    await sleep(600);
+    await sleep(500);
+    /* 它不经允许打字 */
     lineEl.innerHTML = '';
-    /* 故意不走 say——像页面自己在动 */
     var span = document.createElement('span');
     lineEl.appendChild(span);
     var text = R.name + '，你身后三步。';
     for (var i = 0; i < text.length; i++) {
-      await sleep(110);
+      await sleep(100);
       span.textContent += text[i];
     }
-    await sleep(1000);
-    bigWord(R.name + '，别动', 700, true);
-    await sleep(600);
-    vision('vChair', true, 3200);
+    await sleep(900);
+    bigWord(R.name + '，别动', 650, true);
+    await sleep(500);
+    vision('vChair', true, 2800);
     presence(true);
-    swellDrone(0.18, 2);
+    swellDrone(0.2, 1.5);
+    await sleep(300);
+    faceJump('resource/haunt/portrait.png', { ms: 650, hold: 600, vol: 0.4, shake: false });
     await sleep(400);
-    faceJump('resource/haunt/portrait.png', { ms: 700, hold: 650, vol: 0.45, shake: false });
-    await sleep(500);
-    await say('（这不是我问的。）', { dim: true, speed: 60, hold: 1600 });
-    flashBlack(250);
-    await sleep(500);
-    await say('现在，做一个选择。', { speed: 80 });
-    actYield();
-  }
-
-  async function actYield() {
+    await say('（这不是我问的。）', { dim: true, speed: 58, hold: 1400 });
+    flashBlack(220);
+    await sleep(400);
     setPhase('让');
-    await say('给它让一个位置。', { speed: 85 });
-    await say('就一个。', { dim: true, speed: 75 });
+    await say('给它让一个位置。', { speed: 82 });
     actChoice(
       ['让', '不让'],
       function (idx) { yieldDone(idx); }
@@ -1154,83 +1268,64 @@ async function startLetterScreen() {
   }
 
   async function yieldDone(idx) {
-    await sleep(500);
+    await sleep(400);
     if (idx === 0) {
       R.letIn = true;
-      await say('你让了。', { speed: 75 });
-      await sleep(300);
-      await say('它坐下了。', { speed: 70, hold: 1800 });
-      vision('vChair', true, 2800);
+      await say('你让了。', { speed: 72 });
+      await sleep(250);
+      await say('它坐下了。', { speed: 68, hold: 1600 });
+      vision('vChair', true, 2400);
     } else {
-      await say('你没让。', { speed: 75 });
-      await sleep(300);
-      await say('但它已经站到你旁边了。', { speed: 68, hold: 1800 });
+      await say('你没让。', { speed: 72 });
+      await sleep(250);
+      await say('但它已经站到你旁边了。', { speed: 66, hold: 1600 });
     }
-    flashBlack(300);
-    await sleep(700);
-    await say('最后一问之前——', { speed: 80 });
-    await say('你要不要回头？', { speed: 75 });
-    actChoice(
-      ['回', '不回'],
-      function (idx2) { threshold(idx2); }
-    );
-  }
-
-  async function threshold(lookIdx) {
-    R.lookedBack = (lookIdx === 0);
-    if (R.lookedBack) {
-      vision('vPortrait', true, 1200);
-      whisperPan(0);
-      await sleep(700);
-      faceJump('resource/haunt/portrait.png', { full: true, ms: 1400, hold: 1300, vol: 0.7, invert: true });
-      thud();
-      await sleep(500);
-      await say('你回了头。', { speed: 70 });
-      await sleep(400);
-      await say('很好。它省了一步。', { speed: 65, hold: 1800 });
-    } else {
-      await say('你没回。', { speed: 75 });
-      await sleep(300);
-      await say('它也不急。', { speed: 70, hold: 1600 });
-    }
-    scan(false);
-    setPhase('阈');
+    flashBlack(250);
     await sleep(500);
-    await veil('…', 2800);
-    await say('最后一问。', { speed: 90, hold: 1600 });
-    await say('允许它进来吗？', { speed: 70, hold: 2000 });
+    setPhase('阈');
+    await say('最后一问。', { speed: 85, hold: 1400 });
+    await say('允许它进来吗？', { speed: 68, hold: 1800 });
+
+    /* 阈值：不点，它自己替你点 */
+    var answered = false;
     actChoice(
       ['允许', '不允许'],
-      function (idx) { enter(idx); }
+      function (idx) { answered = true; enter(idx); }
     );
+    setTimeout(function () {
+      if (answered) return;
+      /* 犹豫太久 */
+      clearAct();
+      answered = true;
+      sysNote('输入超时', '系统已代为选择', 2400);
+      whisperPan(0);
+      setTimeout(function () { enter(Math.random() < 0.5 ? 0 : 1); }, 1200);
+    }, 16000);
   }
 
   async function enter(idx) {
     setPhase('入');
     var allow = (idx === 0);
-    await sleep(600);
+    await sleep(500);
 
     if (!allow) {
-      await say('你说了不允许。', { speed: 80 });
-      await sleep(1400);
-      flashBlack(800);
-      await sleep(1000);
-      await say('但它已经进来了。', { speed: 60, hold: 2400 });
-      swellDrone(0.2, 1);
+      await say('你说了不允许。', { speed: 75 });
+      /* 长停顿——这是全片最长的一次沉默 */
+      await sleep(2200);
+      flashBlack(900);
+      await sleep(900);
+      swellDrone(0.24, 1);
+      await say('但它已经进来了。', { speed: 55, hold: 2400 });
     } else {
-      await say('谢谢。', { speed: 70, hold: 2000 });
-      flashBlack(1000);
-      swellDrone(0.22, 1);
-      await sleep(1200);
+      await say('谢谢。', { speed: 65, hold: 1800 });
+      flashBlack(900);
+      swellDrone(0.24, 1);
+      await sleep(1000);
     }
 
-    /* 接管 */
-    await sleep(400);
     mirror(true);
     presence(true);
     scan(true);
-
-    /* 结尾墙 */
     showWall();
   }
 
@@ -1255,70 +1350,85 @@ async function startLetterScreen() {
     }
     wall.classList.add('on');
 
-    await sleep(1600);
+    await sleep(1400);
     cap.textContent = '他们都在看';
-    await sleep(1800);
+    await sleep(1500);
     cap.textContent = '第 ' + (5 + R.visited) + ' 位受试者已入席';
-    await sleep(1800);
+    await sleep(1500);
     cap.textContent = '就是你';
-    await sleep(2200);
-
-    /* 最终接管屏 */
+    await sleep(1800);
     wall.classList.remove('on');
-    /* 最终跳脸 */
-    faceJump('resource/haunt/portrait.png', { full: true, ms: 1600, hold: 1500, vol: 0.75, invert: true });
-    thud();
+
+    /* 余震：不靠跳脸，靠「它知道你是谁」 */
+    mirror(false); presence(false); scan(false);
+    document.body.style.background = '#030406';
+    stopDrone();
     await sleep(800);
-    bigWord('就是你', 900, true);
+
+    /* 极安静的一行 */
+    await say('仪式完成了。', { speed: 90, hold: 2000 });
+    await say('你可以关掉页面了。', { speed: 85, hold: 2200 });
+    await say('它说，', { speed: 80, hold: 1400 });
+    await say('它跟你一起走。', { speed: 60, hold: 2600 });
+    flashBlack(400);
     await sleep(600);
+
+    /* 追出去：来电 */
+    await startIncomingCall();
+
+    /* 遗书写完后：真正的最后一刀——它把你写的字念回来，改一个字 */
+    await sleep(600);
+    var mine = readLetter();
+    if (mine) {
+      setPhase('书');
+      await say('你写的那句——', { dim: true, speed: 70 });
+      /* 打出来，最后一个字换成「它」相关 */
+      lineEl.innerHTML = '';
+      var sp3 = document.createElement('span');
+      var car3 = document.createElement('span');
+      car3.className = 'caret';
+      lineEl.appendChild(sp3); lineEl.appendChild(car3);
+      var shown = mine;
+      /* 若超过 4 字，把倒数第 2 个字改掉 */
+      if (shown.length >= 4) {
+        var pos = shown.length - 2;
+        shown = shown.slice(0, pos) + '它' + shown.slice(pos + 1);
+      }
+      for (var q = 0; q < shown.length; q++) {
+        sp3.textContent += shown[q];
+        await sleep(90 + Math.random() * 70);
+      }
+      await sleep(1200);
+      await say('不对吗？', { speed: 75, hold: 1600 });
+      await say('它抄的时候手抖了一下。', { dim: true, speed: 65, hold: 2000 });
+    }
+
+    /* 真正的终幕：不是黑屏，是页面「活」着 */
+    await sleep(800);
+    flashBlack(500);
+    await sleep(700);
+    /* 标题永久改掉 */
+    document.title = (R.name || '它') + ' 的房间';
+    /* presence 不灭 */
+    presence(true);
     var tk = $('takeover');
     var tt = $('takeoverText');
     tk.classList.add('on');
-    var msg = R.letIn
-      ? '它坐下了。\n' + (R.name ? R.name + ' 站在你后面。' : '它站在你后面。')
-      : '仪式结束。\n它没有离开。';
     tt.style.whiteSpace = 'pre-wrap';
     tt.textContent = '';
-    for (var j = 0; j < msg.length; j++) {
-      await sleep(90);
-      tt.textContent += msg[j];
-    }
-
-    await sleep(2400);
-    /* 假结束 + 回马枪 */
-    tt.textContent = '';
-    var msg2 = '别关页面。\n它还没走。';
-    for (var k = 0; k < msg2.length; k++) {
-      await sleep(100);
-      tt.textContent += msg2[k];
-    }
-    await sleep(2000);
-    flashBlack(800);
-    await sleep(1000);
-    faceJump('resource/haunt/photo.png', { full: true, ms: 1200, hold: 1100, vol: 0.65 });
-    await sleep(500);
-    /* 接管屏收起，格式再碎一次：来电 */
-    tk.classList.remove('on');
-    mirror(false); presence(false); scan(false);
-    document.body.style.background = '#0a0b0f';
-    stopDrone();
-    await sleep(600);
-
-    await startIncomingCall();
-
-    /* 遗书写完后一句收尾 */
-    await sleep(800);
-    tt.classList.add('on');
-    var endMsg = '下一个人打开这页时，\n会先看见你写的那句。\n\n它也会看见。';
-    tt.textContent = '';
+    var endMsg = '页面可以关了。\n但它已经复制了一份到你的缓存。\n\n下次打开任何一页，\n它都会先到。';
     for (var e = 0; e < endMsg.length; e++) {
-      await sleep(80);
       tt.textContent += endMsg[e];
+      await sleep(75);
     }
-    titleGlitch('别关', '夜间独处习惯调查', 4);
+    titleGlitch('别关', (R.name || '它') + ' 的房间', 3);
+    /* 10 秒后一个极轻的回马枪 */
+    setT(function () {
+      faceJump('resource/haunt/photo.png', { ms: 450, hold: 400, vol: 0.3, shake: false });
+    }, 10000);
   }
 
-  /* 深夜文案入口 */
+/* 深夜文案入口 */
   if (document.title) {
     /* 保持伪装标题 */
   }

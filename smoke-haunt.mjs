@@ -92,7 +92,8 @@ globalThis.webkitAudioContext = globalThis.AudioContext;
 const probeBody = `
 ;(function(){
   try {
-    ['actGate','actPrep','actNameDone','actCall','actRespond','actYield','threshold','enter','showWall',
+    ['actGate','actPrep','prepDone','actNameDone','actCall','actRespond','yieldDone','enter','showWall',
+     'call2','call3','callDone',
      'startIncomingCall','startLiveCall','startLetterScreen','playRingTone','playBreathLoop',
      'readLetter','writeLetter','say','actHold','actChoice','actName','faceJump','bigWord','flashBlack'
     ].forEach(function(n){
@@ -102,13 +103,10 @@ const probeBody = `
     if (typeof LETTER_KEY !== 'string' || !LETTER_KEY) throw new Error('LETTER_KEY');
     if (DEFAULT_LETTERS.length < 3) throw new Error('DEFAULT_LETTERS');
     /* 阶段标记齐全 */
-    var html = document.title || '';
     var phases = ['门','准','名','唤','应','让','阈','入','书'];
-    var src = ${JSON.stringify('')}; /* placeholder */
-    /* 从函数源码里抓阶段 */
     var gateSrc = actGate.toString() + actPrep.toString() + actNameDone.toString() + actCall.toString()
-      + actRespond.toString() + actYield.toString() + threshold.toString() + enter.toString()
-      + (typeof callDone === 'function' ? callDone.toString() : '');
+      + actRespond.toString() + yieldDone.toString() + enter.toString()
+      + callDone.toString();
     phases.slice(0,8).forEach(function(p){
       if (gateSrc.indexOf(p) < 0) throw new Error('phase ' + p);
     });
