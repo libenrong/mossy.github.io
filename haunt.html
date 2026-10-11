@@ -259,6 +259,41 @@ body.scan::before{
 }
 #sysNote.on{opacity:1}
 #sysNote .sub{display:block;margin-top:4px;font-size:11px;color:#8a919e}
+
+/* 来电 + 遗书接力 */
+#incomingCall{position:fixed;inset:0;z-index:210;display:none;background:linear-gradient(180deg,#0b0d12,#12151c);flex-direction:column;align-items:center;justify-content:center;gap:30px}
+#incomingCall.on{display:flex}
+#incomingCall .ic-from{font-size:11px;letter-spacing:.35em;color:#6a7080}
+#incomingCall .ic-name{font-size:clamp(24px,6vw,32px);letter-spacing:.1em;color:#e8ecf2;animation:icPulse 1.6s ease-in-out infinite}
+@keyframes icPulse{0%,100%{opacity:.55}50%{opacity:1}}
+#incomingCall .ic-sub{font-size:12px;color:#8a919e;letter-spacing:.2em}
+#incomingCall .ic-actions{display:flex;gap:64px;margin-top:28px}
+#incomingCall .ic-btn{width:64px;height:64px;border-radius:50%;border:none;font-size:22px;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center}
+#icAnswer{background:#2d8a4e}
+#icDecline{background:#b33a3a}
+#callLive{position:fixed;inset:0;z-index:211;display:none;background:#050608;flex-direction:column;align-items:center;justify-content:center;gap:26px}
+#callLive.on{display:flex}
+#callLive .cl-timer{font-size:13px;letter-spacing:.3em;color:#6a7080;font-variant-numeric:tabular-nums}
+#callLive .cl-text{font-size:clamp(16px,4vw,19px);letter-spacing:.12em;color:#c8ced8;min-height:2.4em;text-align:center;line-height:2.2;max-width:440px;padding:0 24px}
+#callLive .cl-wave{display:flex;gap:5px;align-items:flex-end;height:28px}
+#callLive .cl-wave i{width:3px;background:#3a4050;animation:clBar 1s ease infinite}
+#callLive .cl-wave i:nth-child(2){animation-delay:.15s}#callLive .cl-wave i:nth-child(3){animation-delay:.3s}#callLive .cl-wave i:nth-child(4){animation-delay:.45s}#callLive .cl-wave i:nth-child(5){animation-delay:.6s}
+@keyframes clBar{0%,100%{height:6px}50%{height:24px}}
+#callLive .cl-hang{margin-top:20px;width:56px;height:56px;border-radius:50%;background:#b33a3a;border:none;color:#fff;font-size:18px;cursor:pointer}
+#letterScreen{position:fixed;inset:0;z-index:205;display:none;background:#0a0b0f;overflow-y:auto;padding:48px 24px 80px}
+#letterScreen.on{display:block}
+#letterScreen .ls-inner{max-width:520px;margin:0 auto}
+#letterScreen .ls-meta{font-size:11px;letter-spacing:.3em;color:#6a7080;margin-bottom:28px}
+#letterScreen .ls-body{font-size:16px;line-height:2.4;color:#d5dae2;letter-spacing:.06em;min-height:10em;white-space:pre-wrap;border-left:2px solid rgba(150,155,170,.3);padding-left:22px;margin-bottom:40px}
+#letterScreen .ls-body .caret{display:inline-block;width:2px;height:1.1em;background:#c45c5c;vertical-align:text-bottom;margin-left:2px;animation:blink 1s step-end infinite}
+#letterScreen .ls-label{font-size:12px;color:#8a919e;letter-spacing:.2em;margin-bottom:14px}
+#letterScreen #letterInput{width:100%;min-height:100px;resize:vertical;background:rgba(255,255,255,.03);border:1px solid rgba(150,155,170,.25);color:#e8ecf2;font-family:inherit;font-size:15px;line-height:2;padding:16px 18px;letter-spacing:.05em;outline:none}
+#letterScreen #letterInput:focus{border-color:#c45c5c}
+#letterScreen #letterSubmit{margin-top:22px;display:block;width:100%;padding:14px;background:transparent;border:1px solid rgba(160,165,180,.4);color:#c8ced8;font-size:14px;letter-spacing:.35em;cursor:pointer;transition:all .25s}
+#letterScreen #letterSubmit:hover{border-color:#c45c5c;color:#c45c5c}
+#letterScreen .ls-after{margin-top:36px;font-size:11px;color:#8a919e;letter-spacing:.15em;line-height:2.2;display:none}
+#letterScreen .ls-after.on{display:block}
+#letterScreen .ls-after a{color:#a8b0bc}
 </style>
 </head>
 <body>
@@ -282,6 +317,37 @@ body.scan::before{
   <div id="act"></div>
 </div>
 
+
+<div id="incomingCall">
+  <div class="ic-from">来电</div>
+  <div class="ic-name" id="icName">未知号码</div>
+  <div class="ic-sub">iPhone</div>
+  <div class="ic-actions">
+    <button class="ic-btn" id="icDecline" type="button">✕</button>
+    <button class="ic-btn" id="icAnswer" type="button">☎</button>
+  </div>
+</div>
+<div id="callLive">
+  <div class="cl-timer" id="clTimer">00:00</div>
+  <div class="cl-wave"><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="cl-text" id="clText"></div>
+  <button class="cl-hang" id="clHang" type="button">▼</button>
+</div>
+<div id="letterScreen">
+  <div class="ls-inner">
+    <div class="ls-meta" id="lsMeta">受试者留书</div>
+    <div class="ls-label">上一位答完的人，给你留了这些——</div>
+    <div class="ls-body" id="lsBody"></div>
+    <div class="ls-label" id="lsInputLabel">你也要给下一个人留一句。他会看到。</div>
+    <textarea id="letterInput" maxlength="200" placeholder="写点什么。一百字以内。" disabled></textarea>
+    <button id="letterSubmit" type="button" disabled>留 下</button>
+    <div class="ls-after" id="lsAfter">
+      已封存。下一位打开这份页面时，第一眼看到的就是你的话。<br>
+      你不知道他是谁。他也不知道你是谁。<br><br>
+      <a href="tools.html">← 回功能合集</a>
+    </div>
+  </div>
+</div>
 <div id="wall">
   <div class="wall-grid" id="wallGrid"></div>
   <div class="caption" id="wallCap">他们都在看</div>
@@ -695,7 +761,176 @@ function invertPulse(n, gap) {
     localStorage.setItem('haunt_v', String(R.visited));
   } catch (e) {}
 
-  /* ---------- 仪式流程 ---------- */
+  
+/* ---------- 二段仪式：来电 + 遗书接力 ---------- */
+var LETTER_KEY = 'haunt_letter';
+var DEFAULT_LETTERS = [
+  '别在凌晨打开这个。我后悔了。',
+  '我按住「已关」的时候，键盘后面有敲击声。不是我在敲。',
+  '如果你看到这行字，说明我留的位置还在。它也在。',
+  '不要选「允许」。永远不要。',
+  '这封信本来是空白的。上一个人写完就再也没登录过。'
+];
+
+function readLetter() {
+  try { return localStorage.getItem(LETTER_KEY) || ''; } catch (e) { return ''; }
+}
+function writeLetter(text) {
+  try { localStorage.setItem(LETTER_KEY, text); } catch (e) {}
+}
+
+function playRingTone() {
+  try {
+    if (!actx) return;
+    if (actx.state === 'suspended') actx.resume();
+    var t = actx.currentTime;
+    var o = actx.createOscillator();
+    var g = actx.createGain();
+    o.type = 'sine';
+    o.connect(g); g.connect(actx.destination);
+    g.gain.value = 0;
+    for (var k = 0; k < 3; k++) {
+      var t0 = t + k * 1.6;
+      o.frequency.setValueAtTime(440, t0);
+      o.frequency.setValueAtTime(480, t0 + 0.35);
+      g.gain.linearRampToValueAtTime(0.07, t0 + 0.04);
+      g.gain.setValueAtTime(0.07, t0 + 0.65);
+      g.gain.linearRampToValueAtTime(0, t0 + 0.9);
+    }
+    o.start(t); o.stop(t + 5);
+  } catch (e) {}
+}
+
+function playBreathLoop(sec) {
+  try {
+    if (!actx) return;
+    if (actx.state === 'suspended') actx.resume();
+    var t = actx.currentTime;
+    var o = actx.createOscillator();
+    var g = actx.createGain();
+    var lfo = actx.createOscillator();
+    var lg = actx.createGain();
+    o.type = 'triangle';
+    o.frequency.value = 62;
+    lfo.type = 'sine';
+    lfo.frequency.value = 0.27;
+    lg.gain.value = 0.03;
+    g.gain.value = 0.01;
+    lfo.connect(lg); lg.connect(g.gain);
+    o.connect(g); g.connect(actx.destination);
+    o.start(t); lfo.start(t);
+    o.stop(t + sec); lfo.stop(t + sec);
+  } catch (e) {}
+}
+
+async function startIncomingCall() {
+  var el = $('incomingCall');
+  if (!el) { return startLetterScreen(); }
+  var tail = '7919';
+  try { tail = ('0000' + (R.visited * 7919 % 10000)).slice(-4); } catch (e) {}
+  $('icName').textContent = '未知号码 ····' + tail;
+  el.classList.add('on');
+  document.title = '来电';
+  playRingTone();
+  if (navigator.vibrate) { try { navigator.vibrate([300,200,300,200,300]); } catch (e) {} }
+
+  return new Promise(function (resolve) {
+    $('icAnswer').onclick = function () {
+      el.classList.remove('on');
+      startLiveCall().then(resolve);
+    };
+    $('icDecline').onclick = function () {
+      el.classList.remove('on');
+      document.title = '未接来电 (1)';
+      note('它改天再打。', 2400);
+      startLetterScreen().then(resolve);
+    };
+  });
+}
+
+async function startLiveCall() {
+  var live = $('callLive');
+  if (!live) return startLetterScreen();
+  live.classList.add('on');
+  document.title = '通话中';
+  var sec = 0;
+  var timerEl = $('clTimer');
+  var textEl = $('clText');
+  var timer = setInterval(function () {
+    sec++;
+    var m = Math.floor(sec / 60), s = sec % 60;
+    timerEl.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+  }, 1000);
+
+  playBreathLoop(28);
+  var script = [
+    [1.2, '……喂？'],
+    [3.5, '能听见吗。'],
+    [6.0, '别说话。听我说完。'],
+    [9.5, '你身后那把椅子——'],
+    [12.5, '不是空的。'],
+    [15.5, '我上一次也接了这通电话。'],
+    [19.0, '现在轮到我给你打了。'],
+    [22.5, '挂断之前，看一眼你背后。'],
+    [26.0, '……时间到了。']
+  ];
+  for (var i = 0; i < script.length; i++) {
+    await sleep(script[i][0] * 1000 - (i === 0 ? 0 : script[i - 1][0] * 1000));
+    textEl.textContent = script[i][1];
+  }
+  await sleep(1500);
+  clearInterval(timer);
+  live.classList.remove('on');
+  textEl.textContent = '';
+  timerEl.textContent = '00:00';
+  document.title = '夜间独处习惯调查';
+  return startLetterScreen();
+}
+
+async function startLetterScreen() {
+  var sc = $('letterScreen');
+  if (!sc) return;
+  sc.classList.add('on');
+  document.title = '受试者留书';
+  setPhase('书');
+
+  var saved = readLetter();
+  var content = saved || DEFAULT_LETTERS[Math.floor(Math.random() * DEFAULT_LETTERS.length)];
+  var body = $('lsBody');
+  $('lsMeta').textContent = '受试者留书 · ' + (saved ? '封存于本机' : '无名氏 · 记录缺失');
+  body.innerHTML = '<span class="caret"></span>';
+  var caret = body.querySelector('.caret');
+
+  for (var i = 0; i < content.length; i++) {
+    caret.insertAdjacentText('beforebegin', content.charAt(i));
+    await sleep(70 + Math.random() * 90);
+  }
+  await sleep(2500);
+  $('letterInput').disabled = false;
+  $('letterSubmit').disabled = false;
+
+  return new Promise(function (resolve) {
+    $('letterSubmit').onclick = function () {
+      var text = ($('letterInput').value || '').trim();
+      if (!text) {
+        var inp = $('letterInput');
+        inp.style.borderColor = '#c45c5c';
+        setTimeout(function () { inp.style.borderColor = ''; }, 800);
+        return;
+      }
+      writeLetter(text);
+      $('letterInput').disabled = true;
+      $('letterInput').style.opacity = '.4';
+      $('letterSubmit').disabled = true;
+      $('letterSubmit').textContent = '已封存';
+      $('lsInputLabel').textContent = '你留下的：';
+      $('lsAfter').classList.add('on');
+      resolve();
+    };
+  });
+}
+
+/* ---------- 仪式流程 ---------- */
 
   async function actGate() {
     setPhase('门');
@@ -1062,9 +1297,25 @@ function invertPulse(n, gap) {
     await sleep(1000);
     faceJump('resource/haunt/photo.png', { full: true, ms: 1200, hold: 1100, vol: 0.65 });
     await sleep(500);
-    tt.textContent = '它已经和你一起看了。\n\n—— 夜间独处习惯调查 · 已结束 ——';
-    titleGlitch('别关', '夜间独处习惯调查', 5);
+    /* 接管屏收起，格式再碎一次：来电 */
+    tk.classList.remove('on');
+    mirror(false); presence(false); scan(false);
+    document.body.style.background = '#0a0b0f';
     stopDrone();
+    await sleep(600);
+
+    await startIncomingCall();
+
+    /* 遗书写完后一句收尾 */
+    await sleep(800);
+    tt.classList.add('on');
+    var endMsg = '下一个人打开这页时，\n会先看见你写的那句。\n\n它也会看见。';
+    tt.textContent = '';
+    for (var e = 0; e < endMsg.length; e++) {
+      await sleep(80);
+      tt.textContent += endMsg[e];
+    }
+    titleGlitch('别关', '夜间独处习惯调查', 4);
   }
 
   /* 深夜文案入口 */
