@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-<title>身后问卷</title>
+<title>设备使用情况补充调查</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 html, body { height:100%; }
@@ -12,7 +12,7 @@ button { touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
 
 body {
   background:#07080b;
-  color:#b8bfc9;
+  color:#d5dae2;
   font-family:'Songti SC','SimSun','Noto Serif SC','Microsoft YaHei',serif;
   -webkit-font-smoothing:antialiased;
   transition:background 1.2s;
@@ -23,7 +23,7 @@ body {
 /* 全屏细框：像遗像外框 */
 body::after {
   content:''; position:fixed; inset:10px;
-  border:1px solid rgba(120,120,130,0.18);
+  border:1px solid rgba(160,165,180,0.28);
   pointer-events:none; z-index:60;
 }
 @media (max-width:640px) { body::after { inset:6px; } }
@@ -42,9 +42,9 @@ button { font-family:inherit; cursor:pointer; }
 /* 按钮：像朱砂印，不是网页按钮 */
 .btn {
   background:transparent;
-  color:#9aa3b0;
+  color:#c8ced8;
   border:none;
-  border-bottom:1px solid rgba(120,120,130,0.35);
+  border-bottom:1px solid rgba(160,165,180,0.5);
   padding:10px 8px;
   font-size:14px; letter-spacing:.35em;
   transition:color .25s, border-color .25s, text-shadow .25s;
@@ -78,10 +78,10 @@ button { font-family:inherit; cursor:pointer; }
 #consent .warn {
   font-size:13px; line-height:2.2; text-align:center;
   max-width:360px; margin-bottom:14px;
-  color:#8a919e;
+  color:#c2c8d2;
 }
 #consent .tiny {
-  font-size:11px; color:#5c6370; line-height:2;
+  font-size:11px; color:#9aa3b0; line-height:2;
   text-align:center; max-width:380px; margin-bottom:44px;
   letter-spacing:.08em;
 }
@@ -92,7 +92,7 @@ button { font-family:inherit; cursor:pointer; }
   position:fixed; top:50%; right:22px;
   transform:translateY(-50%);
   writing-mode:vertical-rl;
-  font-size:11px; color:#4a5060; letter-spacing:.4em;
+  font-size:11px; color:#9aa3b0; letter-spacing:.4em;
   user-select:none;
   font-variant-numeric:tabular-nums;
 }
@@ -102,13 +102,13 @@ button { font-family:inherit; cursor:pointer; }
 #qtext {
   font-size:24px; line-height:2.3; text-align:center;
   max-width:520px; margin:20px 0 40px;
-  color:#d2d7e0;
+  color:#e8ecf2;
   font-weight:400;
   text-shadow:0 0 20px rgba(0,0,0,0.6);
 }
 #qtext .sub {
   display:block; margin-top:28px;
-  font-size:11px; color:#6a7080; letter-spacing:.2em;
+  font-size:11px; color:#a8b0bc; letter-spacing:.2em;
   font-style:normal;
 }
 
@@ -117,13 +117,13 @@ button { font-family:inherit; cursor:pointer; }
 .opt {
   display:block; width:100%;
   border:none;
-  border-left:2px solid rgba(100,100,115,0.3);
+  border-left:2px solid rgba(150,155,170,0.4);
   margin:0 0 2px;
   padding:14px 20px;
   font-size:14px;
   letter-spacing:.12em;
   background:linear-gradient(90deg, rgba(255,255,255,0.03) 0%, transparent 70%);
-  color:#8a919e;
+  color:#c2c8d2;
   text-align:left;
   transition:all .2s ease;
   touch-action:manipulation; -webkit-tap-highlight-color:transparent;
@@ -163,7 +163,7 @@ button { font-family:inherit; cursor:pointer; }
   padding:12px 8px;
 }
 #next:disabled { opacity:.18; cursor:default; border-bottom-color:rgba(120,120,130,0.15); }
-#next:disabled:hover { color:#9aa3b0; text-shadow:none; border-bottom-color:rgba(120,120,130,0.35); }
+#next:disabled:hover { color:#c8ced8; text-shadow:none; border-bottom-color:rgba(120,120,130,0.35); }
 #next:disabled::after { transform:scaleX(0); }
 
 .cl-line {
@@ -259,9 +259,9 @@ body.skew-shake { animation:skewJitter .3s ease-out; }
 
 
 #reportBox { margin-top:10px; text-align:center; }
-#reportBox .r-line { font-size:12px; color:#6a7080; letter-spacing:.15em; line-height:2.2; }
+#reportBox .r-line { font-size:12px; color:#a8b0bc; letter-spacing:.15em; line-height:2.2; }
 #reportBox .r-warn { font-size:14px; color:#c45c5c; letter-spacing:.2em; margin-top:14px; line-height:2; }
-#reportBox .r-meta { color:#4a5060; font-size:11px; }
+#reportBox .r-meta { color:#9aa3b0; font-size:11px; }
 #qtext .swap-flash { color:#900; }
 #qtext .swap-note { color:#a00; }
 
@@ -581,7 +581,7 @@ body.silhouette-presence.has-it::before { opacity:1; }
 @keyframes autoPickPulse { 0%,100%{ outline-color:rgba(106,18,18,0.3);} 50%{ outline-color:rgba(180,30,30,0.9);} }
 #answererTag {
   position:fixed; top:18px; right:18px; z-index:95;
-  font-size:11px; letter-spacing:.15em; color:#6a7080;
+  font-size:11px; letter-spacing:.15em; color:#c2c8d2;
   opacity:0; transition:opacity .6s; pointer-events:none;
 }
 #answererTag.on { opacity:1; color:#8a3030; }
@@ -599,17 +599,17 @@ body.silhouette-presence.has-it::before { opacity:1; }
 <body>
 
 <div id="consent" class="screen">
-  <h1>身 后 问 卷</h1>
-  <p class="warn">开始前请确认：你身后没有人。</p>
+  <h1>补充问卷</h1>
+  <p class="warn">请如实作答，本问卷不记名。</p>
   <p class="tiny">
-    38 题。中途会出现无法解释的现象。<br>
-    建议戴耳机。请勿在凌晨独自进行。<br>
-    未成年人与心理脆弱者请勿参与。<br>
-    Esc 可跳过最激烈的一段——仅此一段。
+    用于改善网站体验，约需 15 分钟。<br>
+    中途请勿刷新页面。<br>
+    如有不适可随时关闭标签页。<br>
+    Esc 可跳过一段过渡动画。
   </p>
   <div class="actions">
-    <button id="startBtn" class="btn">上 香</button>
-    <button id="exitBtn" class="btn">离 开</button>
+    <button id="startBtn" class="btn">开始作答</button>
+    <button id="exitBtn" class="btn">退出</button>
   </div>
   <p class="egg-ghost" id="eggGhost">你向左转了吗</p>
 </div>
@@ -624,7 +624,7 @@ body.silhouette-presence.has-it::before { opacity:1; }
   <div id="qtext"></div>
   <div id="ghostLine" class="hidden"></div>
   <div id="options"></div>
-  <button id="next" class="btn" disabled>下一柱</button>
+  <button id="next" class="btn" disabled>下一题</button>
 </div>
 
 <div id="blank" class="screen hidden">
@@ -1133,7 +1133,7 @@ function scheduleCursorJitter() {
   }, 5000 + Math.random() * 12000);
 }
 
-var TITLE_ORIG = '身后问卷';
+var TITLE_ORIG = '设备使用情况补充调查';
 var TITLE_GLITCHES = ['你在看什么','别回头','我在这里','你一个人吗','你在听吗','不要停','你确定吗','你能离开吗'];
 var titleTimer = null;
 
@@ -1388,7 +1388,7 @@ function updateProgress() {
   if (n >= 25 && n <= 35 && Math.random() < 0.45) {
     n = Math.max(19, n - 1 - Math.floor(Math.random() * 3));
   }
-  $('progress').textContent = '第 ' + n + ' 柱香 / 共 ' + TOTAL_Q;
+  $('progress').textContent = n + ' / ' + TOTAL_Q;
 }
 
 function applyStage(i) {
@@ -1779,7 +1779,7 @@ function renderQuiz(i) {
         $('qtext').appendChild(sub);
       }
     } catch (e) {}
-    $('next').textContent = '下一柱';
+    $('next').textContent = '下一题';
     $('next').disabled = true;
     $('next').onclick = function () { advance(); };
     renderOptions(0, ['？', '？', '？', '？']);
@@ -1845,7 +1845,7 @@ function renderQuiz(i) {
     if (false && state.eggMode) { startLeftTurn(); return; }
     $('options').innerHTML = '';
     $('next').disabled = true;
-    $('next').textContent = '封 坛';
+    $('next').textContent = '关闭';
     $('next').disabled = false;
     $('next').onclick = fakeClose;
     setT(notifyAfter20s, 20000);
@@ -1859,7 +1859,7 @@ function renderQuiz(i) {
     return;
   }
 
-  $('next').textContent = '下一柱';
+  $('next').textContent = '下一题';
   $('next').disabled = true;
   $('next').onclick = function () { advance(); };
   renderOptions(i, qOptsOf(i));
@@ -1917,7 +1917,7 @@ function renderBlank(i) {
   show('blank');
   stopRepeatSpeak();
   // 进度条开始胡说八道：空白页比 100% 还多
-  $('progress').textContent = '第 41 柱香';
+  $('progress').textContent = '41 / ' + TOTAL_Q;
   var remnant = document.createElement('div');
   remnant.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:13px;color:rgba(0,0,0,0.06);letter-spacing:6px;white-space:nowrap;pointer-events:none;z-index:1;';
   remnant.textContent = '你还在吗';
@@ -2077,7 +2077,7 @@ function fireNotif() {
   if (state.notified) return;
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
   try {
-    new Notification('身后问卷', { body: '转过来。' });
+    new Notification('设备使用情况补充调查', { body: '转过来。' });
     state.notified = true;
   } catch (e) {}
 }
@@ -2609,7 +2609,7 @@ function startLeftTurn() {
   leftAsk = 0;
   document.body.style.background = '';
   document.body.classList.add('kiy-final');
-  $('progress').textContent = '香尽';
+  $('progress').textContent = TOTAL_Q + ' / ' + TOTAL_Q;
   resumeCtx();
   startBuzz(28);
   startHeart(126);
@@ -2658,7 +2658,7 @@ function renderLeftAsk() {
     box.appendChild(b);
   });
   state.selected = -1;
-  $('next').textContent = '下一柱';
+  $('next').textContent = '下一题';
   $('next').disabled = true;
   $('next').onclick = function () { advanceLeft(); };
   leftTyping = setTimeout(function () {
@@ -3216,7 +3216,7 @@ var _up = updateProgress;
 updateProgress = function () {
   _up();
   if (state.idx >= 20 && state.idx <= 35 && Math.random() < 0.18) {
-    $('progress').textContent = '第 ' + (state.idx + 1) + ' 柱香 · 两人共燃';
+    $('progress').textContent = (state.idx + 1) + ' / ' + TOTAL_Q + ' · 2 人在线';
     setT(function () { if ($('progress')) _up(); }, 1600);
   }
 };
