@@ -10,11 +10,12 @@ html, body { height:100%; }
 html { -webkit-text-size-adjust:100%; }
 button { touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
 body {
-  background:#fafafa;
-  color:#000;
+  background:#0a0c10;
+  color:#c8cdd6;
   font-family:'Songti SC','SimSun','Noto Serif SC','Microsoft YaHei',serif;
   -webkit-font-smoothing:antialiased;
   transition:background .8s;
+  letter-spacing:.02em;
 }
 .screen {
   position:fixed; top:0; left:0; right:0; bottom:0;
@@ -29,13 +30,13 @@ button {
   font-family:inherit; cursor:pointer;
 }
 .btn {
-  background:transparent; color:#000;
-  border:1px solid #000;
+  background:transparent; color:#c8cdd6;
+  border:1px solid #3a4050;
   padding:11px 42px;
   font-size:15px; letter-spacing:4px;
   transition:background .2s, color .2s;
 }
-.btn:hover { background:#000; color:#fff; }
+.btn:hover { background:#c8cdd6; color:#0a0c10; border-color:#c8cdd6; }
 
 #consent h1 {
   font-weight:600; letter-spacing:8px;
@@ -479,18 +480,53 @@ body.bw #quiz, body.bw #crack, body.bw #progress { filter:grayscale(1); }
 .memorial-wall:has(.mw-full) .mw-cell { display:none; }
 .memorial-wall:has(.mw-full) .mw-caption { z-index:2; }
 .memorial-wall .mw-caption { position:absolute; bottom:8%; left:0; right:0; text-align:center; color:#cfcfcf; font-size:13px; letter-spacing:8px; z-index:2; }
+
+/* ===== 身后问卷专属：镜像、错位、扫描线 ===== */
+body.mirror-mode { transform: scaleX(-1); }
+body.mirror-mode #qtext, body.mirror-mode #options, body.mirror-mode #next { transform: scaleX(-1); }
+body.tilted { transform: rotate(0.6deg) scale(1.01); }
+.scanlines::after {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:80;
+  background:repeating-linear-gradient(0deg, transparent 0 2px, rgba(0,0,0,0.04) 2px 3px);
+  animation:scanDrift 8s linear infinite;
+}
+@keyframes scanDrift { from{ background-position:0 0; } to{ background-position:0 100px; } }
+body.silhouette-presence::before {
+  content:''; position:fixed; right:-4%; bottom:-8%; width:38vw; height:80vh;
+  background:radial-gradient(ellipse at 40% 80%, rgba(0,0,0,0.55) 0%, transparent 70%);
+  pointer-events:none; z-index:70; opacity:0;
+  transition:opacity 2.4s;
+}
+body.silhouette-presence.has-it::before { opacity:1; }
+.opt.auto-picked { outline:1px solid #6a1212; outline-offset:2px; animation:autoPickPulse 0.9s ease infinite; }
+@keyframes autoPickPulse { 0%,100%{ outline-color:rgba(106,18,18,0.3);} 50%{ outline-color:rgba(180,30,30,0.9);} }
+#answererTag {
+  position:fixed; top:18px; right:18px; z-index:95;
+  font-size:11px; letter-spacing:.15em; color:#6a7080;
+  opacity:0; transition:opacity .6s; pointer-events:none;
+}
+#answererTag.on { opacity:1; color:#8a3030; }
+#glitchBars { position:fixed; inset:0; pointer-events:none; z-index:100; display:none; }
+#glitchBars.on { display:block; }
+#glitchBars .bar { position:absolute; left:0; right:0; height:2px; background:#c8cdd6; mix-blend-mode:difference; }
+#longPause {
+  position:fixed; inset:0; z-index:98; background:#050608;
+  display:none; align-items:center; justify-content:center;
+  color:#1a1e28; font-size:13px; letter-spacing:12px;
+}
+#longPause.on { display:flex; }
 </style>
 </head>
 <body>
 
 <div id="consent" class="screen">
-  <h1>身后问卷</h1>
-  <p class="warn">本问卷用于自查「你是否独自一人」。请如实作答。</p>
+  <h1>身 后 问 卷</h1>
+  <p class="warn">开始前请确认：你身后没有人。</p>
   <p class="tiny">
-    包含强烈心理压迫、灵异暗示、异常文字与声音刺激。<br>
-    未成年人与心理状态脆弱者请勿参与。<br>
-    全程约 15–20 分钟。<br>
-    如感到任何不适，可按 Esc 随时退出——如果你能退出的话。
+    38 题。中途会出现无法解释的现象。<br>
+    建议戴耳机。请勿在凌晨独自进行。<br>
+    未成年人与心理脆弱者请勿参与。<br>
+    Esc 可跳过最激烈的一段——仅此一段。
   </p>
   <div class="actions">
     <button id="startBtn" class="btn">开始作答</button>
@@ -500,6 +536,9 @@ body.bw #quiz, body.bw #crack, body.bw #progress { filter:grayscale(1); }
 </div>
 
 <div id="progress" class="hidden"></div>
+<div id="answererTag">受试者 B · 作答中</div>
+<div id="glitchBars"></div>
+<div id="longPause">你还在吗</div>
 <div id="vignette"></div>
 
 <div id="quiz" class="screen hidden">
@@ -560,7 +599,7 @@ body.bw #quiz, body.bw #crack, body.bw #progress { filter:grayscale(1); }
   <div class="mw-cell ph"><img src="resource/haunt/wall-6.webp" alt="" onerror="this.parentNode.classList.add('ph');this.remove();"></div>
   <div class="mw-cell ph"><img src="resource/haunt/wall-7.webp" alt="" onerror="this.parentNode.classList.add('ph');this.remove();"></div>
   <div class="mw-cell ph"><img src="resource/haunt/wall-8.webp" alt="" onerror="this.parentNode.classList.add('ph');this.remove();"></div>
-  <div class="mw-caption">他们都在看</div>
+  <div class="mw-caption" id="mwCaption">他们都在看</div>
 </div>
 
 <div id="finalSeq">
@@ -2912,6 +2951,12 @@ function portraitJump() {
 function memorialWallShow(cb) {
   var w = $('memorialWall');
   if (!w) { if (cb) cb(); return; }
+  var cap = $('mwCaption');
+  if (cap) {
+    cap.textContent = '他们都在看';
+    setT(function () { if (cap) cap.textContent = '第 2 位受试者已入席'; }, 1400);
+    setT(function () { if (cap) cap.textContent = '就是你'; }, 2600);
+  }
   w.classList.add('on');
   var cells = w.querySelectorAll('.mw-cell');
   var i = 0;
@@ -2961,6 +3006,150 @@ renderQuiz = function (i) {
   _origRenderQuiz(i);
   if (i === 28) setT(portraitJump, 800);
   if (i === 34) setT(function () { flashImg('imgChair', 200); }, 600);
+};
+
+
+/* ===== 身后问卷专属机制 ===== */
+var hauntFX = {
+  mirrorOn: false,
+  autoPickUsed: {},
+  pauseDone: {},
+  answererTimer: null
+};
+
+function setMirror(on) {
+  hauntFX.mirrorOn = !!on;
+  document.body.classList.toggle('mirror-mode', on);
+}
+function setTilt(on) {
+  document.body.classList.toggle('tilted', !!on);
+}
+function setPresence(on) {
+  document.body.classList.toggle('silhouette-presence', !!on);
+  document.body.classList.toggle('has-it', !!on);
+}
+function glitchBars(n, ms) {
+  var g = $('glitchBars');
+  if (!g) return;
+  g.innerHTML = '';
+  g.classList.add('on');
+  for (var i = 0; i < (n || 6); i++) {
+    var b = document.createElement('div');
+    b.className = 'bar';
+    b.style.top = (Math.random() * 100) + '%';
+    b.style.height = (1 + Math.random() * 4) + 'px';
+    b.style.opacity = String(0.3 + Math.random() * 0.7);
+    g.appendChild(b);
+  }
+  setT(function () { g.classList.remove('on'); g.innerHTML = ''; }, ms || 120);
+}
+function showLongPause(sec, cb) {
+  var el = $('longPause');
+  if (!el) { if (cb) cb(); return; }
+  el.classList.add('on');
+  setT(function () { el.classList.remove('on'); if (cb) cb(); }, (sec || 6) * 1000);
+}
+function answererTag(on) {
+  var t = $('answererTag');
+  if (!t) return;
+  if (on) {
+    t.classList.add('on');
+    hauntFX.answererTimer = setT(function () { t.classList.remove('on'); }, 4000);
+  } else {
+    t.classList.remove('on');
+  }
+}
+
+/* 它替你选：某些题自动点亮一个错误/更吓人的选项 */
+function maybeAutoPick(i) {
+  var forced = {
+    14: 3,  // 「你怎么知道」
+    18: 3,  // 「它说它替你答了」
+    23: 3,  // 「你转过去看看」
+    26: 1,  // 「不一样」
+    33: 3,  // 「它刚离开」
+    35: 3   // 「你终于发现了」
+  };
+  if (forced[i] === undefined || hauntFX.autoPickUsed[i]) return;
+  hauntFX.autoPickUsed[i] = true;
+  setT(function () {
+    var btns = $('options').querySelectorAll('.opt');
+    if (!btns || !btns[forced[i]]) return;
+    answererTag(true);
+    btns[forced[i]].classList.add('auto-picked', 'sel');
+    state.selected = forced[i];
+    $('next').disabled = false;
+    glitchBars(3, 90);
+  }, 2200 + Math.random() * 1800);
+}
+
+/* 巨型停顿：某题前整页黑掉几秒 */
+function maybeLongPause(i) {
+  if (hauntFX.pauseDone[i]) return;
+  var triggers = { 19: 7, 27: 9, 31: 6 };  // 题号 → 停顿秒数
+  if (!triggers[i]) return;
+  hauntFX.pauseDone[i] = true;
+  setT(function () {
+    showLongPause(triggers[i], function () {
+      glitchBars(8, 200);
+    });
+  }, 900);
+}
+
+/* 包一层 renderQuestion，挂新机制 */
+var _rq = renderQuestion;
+renderQuestion = function (i) {
+  _rq(i);
+  if (!state.hasInteracted) return;
+  /* 镜像段：Q12–15 名字段 */
+  setMirror(i >= 12 && i <= 15);
+  /* 倾斜：Q24 起 */
+  setTilt(i >= 24 && i <= 35);
+  /* 身后存在感剪影：Q20 起 */
+  setPresence(i >= 20 && i <= 35);
+  /* 扫描线：Q16 起 */
+  document.body.classList.toggle('scanlines', i >= 16 && i <= 35);
+  maybeAutoPick(i);
+  maybeLongPause(i);
+  /* 偶发整页 glitch */
+  if (i >= 10 && i <= 35 && Math.random() < 0.22) {
+    setT(function () { glitchBars(4 + Math.random() * 5, 80 + Math.random() * 100); }, 1500 + Math.random() * 2500);
+  }
+};
+
+/* 它先替你答了：推进时偶尔「下一题」按钮假装失灵一次 */
+var _adv = advance;
+var _ghostClicks = {};
+advance = function () {
+  var i = state.idx;
+  if (i >= 16 && i <= 30 && !_ghostClicks[i] && Math.random() < 0.28) {
+    _ghostClicks[i] = true;
+    glitchBars(3, 70);
+    /* 吞掉这一次点击，0.8s 后才真正推进 */
+    setT(function () { _adv(); }, 800);
+    return;
+  }
+  _adv();
+};
+
+/* 进度条除了倒退，还会「多报一个人」 */
+var _up = updateProgress;
+updateProgress = function () {
+  _up();
+  if (state.idx >= 20 && state.idx <= 35 && Math.random() < 0.18) {
+    $('progress').textContent = (state.idx + 1) + ' / ' + TOTAL_Q + '（2 人在线）';
+    setT(function () { if ($('progress')) _up(); }, 1600);
+  }
+};
+
+/* 清理：离开 quiz 范围时关掉镜像/倾斜 */
+var _show = show;
+show = function (name) {
+  _show(name);
+  if (name !== 'quiz') {
+    setMirror(false); setTilt(false); setPresence(false);
+    document.body.classList.remove('scanlines');
+  }
 };
 
 scheduleHauntImages();
