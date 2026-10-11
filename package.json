@@ -7,7 +7,8 @@
     "docs:build": "vitepress build docs && node scripts/build-static.mjs",
     "docs:preview": "vitepress preview docs",
     "test:exam": "node smoke-exam.js",
-    "test:psych": "node smoke-psych.mjs"
+    "test:psych": "node smoke-psych.mjs",
+    "test:haunt": "node smoke-haunt.mjs"
   },
   "devDependencies": {
     "jsdom": "^30.1.1",
