@@ -61,7 +61,7 @@ cpSync(join(root, 'resource'), join(siteDir, 'resource'), { recursive: true })
 console.log('[build-static] resource/ -> site/resource/')
 
 // 4) 共享工具页放到站根，与 tools.html 里的链接保持一致
-for (const file of ['psych.html', 'cert.html', 'tools.html']) {
+for (const file of ['psych.html', 'haunt.html', 'cert.html', 'tools.html']) {
   copy(file, join(dist, file))
 }
 
