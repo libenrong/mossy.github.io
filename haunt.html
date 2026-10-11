@@ -9,87 +9,162 @@
 html, body { height:100%; }
 html { -webkit-text-size-adjust:100%; }
 button { touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+
 body {
-  background:#0a0c10;
-  color:#c8cdd6;
+  background:#07080b;
+  color:#b8bfc9;
   font-family:'Songti SC','SimSun','Noto Serif SC','Microsoft YaHei',serif;
   -webkit-font-smoothing:antialiased;
-  transition:background .8s;
-  letter-spacing:.02em;
+  transition:background 1.2s;
+  letter-spacing:.03em;
+  overflow-x:hidden;
 }
+
+/* 全屏细框：像遗像外框 */
+body::after {
+  content:''; position:fixed; inset:10px;
+  border:1px solid rgba(120,120,130,0.18);
+  pointer-events:none; z-index:60;
+}
+@media (max-width:640px) { body::after { inset:6px; } }
+
 .screen {
   position:fixed; top:0; left:0; right:0; bottom:0;
   display:flex; flex-direction:column;
   align-items:center; justify-content:center;
-  padding:32px;
+  padding:40px 28px;
 }
 #quiz { cursor:none; }
 .hidden { display:none !important; }
 
-button {
-  font-family:inherit; cursor:pointer;
-}
-.btn {
-  background:transparent; color:#c8cdd6;
-  border:1px solid #3a4050;
-  padding:11px 42px;
-  font-size:15px; letter-spacing:4px;
-  transition:background .2s, color .2s;
-}
-.btn:hover { background:#c8cdd6; color:#0a0c10; border-color:#c8cdd6; }
+button { font-family:inherit; cursor:pointer; }
 
+/* 按钮：像朱砂印，不是网页按钮 */
+.btn {
+  background:transparent;
+  color:#9aa3b0;
+  border:none;
+  border-bottom:1px solid rgba(120,120,130,0.35);
+  padding:10px 8px;
+  font-size:14px; letter-spacing:.35em;
+  transition:color .25s, border-color .25s, text-shadow .25s;
+  position:relative;
+}
+.btn:hover {
+  color:#c45c5c;
+  border-bottom-color:#c45c5c;
+  text-shadow:0 0 12px rgba(196,92,92,0.35);
+}
+.btn::after {
+  content:''; position:absolute; left:0; right:0; bottom:-1px; height:1px;
+  background:#c45c5c; transform:scaleX(0); transform-origin:left;
+  transition:transform .3s ease;
+}
+.btn:hover::after { transform:scaleX(1); }
+
+/* ===== 同意页：竖排牌位感 ===== */
+#consent { gap:0; }
 #consent h1 {
-  font-weight:600; letter-spacing:8px;
-  font-size:27px; margin-bottom:22px;
-  text-align:center;
+  writing-mode:vertical-rl;
+  text-orientation:upright;
+  font-weight:400;
+  letter-spacing:.6em;
+  font-size:32px;
+  margin-bottom:36px;
+  color:#d0d5dd;
+  text-shadow:0 0 24px rgba(180,180,200,0.12);
+  height:auto;
 }
 #consent .warn {
-  font-size:13px; line-height:1.9; text-align:center;
-  max-width:420px; margin-bottom:10px;
+  font-size:13px; line-height:2.2; text-align:center;
+  max-width:360px; margin-bottom:14px;
+  color:#8a919e;
 }
 #consent .tiny {
-  font-size:11px; color:#888; line-height:1.8; text-align:center;
-  max-width:420px; margin-bottom:34px;
+  font-size:11px; color:#5c6370; line-height:2;
+  text-align:center; max-width:380px; margin-bottom:44px;
+  letter-spacing:.08em;
 }
-#consent .actions { display:flex; gap:18px; }
+#consent .actions { display:flex; gap:36px; }
 
+/* 香位进度：右侧竖排点 */
 #progress {
-  position:fixed; top:16px; right:20px;
-  font-size:11px; color:#bbb; letter-spacing:2px;
+  position:fixed; top:50%; right:22px;
+  transform:translateY(-50%);
+  writing-mode:vertical-rl;
+  font-size:11px; color:#4a5060; letter-spacing:.4em;
   user-select:none;
+  font-variant-numeric:tabular-nums;
 }
+@media (max-width:640px) { #progress { right:12px; font-size:10px; } }
 
+/* 题干：大、疏、像悼词 */
 #qtext {
-  font-size:22px; line-height:2; text-align:center;
-  max-width:560px; margin:26px 0 30px;
+  font-size:24px; line-height:2.3; text-align:center;
+  max-width:520px; margin:20px 0 40px;
+  color:#d2d7e0;
+  font-weight:400;
+  text-shadow:0 0 20px rgba(0,0,0,0.6);
 }
 #qtext .sub {
-  display:block; margin-top:22px;
-  font-size:12px; color:#a9a9a9; letter-spacing:1px;
+  display:block; margin-top:28px;
+  font-size:11px; color:#6a7080; letter-spacing:.2em;
+  font-style:normal;
 }
-#options { width:340px; max-width:92vw; }
+
+/* 选项：灵位长条，左对齐，选中像盖章 */
+#options { width:380px; max-width:92vw; }
 .opt {
   display:block; width:100%;
-  border:1px solid #000; margin:11px 0;
-  padding:13px 18px; font-size:15px;
-  background:transparent; color:#000; text-align:center;
-  transition:background .18s, color .18s;
+  border:none;
+  border-left:2px solid rgba(100,100,115,0.3);
+  margin:0 0 2px;
+  padding:14px 20px;
+  font-size:14px;
+  letter-spacing:.12em;
+  background:linear-gradient(90deg, rgba(255,255,255,0.03) 0%, transparent 70%);
+  color:#8a919e;
+  text-align:left;
+  transition:all .2s ease;
   touch-action:manipulation; -webkit-tap-highlight-color:transparent;
 }
+.opt:hover {
+  border-left-color:#c45c5c;
+  color:#d0d5dd;
+  background:linear-gradient(90deg, rgba(196,92,92,0.1) 0%, transparent 70%);
+  padding-left:28px;
+}
+.opt.sel {
+  border-left-color:#c45c5c;
+  color:#e8d0d0;
+  background:linear-gradient(90deg, rgba(196,92,92,0.16) 0%, transparent 75%);
+  padding-left:28px;
+  text-shadow:0 0 10px rgba(196,92,92,0.3);
+}
+.opt.sel::before {
+  content:'●';
+  margin-right:10px;
+  color:#c45c5c;
+  font-size:8px;
+  vertical-align:middle;
+}
 @media (max-width:640px) {
-  .screen { padding:20px; justify-content:flex-start; padding-top:72px; overflow-y:auto; }
-  #qtext { font-size:19px; line-height:1.9; margin:14px 0 20px; }
-  .opt { padding:16px 14px; font-size:16px; }
-  .btn { padding:12px 34px; }
-  #progress { top:12px; right:14px; }
+  .screen { padding:24px 18px; justify-content:flex-start; padding-top:64px; overflow-y:auto; }
+  #qtext { font-size:19px; line-height:2.1; margin:12px 0 28px; }
+  .opt { padding:16px 16px; font-size:15px; }
+  .btn { padding:12px 8px; letter-spacing:.25em; }
+  #progress { top:50%; right:10px; }
   #scare .big { font-size:26px; }
+  #consent h1 { font-size:26px; letter-spacing:.45em; }
 }
-.opt:hover, .opt.sel { background:#000; color:#fff; }
+
 #next {
-  margin-top:28px; padding:10px 44px;
+  margin-top:36px;
+  padding:12px 8px;
 }
-#next:disabled { opacity:.25; cursor:default; }
-#next:disabled:hover { background:transparent; color:#000; }
+#next:disabled { opacity:.18; cursor:default; border-bottom-color:rgba(120,120,130,0.15); }
+#next:disabled:hover { color:#9aa3b0; text-shadow:none; border-bottom-color:rgba(120,120,130,0.35); }
+#next:disabled::after { transform:scaleX(0); }
 
 .cl-line {
   font-size:20px; font-weight:600;
@@ -183,6 +258,10 @@ body.skew-shake { animation:skewJitter .3s ease-out; }
 
 
 
+#reportBox { margin-top:10px; text-align:center; }
+#reportBox .r-line { font-size:12px; color:#6a7080; letter-spacing:.15em; line-height:2.2; }
+#reportBox .r-warn { font-size:14px; color:#c45c5c; letter-spacing:.2em; margin-top:14px; line-height:2; }
+#reportBox .r-meta { color:#4a5060; font-size:11px; }
 #qtext .swap-flash { color:#900; }
 #qtext .swap-note { color:#a00; }
 
@@ -498,7 +577,7 @@ body.silhouette-presence::before {
   transition:opacity 2.4s;
 }
 body.silhouette-presence.has-it::before { opacity:1; }
-.opt.auto-picked { outline:1px solid #6a1212; outline-offset:2px; animation:autoPickPulse 0.9s ease infinite; }
+.opt.auto-picked { border-left-color:#c45c5c !important; color:#e8b0b0 !important; animation:autoPickPulse 0.9s ease infinite; }
 @keyframes autoPickPulse { 0%,100%{ outline-color:rgba(106,18,18,0.3);} 50%{ outline-color:rgba(180,30,30,0.9);} }
 #answererTag {
   position:fixed; top:18px; right:18px; z-index:95;
@@ -529,8 +608,8 @@ body.silhouette-presence.has-it::before { opacity:1; }
     Esc 可跳过最激烈的一段——仅此一段。
   </p>
   <div class="actions">
-    <button id="startBtn" class="btn">开始作答</button>
-    <button id="exitBtn" class="btn">退出</button>
+    <button id="startBtn" class="btn">上 香</button>
+    <button id="exitBtn" class="btn">离 开</button>
   </div>
   <p class="egg-ghost" id="eggGhost">你向左转了吗</p>
 </div>
@@ -545,7 +624,7 @@ body.silhouette-presence.has-it::before { opacity:1; }
   <div id="qtext"></div>
   <div id="ghostLine" class="hidden"></div>
   <div id="options"></div>
-  <button id="next" class="btn" disabled>下一题</button>
+  <button id="next" class="btn" disabled>下一柱</button>
 </div>
 
 <div id="blank" class="screen hidden">
@@ -1309,7 +1388,7 @@ function updateProgress() {
   if (n >= 25 && n <= 35 && Math.random() < 0.45) {
     n = Math.max(19, n - 1 - Math.floor(Math.random() * 3));
   }
-  $('progress').textContent = n + ' / ' + TOTAL_Q;
+  $('progress').textContent = '第 ' + n + ' 柱香 / 共 ' + TOTAL_Q;
 }
 
 function applyStage(i) {
@@ -1700,7 +1779,7 @@ function renderQuiz(i) {
         $('qtext').appendChild(sub);
       }
     } catch (e) {}
-    $('next').textContent = '下一题';
+    $('next').textContent = '下一柱';
     $('next').disabled = true;
     $('next').onclick = function () { advance(); };
     renderOptions(0, ['？', '？', '？', '？']);
@@ -1766,7 +1845,7 @@ function renderQuiz(i) {
     if (false && state.eggMode) { startLeftTurn(); return; }
     $('options').innerHTML = '';
     $('next').disabled = true;
-    $('next').textContent = '关闭';
+    $('next').textContent = '封 坛';
     $('next').disabled = false;
     $('next').onclick = fakeClose;
     setT(notifyAfter20s, 20000);
@@ -1780,7 +1859,7 @@ function renderQuiz(i) {
     return;
   }
 
-  $('next').textContent = '下一题';
+  $('next').textContent = '下一柱';
   $('next').disabled = true;
   $('next').onclick = function () { advance(); };
   renderOptions(i, qOptsOf(i));
@@ -1838,7 +1917,7 @@ function renderBlank(i) {
   show('blank');
   stopRepeatSpeak();
   // 进度条开始胡说八道：空白页比 100% 还多
-  $('progress').textContent = '41 / ' + TOTAL_Q;
+  $('progress').textContent = '第 41 柱香';
   var remnant = document.createElement('div');
   remnant.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:13px;color:rgba(0,0,0,0.06);letter-spacing:6px;white-space:nowrap;pointer-events:none;z-index:1;';
   remnant.textContent = '你还在吗';
@@ -2530,7 +2609,7 @@ function startLeftTurn() {
   leftAsk = 0;
   document.body.style.background = '';
   document.body.classList.add('kiy-final');
-  $('progress').textContent = TOTAL_Q + ' / ' + TOTAL_Q;
+  $('progress').textContent = '香尽';
   resumeCtx();
   startBuzz(28);
   startHeart(126);
@@ -2579,7 +2658,7 @@ function renderLeftAsk() {
     box.appendChild(b);
   });
   state.selected = -1;
-  $('next').textContent = '下一题';
+  $('next').textContent = '下一柱';
   $('next').disabled = true;
   $('next').onclick = function () { advanceLeft(); };
   leftTyping = setTimeout(function () {
@@ -3137,7 +3216,7 @@ var _up = updateProgress;
 updateProgress = function () {
   _up();
   if (state.idx >= 20 && state.idx <= 35 && Math.random() < 0.18) {
-    $('progress').textContent = (state.idx + 1) + ' / ' + TOTAL_Q + '（2 人在线）';
+    $('progress').textContent = '第 ' + (state.idx + 1) + ' 柱香 · 两人共燃';
     setT(function () { if ($('progress')) _up(); }, 1600);
   }
 };
