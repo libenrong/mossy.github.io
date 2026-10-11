@@ -594,6 +594,51 @@ body.silhouette-presence.has-it::before { opacity:1; }
   color:#1a1e28; font-size:13px; letter-spacing:12px;
 }
 #longPause.on { display:flex; }
+
+/* ===== 行为感应层 ===== */
+#typeGhost {
+  position:fixed; left:28px; bottom:24px; z-index:90;
+  font-size:12px; color:#8a919e; letter-spacing:.2em;
+  opacity:0; transition:opacity .5s; pointer-events:none;
+}
+#typeGhost.on { opacity:1; }
+#typeGhost .dots::after { content:'…'; animation:dotFade 1.2s ease infinite; }
+@keyframes dotFade { 0%,100%{opacity:.2} 50%{opacity:1} }
+#idleWarn {
+  position:fixed; inset:0; z-index:88; display:flex;
+  align-items:center; justify-content:center;
+  font-size:13px; letter-spacing:.3em; color:#c45c5c;
+  opacity:0; transition:opacity 1.4s; pointer-events:none;
+}
+#idleWarn.on { opacity:1; }
+#holdWrap { display:none; margin-top:30px; width:200px; }
+#holdWrap.on { display:block; }
+#holdBar {
+  height:2px; background:#2a2e38; position:relative; overflow:hidden;
+}
+#holdBar i {
+  position:absolute; left:0; top:0; bottom:0; width:0%;
+  background:linear-gradient(90deg,#8a3030,#c45c5c);
+  transition:width .1s linear;
+}
+#holdHint {
+  margin-top:10px; font-size:11px; color:#8a919e;
+  letter-spacing:.25em; text-align:center;
+}
+#crashFake {
+  position:fixed; inset:0; z-index:200; display:none;
+  background:#1e2128; flex-direction:column;
+  align-items:center; justify-content:center; gap:18px;
+}
+#crashFake.on { display:flex; }
+#crashFake .cf-face { font-size:52px; opacity:.9; }
+#crashFake .cf-msg { font-size:14px; color:#9aa3b0; letter-spacing:.1em; text-align:center; line-height:2; }
+#crashFake .cf-btn {
+  margin-top:8px; padding:8px 28px; font-size:12px;
+  border:1px solid #3a4050; background:transparent; color:#c8ced8;
+  letter-spacing:.2em; cursor:pointer;
+}
+#crashFake .cf-btn:hover { border-color:#c45c5c; color:#c45c5c; }
 </style>
 </head>
 <body>
@@ -618,6 +663,14 @@ body.silhouette-presence.has-it::before { opacity:1; }
 <div id="answererTag">受试者 B · 作答中</div>
 <div id="glitchBars"></div>
 <div id="longPause">你还在吗</div>
+<div id="typeGhost">受试者 B<span class="dots"></span></div>
+<div id="idleWarn"></div>
+<div id="holdWrap"><div id="holdBar"><i></i></div><div id="holdHint">按住不放</div></div>
+<div id="crashFake">
+  <div class="cf-face">☹</div>
+  <div class="cf-msg">页面崩溃了。<br>是不是你刚才那一题……不该答的？</div>
+  <button class="cf-btn" type="button" onclick="document.getElementById('crashFake').classList.remove('on')">恢复页面</button>
+</div>
 <div id="vignette"></div>
 
 <div id="quiz" class="screen hidden">
@@ -3230,6 +3283,289 @@ show = function (name) {
     document.body.classList.remove('scanlines');
   }
 };
+
+
+/* ===== 行为感应：标题说话 / 切页返回 / 离开鼠标 / 本地时间 / 回访 / URL / 躲避按钮 / 打字幽灵 / 按住 / Esc 捉弄 / 电量 / 呼吸检测 ===== */
+var behave = {
+  titleTimer: null,
+  titleStep: 0,
+  idleTimer: null,
+  wasHidden: false,
+  holdRAF: null,
+  holdStart: 0,
+  dodgeDone: false,
+  escJokeDone: false,
+  breathDone: false
+};
+
+/* 1. 标题栏实时说话 */
+var TITLE_MSGS = [
+  '夜间独处习惯调查',
+  '你一个人在看吗',
+  '它也想知道答案',
+  '别关标签页',
+  '你点它了',
+  '救',
+  '夜间独处习惯调查'
+];
+function startTitleTalk() {
+  if (behave.titleTimer) return;
+  behave.titleTimer = setInterval(function () {
+    if (!state.hasInteracted) return;
+    if (document.hidden) { document.title = '我看见你了'; return; }
+    behave.titleStep = (behave.titleStep + 1) % TITLE_MSGS.length;
+    /* 越往后越诡异 */
+    var i = state.idx;
+    if (i >= 30) document.title = Math.random() < 0.4 ? '别回头' : '身后问卷';
+    else document.title = TITLE_MSGS[behave.titleStep];
+  }, 4200);
+}
+
+/* 2. 切走再回来：题目会被改过 */
+document.addEventListener('visibilitychange', function () {
+  if (!state.hasInteracted || state.climaxMode || state.blankMode) return;
+  if (document.hidden) {
+    behave.wasHidden = true;
+    document.title = '我看见你了';
+    return;
+  }
+  if (behave.wasHidden) {
+    behave.wasHidden = false;
+    document.title = TITLE_ORIG;
+    if (Math.random() < 0.55 && state.idx < TOTAL_Q - 2) {
+      var qt = $('qtext');
+      var lines = [
+        '你刚去哪了？',
+        '它替你把题看完了。',
+        '欢迎回来。它还在。',
+        '离开的那几秒，它数了。'
+      ];
+      if (qt) {
+        qt.style.opacity = '0';
+        setTimeout(function () {
+          qt.textContent = lines[Math.floor(Math.random() * lines.length)];
+          qt.style.opacity = '1';
+        }, 400);
+      }
+      glitchBars(4, 150);
+    }
+  }
+});
+
+/* 3. 鼠标离开 / 触摸中断：身后的存在感拉满 */
+function noteLeave() {
+  if (!state.hasInteracted || state.idx < 8 || state.climaxMode) return;
+  setPresence(true);
+  var w = $('idleWarn');
+  if (w) {
+    w.textContent = '你把手拿开了';
+    w.classList.add('on');
+  }
+}
+function noteEnter() {
+  var w = $('idleWarn');
+  if (w) w.classList.remove('on');
+}
+document.addEventListener('mouseleave', noteLeave);
+document.addEventListener('mouseenter', noteEnter);
+document.addEventListener('touchend', function () {
+  clearTimeout(behave.idleTimer);
+  behave.idleTimer = setTimeout(noteLeave, 8000);
+}, { passive: true });
+document.addEventListener('touchstart', noteEnter, { passive: true });
+
+/* 4. 本地时间：深夜开场加一句 */
+function nightOpenLine() {
+  var h = new Date().getHours();
+  if (h >= 23 || h < 5) {
+    var hh = (h < 10 ? '0' : '') + h;
+    var mm = new Date().getMinutes();
+    mm = (mm < 10 ? '0' : '') + mm;
+    var el = document.querySelector('#consent .warn');
+    if (el) el.textContent = '现在是 ' + hh + ':' + mm + '。你还没睡。';
+  }
+}
+
+/* 5. localStorage 回访 */
+function returnVisitLine() {
+  try {
+    var n = parseInt(localStorage.getItem('haunt_visits') || '0', 10) + 1;
+    localStorage.setItem('haunt_visits', String(n));
+    if (n >= 2) {
+      var el = document.querySelector('#consent .tiny');
+      if (el) {
+        el.innerHTML = (n === 2 ? '欢迎回来。这是你第 ' + n + ' 次。<br>' : '第 ' + n + ' 次。它一直在。<br>') + el.innerHTML;
+      }
+    }
+  } catch (e) {}
+}
+
+/* 6. URL 染指 */
+function stainUrl(stage) {
+  try {
+    var paths = ['', '', '/alone', '/alone', '/behind', '/behind', '/behind-you', '/help', '/help', '/it-is-here'];
+    var p = paths[Math.min(stage, paths.length - 1)];
+    if (p) history.replaceState(null, '', location.pathname.replace(/\/[^/]*$/, '/') + p.replace(/^\//, '') || location.pathname);
+  } catch (e) {}
+}
+
+/* 7. 下一题按钮躲一次光标 */
+function maybeDodgeNext() {
+  if (behave.dodgeDone || state.idx !== 8) return;
+  behave.dodgeDone = true;
+  var btn = $('next');
+  if (!btn) return;
+  var dodged = 0;
+  function onMove(e) {
+    if (dodged >= 2) { btn.removeEventListener('mousemove', onMove); return; }
+    var r = btn.getBoundingClientRect();
+    var dx = e.clientX - (r.left + r.width / 2);
+    var dy = e.clientY - (r.top + r.height / 2);
+    if (Math.abs(dx) < 70 && Math.abs(dy) < 30) {
+      dodged++;
+      btn.style.transition = 'transform .18s';
+      btn.style.transform = 'translate(' + (dx > 0 ? -40 : 40) + 'px,' + (dy > 0 ? -18 : 18) + 'px)';
+      setTimeout(function () { btn.style.transform = ''; }, 500);
+    }
+  }
+  btn.addEventListener('mousemove', onMove);
+}
+
+/* 8. 打字幽灵：选完后闪一下 */
+function typeGhostFlash(ms) {
+  var t = $('typeGhost');
+  if (!t) return;
+  t.classList.add('on');
+  setT(function () { t.classList.remove('on'); }, ms || 2600);
+}
+
+/* 9. 停留时间羞辱：下一题时若某题停留过久 */
+var dwellStart = 0;
+var dwellShamed = {};
+function noteDwell(i) {
+  var elapsed = Date.now() - dwellStart;
+  dwellStart = Date.now();
+  if (elapsed > 14000 && i >= 10 && i <= 34 && !dwellShamed[i] && Math.random() < 0.5) {
+    dwellShamed[i] = true;
+    var qt = $('qtext');
+    if (qt && qt.querySelector('.dwell')) return;
+    if (qt) {
+      var s = document.createElement('span');
+      s.className = 'sub dwell';
+      s.style.color = '#c45c5c';
+      s.textContent = '这题你看了 ' + Math.round(elapsed / 1000) + ' 秒。';
+      qt.appendChild(s);
+    }
+  }
+}
+
+/* 10. 按住不放：Q29 削苹果（稳住刀） */
+function maybeHoldQuestion() {
+  var wrap = $('holdWrap');
+  var bar = $('holdBar');
+  if (!wrap || !bar) return;
+  if (state.idx !== 29) {
+    wrap.classList.remove('on');
+    return;
+  }
+  wrap.classList.add('on');
+  $('next').style.display = 'none';
+  var iBar = bar.querySelector('i');
+  iBar.style.width = '0%';
+  var start = null;
+  var DUR = 3200;
+  function tick(ts) {
+    if (state.idx !== 29) { wrap.classList.remove('on'); $('next').style.display = ''; return; }
+    if (!start) start = ts;
+    var p = Math.min(1, (ts - start) / DUR);
+    iBar.style.width = (p * 100) + '%';
+    if (p >= 1) {
+      wrap.classList.remove('on');
+      $('next').style.display = '';
+      $('next').disabled = false;
+      state.selected = 0; /* 削完了：对应第一个选项 */
+      glitchBars(5, 120);
+      return;
+    }
+    behave.holdRAF = requestAnimationFrame(tick);
+  }
+  behave.holdRAF = requestAnimationFrame(tick);
+}
+
+/* 11. Esc 捉弄：高潮段按 Esc 显示「Esc 被禁用了」 */
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape' && state.hasInteracted && state.idx >= 28 && state.idx <= 35 && !behave.escJokeDone) {
+    behave.escJokeDone = true;
+    e.stopImmediatePropagation();
+    var w = $('idleWarn');
+    if (w) {
+      w.textContent = 'Esc 被禁用了';
+      w.classList.add('on');
+      setT(function () { w.classList.remove('on'); }, 2200);
+    }
+  }
+}, true);
+
+/* 12. 电量彩蛋（支持的浏览器） */
+function batteryEaster() {
+  try {
+    if (!navigator.getBattery) return;
+    navigator.getBattery().then(function (b) {
+      var pct = Math.round(b.level * 100);
+      if (pct <= 20 && state.idx >= 15) {
+        var el = document.querySelector('#qtext .sub');
+        if (el && !el.textContent) el.textContent = '电量 ' + pct + '%。和它剩下的耐心一样。';
+      }
+    }).catch(function () {});
+  } catch (e) {}
+}
+
+/* 13. 假呼吸检测：不碰麦克风，纯演技 */
+function fakeBreathCheck() {
+  if (behave.breathDone || state.idx !== 22) return;
+  behave.breathDone = true;
+  setT(function () {
+    var w = $('idleWarn');
+    if (w) {
+      w.textContent = '检测到背后有呼吸声';
+      w.classList.add('on');
+      setT(function () { w.classList.remove('on'); }, 3200);
+    }
+    if (navigator.vibrate) { try { navigator.vibrate([40, 80, 40]); } catch (e) {} }
+  }, 1800);
+}
+
+/* 14. Q34 椅子闪图时补一次震动 */
+/* 挂进现有调度，不改旧函数 */
+
+/* 包 renderQuestion（叠在 hauntFX 那层之上） */
+var _rq2 = renderQuestion;
+renderQuestion = function (i) {
+  _rq2(i);
+  if (!state.hasInteracted) return;
+  dwellStart = Date.now();
+  typeGhostFlash(1800 + Math.random() * 1200);
+  maybeDodgeNext();
+  maybeHoldQuestion();
+  fakeBreathCheck();
+  batteryEaster();
+  stainUrl(Math.floor(i / 4));
+  if (i >= 12 && Math.random() < 0.3) typeGhostFlash(4000);
+};
+
+/* 包 startClimax：标题和 URL 全乱 */
+var _sc = startClimax;
+startClimax = function () {
+  _sc();
+  document.title = '它';
+  stainUrl(9);
+};
+
+/* 开场接时间/回访 */
+nightOpenLine();
+returnVisitLine();
+startTitleTalk();
+dwellStart = Date.now();
 
 scheduleHauntImages();
 
