@@ -5,3578 +5,859 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>夜间独处习惯调查</title>
 <style>
-* { margin:0; padding:0; box-sizing:border-box; }
-html, body { height:100%; }
-html { -webkit-text-size-adjust:100%; }
-button { touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
-
-body {
-  background:#07080b;
-  color:#d5dae2;
-  font-family:'Songti SC','SimSun','Noto Serif SC','Microsoft YaHei',serif;
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:#05060a;
+  color:#c5cad3;
+  font-family:'Songti SC','SimSun','Noto Serif SC',serif;
   -webkit-font-smoothing:antialiased;
-  transition:background 1.2s;
-  letter-spacing:.03em;
-  overflow-x:hidden;
-}
-
-/* 全屏细框：像遗像外框 */
-body::after {
-  content:''; position:fixed; inset:10px;
-  border:1px solid rgba(160,165,180,0.28);
-  pointer-events:none; z-index:60;
-}
-@media (max-width:640px) { body::after { inset:6px; } }
-
-.screen {
-  position:fixed; top:0; left:0; right:0; bottom:0;
-  display:flex; flex-direction:column;
-  align-items:center; justify-content:center;
-  padding:40px 28px;
-}
-#quiz { cursor:none; }
-.hidden { display:none !important; }
-
-button { font-family:inherit; cursor:pointer; }
-
-/* 按钮：像朱砂印，不是网页按钮 */
-.btn {
-  background:transparent;
-  color:#c8ced8;
-  border:none;
-  border-bottom:1px solid rgba(160,165,180,0.5);
-  padding:10px 8px;
-  font-size:14px; letter-spacing:.35em;
-  transition:color .25s, border-color .25s, text-shadow .25s;
-  position:relative;
-}
-.btn:hover {
-  color:#c45c5c;
-  border-bottom-color:#c45c5c;
-  text-shadow:0 0 12px rgba(196,92,92,0.35);
-}
-.btn::after {
-  content:''; position:absolute; left:0; right:0; bottom:-1px; height:1px;
-  background:#c45c5c; transform:scaleX(0); transform-origin:left;
-  transition:transform .3s ease;
-}
-.btn:hover::after { transform:scaleX(1); }
-
-/* ===== 同意页：竖排牌位感 ===== */
-#consent { gap:0; }
-#consent h1 {
-  writing-mode:vertical-rl;
-  text-orientation:upright;
-  font-weight:400;
-  letter-spacing:.6em;
-  font-size:32px;
-  margin-bottom:36px;
-  color:#d0d5dd;
-  text-shadow:0 0 24px rgba(180,180,200,0.12);
-  height:auto;
-}
-#consent .warn {
-  font-size:13px; line-height:2.2; text-align:center;
-  max-width:360px; margin-bottom:14px;
-  color:#c2c8d2;
-}
-#consent .tiny {
-  font-size:11px; color:#9aa3b0; line-height:2;
-  text-align:center; max-width:380px; margin-bottom:44px;
-  letter-spacing:.08em;
-}
-#consent .actions { display:flex; gap:36px; }
-
-/* 香位进度：右侧竖排点 */
-#progress {
-  position:fixed; top:50%; right:22px;
-  transform:translateY(-50%);
-  writing-mode:vertical-rl;
-  font-size:11px; color:#9aa3b0; letter-spacing:.4em;
+  overflow:hidden;
+  letter-spacing:.06em;
   user-select:none;
-  font-variant-numeric:tabular-nums;
 }
-@media (max-width:640px) { #progress { right:12px; font-size:10px; } }
+/* 细遗像框 */
+body::after{
+  content:'';position:fixed;inset:12px;
+  border:1px solid rgba(150,155,170,.22);
+  pointer-events:none;z-index:80;
+}
+/* 极缓呼吸底 */
+body::before{
+  content:'';position:fixed;inset:-20%;
+  background:radial-gradient(ellipse at 50% 60%, rgba(30,34,48,.5) 0%, transparent 55%);
+  animation:breathe 9s ease-in-out infinite;
+  pointer-events:none;z-index:0;
+}
+@keyframes breathe{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(1.06);opacity:1}}
 
-/* 题干：大、疏、像悼词 */
-#qtext {
-  font-size:24px; line-height:2.3; text-align:center;
-  max-width:520px; margin:20px 0 40px;
-  color:#e8ecf2;
-  font-weight:400;
-  text-shadow:0 0 20px rgba(0,0,0,0.6);
+#stage{
+  position:relative;z-index:2;
+  height:100%;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:36px 28px;
+  max-width:640px;margin:0 auto;
 }
-#qtext .sub {
-  display:block; margin-top:28px;
-  font-size:11px; color:#a8b0bc; letter-spacing:.2em;
-  font-style:normal;
+/* 阶段标记：像香谱，不是进度条 */
+#phaseMark{
+  position:fixed;top:28px;left:28px;z-index:82;
+  font-size:10px;letter-spacing:.4em;color:#4a5060;
+  writing-mode:vertical-rl;
 }
+/* 主文字区：一次只说一句 */
+#line{
+  font-size:clamp(18px,4.2vw,24px);
+  line-height:2.4;
+  text-align:center;
+  min-height:3.2em;
+  color:#d8dde6;
+  text-shadow:0 0 30px rgba(0,0,0,.8);
+  white-space:pre-wrap;
+}
+#line.dim{color:#8a919e;font-size:clamp(14px,3.2vw,17px);line-height:2.2}
+#line .caret{
+  display:inline-block;width:1px;height:1em;
+  background:#c45c5c;vertical-align:text-bottom;
+  margin-left:2px;animation:blink 1s step-end infinite;
+}
+@keyframes blink{50%{opacity:0}}
 
-/* 选项：灵位长条，左对齐，选中像盖章 */
-#options { width:380px; max-width:92vw; }
-.opt {
-  display:block; width:100%;
-  border:none;
-  border-left:2px solid rgba(150,155,170,0.4);
-  margin:0 0 2px;
-  padding:14px 20px;
-  font-size:14px;
-  letter-spacing:.12em;
-  background:linear-gradient(90deg, rgba(255,255,255,0.03) 0%, transparent 70%);
-  color:#c2c8d2;
-  text-align:left;
-  transition:all .2s ease;
-  touch-action:manipulation; -webkit-tap-highlight-color:transparent;
+/* 交互区：仪式动作，不是选项 */
+#act{margin-top:48px;min-height:52px;display:flex;flex-direction:column;align-items:center;gap:16px}
+.act-btn{
+  background:none;border:none;
+  border-bottom:1px solid rgba(150,155,170,.3);
+  color:#a8b0bc;font-family:inherit;
+  font-size:13px;letter-spacing:.35em;
+  padding:12px 6px;cursor:pointer;
+  transition:color .3s,border-color .3s,text-shadow .3s;
 }
-.opt:hover {
-  border-left-color:#c45c5c;
-  color:#d0d5dd;
-  background:linear-gradient(90deg, rgba(196,92,92,0.1) 0%, transparent 70%);
-  padding-left:28px;
+.act-btn:hover,.act-btn:focus{
+  color:#e8b0b0;border-bottom-color:#c45c5c;
+  text-shadow:0 0 14px rgba(196,92,92,.35);
+  outline:none;
 }
-.opt.sel {
-  border-left-color:#c45c5c;
-  color:#e8d0d0;
-  background:linear-gradient(90deg, rgba(196,92,92,0.16) 0%, transparent 75%);
-  padding-left:28px;
-  text-shadow:0 0 10px rgba(196,92,92,0.3);
+/* 按住确认 */
+.hold-zone{
+  width:220px;height:44px;position:relative;
+  border:1px solid rgba(150,155,170,.25);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
 }
-.opt.sel::before {
-  content:'●';
-  margin-right:10px;
-  color:#c45c5c;
-  font-size:8px;
-  vertical-align:middle;
+.hold-zone .fill{
+  position:absolute;left:0;top:0;bottom:0;width:0%;
+  background:linear-gradient(90deg,rgba(138,48,48,.15),rgba(196,92,92,.35));
+  transition:width .08s linear;
 }
-@media (max-width:640px) {
-  .screen { padding:24px 18px; justify-content:flex-start; padding-top:64px; overflow-y:auto; }
-  #qtext { font-size:19px; line-height:2.1; margin:12px 0 28px; }
-  .opt { padding:16px 16px; font-size:15px; }
-  .btn { padding:12px 8px; letter-spacing:.25em; }
-  #progress { top:50%; right:10px; }
-  #scare .big { font-size:26px; }
-  #consent h1 { font-size:26px; letter-spacing:.45em; }
+.hold-zone span{
+  position:relative;font-size:11px;letter-spacing:.3em;color:#8a919e;
 }
+.hold-zone.done{border-color:#c45c5c}
+.hold-zone.done span{color:#e8b0b0}
 
-#next {
-  margin-top:36px;
-  padding:12px 8px;
+/* 名字输入 */
+#nameIn{
+  background:none;border:none;
+  border-bottom:1px solid rgba(150,155,170,.35);
+  color:#e8ecf2;font-family:inherit;
+  font-size:18px;letter-spacing:.2em;
+  text-align:center;width:min(280px,80vw);
+  padding:10px 4px;outline:none;
 }
-#next:disabled { opacity:.18; cursor:default; border-bottom-color:rgba(120,120,130,0.15); }
-#next:disabled:hover { color:#c8ced8; text-shadow:none; border-bottom-color:rgba(120,120,130,0.35); }
-#next:disabled::after { transform:scaleX(0); }
+#nameIn::placeholder{color:#3a4050;letter-spacing:.15em}
+#nameIn:focus{border-bottom-color:#c45c5c}
 
-.cl-line {
-  font-size:20px; font-weight:600;
-  line-height:1.55; text-align:center;
-  white-space:pre; user-select:none;
+/* 视象：图片只在「它说话」时浮现 */
+.vision{
+  position:fixed;inset:0;z-index:1;
+  display:flex;align-items:center;justify-content:center;
+  pointer-events:none;opacity:0;
+  transition:opacity 1.8s ease;
 }
+.vision.on{opacity:.22}
+.vision img{
+  max-width:70vw;max-height:70vh;
+  filter:grayscale(1) contrast(1.15) brightness(.7);
+}
+.vision.face img{max-width:36vw;max-height:36vh;filter:grayscale(1) contrast(1.4) brightness(.55)}
 
-#scare { background:#000; color:#fff; overflow:hidden; }
-#scare .big {
-  font-size:34px; letter-spacing:6px;
-  text-align:center; line-height:1.8;
-}
-#scare.flash { filter:invert(1); }
-.noise-line { white-space:nowrap; line-height:1.1; user-select:none; color:#fff; }
+/* 镜像模式：它在看你 */
+body.mirror{transform:scaleX(-1)}
+body.mirror #stage{transform:scaleX(-1)}
+body.mirror #phaseMark{transform:scaleX(-1)}
 
-#blank .cursor {
-  display:inline-block; width:2px; height:26px;
-  background:#000; animation:blink 1s step-end infinite;
-}
-@keyframes blink { 50% { opacity:0; } }
-
-#red { background:#000; }
-#red .red {
-  color:#c00; font-size:24px; letter-spacing:10px; text-align:center;
-}
-#red .tiny {
-  margin-top:26px; font-size:11px; color:#555; letter-spacing:2px;
-}
-
-#watchLayer {
-  position:fixed; top:0; left:0; right:0; bottom:0;
-  background:rgba(0,0,0,0.72); z-index:99;
-  display:flex; align-items:center; justify-content:center;
-  opacity:0; pointer-events:none; transition:opacity .35s;
-}
-#watchLayer.on { opacity:1; pointer-events:none; }
-#watchLayer img {
-  width:150px; height:150px; object-fit:cover;
-  border-radius:50%; mix-blend-mode:screen;
-  animation:eyeGlow 1.2s ease-in-out infinite alternate;
-}
-@keyframes eyeGlow {
-  from { filter:brightness(.9) saturate(1); }
-  to { filter:brightness(1.6) saturate(1.5); }
-}
-/* 彩蛋支线：图片跳脸换成 resource/help.jpg，并铺满整屏 */
-#watchLayer.egg { background:#000; }
-#watchLayer.egg img {
-  width:100%; height:100%; border-radius:0; object-fit:contain;
-  mix-blend-mode:normal;
-  animation:faceIn .16s steps(2) 1;
-}
-@keyframes faceIn {
-  from { filter:invert(0.9) contrast(1.4); }
-  to { filter:none; }
+/* 扫描线 */
+body.scan::before{
+  content:'';position:fixed;inset:0;z-index:75;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(0,0,0,.12) 3px 4px);
 }
 
-#fauxDeath {
-  position:fixed; top:0; left:0; right:0; bottom:0;
-  background:#050608; z-index:98; display:flex;
-  align-items:center; justify-content:center; opacity:0;
-  pointer-events:none; transition:opacity .1s;
+/* 背后剪影 */
+#presence{
+  position:fixed;right:-6%;bottom:-10%;width:42vw;height:85vh;
+  background:radial-gradient(ellipse at 40% 75%, rgba(0,0,0,.65) 0%, transparent 68%);
+  z-index:1;opacity:0;transition:opacity 3s;pointer-events:none;
 }
-#fauxDeath.on { opacity:1; }
-#fauxDeath .fd-line {
-  color:#000; font-size:15px; letter-spacing:3px;
-  animation:blink 1.2s step-end infinite;
+#presence.on{opacity:1}
+
+/* 停顿黑幕 */
+#veil{
+  position:fixed;inset:0;z-index:90;background:#000;
+  display:none;align-items:center;justify-content:center;
+}
+#veil.on{display:flex}
+#veil .v-text{
+  font-size:13px;letter-spacing:.5em;color:#2a2e38;
 }
 
-#reportBox {
-  margin-top:22px; padding:16px 20px;
-  border:1px solid #000; max-width:420px;
-  font-size:13px; line-height:2; text-align:center;
-  background:#08090c;
+/* 结尾墙 */
+#wall{
+  position:fixed;inset:0;z-index:85;
+  display:none;flex-direction:column;
+  align-items:center;justify-content:center;gap:20px;
+  background:rgba(5,6,10,.92);
 }
-#reportBox .r-line { letter-spacing:1px; }
-#reportBox .r-warn { color:#a00; font-weight:600; letter-spacing:3px; }
+#wall.on{display:flex}
+#wall .wall-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:8px;
+  width:min(420px,86vw);
+}
+#wall .cell{
+  aspect-ratio:3/4;background:#12141a;
+  border:1px solid rgba(150,155,170,.15);
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;color:#4a5060;letter-spacing:.1em;
+  overflow:hidden;
+}
+#wall .cell img{width:100%;height:100%;object-fit:cover;filter:grayscale(1) brightness(.6)}
+#wall .cell.me{
+  border-color:#c45c5c;
+  background:radial-gradient(ellipse at center, rgba(196,92,92,.15), #12141a);
+  color:#e8b0b0;
+}
+#wall .caption{font-size:14px;letter-spacing:.3em;color:#8a919e}
 
-body.skip-shake { transform:translateX(2px); }
-body.skew-shake { animation:skewJitter .3s ease-out; }
-@keyframes skewJitter {
-  0% { transform:translate(0,0) skewX(0); }
-  25% { transform:translate(-2px,0) skewX(.4deg); }
-  50% { transform:translate(2px,1px) skewX(-.6deg); }
-  75% { transform:translate(-1px,0) skewX(.3deg); }
-  100% { transform:translate(0,0) skewX(0); }
+/* 最终接管 */
+#takeover{
+  position:fixed;inset:0;z-index:95;
+  display:none;flex-direction:column;
+  align-items:center;justify-content:center;
+  background:#000;
 }
-
-.opt-dodge { transition:transform .12s ease-out; }
-.opt.ghosted { border-color:#d0d0d0; color:#d0d0d0; transition:border-color .12s, color .12s, transform .12s ease-out; }
-
-
-
-#reportBox { margin-top:10px; text-align:center; }
-#reportBox .r-line { font-size:12px; color:#a8b0bc; letter-spacing:.15em; line-height:2.2; }
-#reportBox .r-warn { font-size:14px; color:#c45c5c; letter-spacing:.2em; margin-top:14px; line-height:2; }
-#reportBox .r-meta { color:#9aa3b0; font-size:11px; }
-#qtext .swap-flash { color:#900; }
-#qtext .swap-note { color:#a00; }
-
-#qtyWrap { margin-top:16px; text-align:center; }
-#qtyWrap input {
-  font-family:inherit; font-size:15px; text-align:center;
-  border:1px solid #000; padding:10px 14px; width:240px; max-width:80vw;
-  border-radius:0; outline:none;
+#takeover.on{display:flex}
+#takeover .big{
+  font-size:clamp(28px,7vw,48px);letter-spacing:.25em;
+  color:#e8ecf2;text-align:center;line-height:1.9;
+  text-shadow:0 0 40px rgba(196,92,92,.25);
 }
-#qtyWrap .dismissed { color:#a00; font-size:13px; letter-spacing:3px; margin-top:10px; }
-
-#blackFlash {
-  position:fixed; inset:0; background:#000; z-index:97;
-  display:flex; align-items:center; justify-content:center;
-  opacity:0; pointer-events:none;
-}
-#blackFlash.on { opacity:1; }
-#blackFlash span { color:#fff; font-size:26px; letter-spacing:8px; white-space:pre; }
-
-/* ===== d3rlord3 easter egg（标题界面输入 d3rlord3 触发） ===== */
-#egg {
-  position:fixed; inset:0; z-index:120;
-  background:rgba(8,8,10,.95); color:#e8c547;
-  display:flex; flex-direction:column;
-  align-items:center; justify-content:center;
-  padding:34px 24px; text-align:center;
-  opacity:0; pointer-events:none;
-  transition:opacity .7s;
-  overflow-y:auto;
-}
-#egg.on { opacity:1; pointer-events:auto; }
-#egg.flash { filter:invert(1); }
-#egg .sign {
-  width:78px; height:78px; flex:none;
-  margin-bottom:28px; opacity:.85;
-  animation:signSpin 34s linear infinite;
-}
-#egg .sign ellipse, #egg .sign circle { fill:none; stroke:#e8c547; stroke-width:2; }
-#egg .sign .dot { fill:#e8c547; stroke:none; }
-@keyframes signSpin { to { transform:rotate(360deg); } }
-#eggText { max-width:540px; }
-#egg .egg-line {
-  font-size:14px; line-height:2.3; letter-spacing:1.5px;
-  opacity:.94; word-break:break-word;
-}
-#egg .egg-line + .egg-line { margin-top:9px; }
-#egg .lead { font-size:15px; letter-spacing:4px; color:#f2d879; }
-#egg .en { font-family:Georgia,'Times New Roman',serif; letter-spacing:2px; }
-#eggText .egg-line:last-child::after {
-  content:''; display:inline-block; width:7px; height:14px; margin-left:4px;
-  background:#e8c547; vertical-align:-2px;
-  animation:blink 1s step-end infinite;
-}
-#egg .egg-code {
-  margin-top:30px; font-size:10px; letter-spacing:3px;
-  color:#6b5a1c; line-height:2;
-}
-#egg .egg-hint {
-  position:fixed; left:0; right:0; bottom:20px;
-  font-size:10px; letter-spacing:4px; color:#4d4212; text-align:center;
-}
-@media (max-width:640px), (max-height:560px) {
-  #egg { justify-content:flex-start; padding-top:54px; padding-bottom:56px; }
-  #egg .sign { width:60px; height:60px; margin-bottom:20px; }
-  #egg .egg-line { font-size:13px; line-height:2.1; }
+#takeover .small{
+  margin-top:36px;font-size:11px;letter-spacing:.35em;color:#4a5060;
 }
 
-/* ===== 彩蛋第三阶段：色调变化 / 震动 / 屏幕碎裂 ===== */
-body.kiy-final { background:#12100a; color:#e8c547; }
-body.kiy-final .opt { border-color:#8a7a2a; color:#e8c547; }
-body.kiy-final .opt:hover, body.kiy-final .opt.sel { background:#e8c547; color:#12100a; }
-body.kiy-final .opt.ghosted { border-color:#4d4212; color:#4d4212; }
-body.kiy-final .btn { border-color:#8a7a2a; color:#e8c547; }
-body.kiy-final .btn:hover { background:#e8c547; color:#12100a; }
-body.kiy-final .btn:disabled { opacity:.3; }
-body.kiy-final .btn:disabled:hover { background:transparent; color:#e8c547; }
-body.kiy-final #progress { color:#5a4c14; }
-body.kiy-final #quiz { cursor:pointer; }
-body.kiy-final #qtext .sub { color:#8a7a2a; }
-body.kiy-final #qtext .swap-flash, body.kiy-final #qtext .swap-note { color:#f2d879; }
-body.kiy-final #qtyWrap input { border-color:#8a7a2a; color:#e8c547; background:transparent; }
-body.kiy-final #qtyWrap .dismissed { color:#e8c547; }
+/* 通知条 */
+#note{
+  position:fixed;bottom:22px;left:50%;transform:translateX(-50%);
+  z-index:88;font-size:11px;letter-spacing:.25em;color:#8a919e;
+  opacity:0;transition:opacity .8s;pointer-events:none;
+  text-align:center;
+}
+#note.on{opacity:1}
 
-#crack {
-  position:fixed; inset:0; z-index:110;
-  pointer-events:none; opacity:0; transition:opacity .5s;
+@media(max-width:640px){
+  body::after{inset:6px}
+  #phaseMark{top:16px;left:14px}
+  #act{margin-top:32px}
+  .hold-zone{width:180px}
 }
-#crack.on { opacity:1; }
-#crack svg { display:block; width:100%; height:100%; }
-#crack path {
-  fill:none; stroke:#f2d879; stroke-width:.3; stroke-linecap:round; stroke-linejoin:round;
-  opacity:0; transition:opacity .28s;
-}
-#crack path.on { opacity:.85; }
-#crack path.web { stroke:#ffeaa6; stroke-width:.2; }
-
-#shatterFlash {
-  position:fixed; inset:0; z-index:111; background:#0a0906;
-  opacity:0; pointer-events:none; transition:opacity .06s;
-}
-#shatterFlash.on { opacity:1; }
-
-body.shake-hard { animation:hardShake .5s cubic-bezier(.36,.07,.19,.97) both; }
-@keyframes hardShake {
-  10%, 90% { transform:translate3d(-3px,1px,0) rotate(-.25deg); }
-  20%, 80% { transform:translate3d(7px,-2px,0) rotate(.4deg); }
-  30%, 50%, 70% { transform:translate3d(-10px,3px,0) rotate(-.6deg); }
-  40%, 60% { transform:translate3d(10px,-3px,0) rotate(.6deg); }
-}
-
-.egg-ghost {
-  display:block; margin-top:14px; font-size:11px; letter-spacing:6px;
-  color:#e8c547; opacity:0; transition:opacity 1.4s;
-}
-.egg-ghost.on { opacity:.55; }
-
-/* ===== 彩蛋终章：黑白锁屏 → 雪花屏 → 黑屏两行 → 文字跳脸 → 最后一词 → 雪花屏 ===== */
-body.bw { background:#0c0c0c; }
-body.bw #quiz, body.bw #crack, body.bw #progress { filter:grayscale(1); }
-
-#finalSeq { position:fixed; inset:0; z-index:113; display:none; overflow:hidden; }
-#finalSeq.on { display:block; }
-
-/* 黑屏 + 两行（字号加大） */
-#fsSlow { position:absolute; inset:0; display:none; background:#000; overflow:hidden; }
-#fsSlow.on { display:block; }
-#finalSeq .fs-line {
-  position:absolute; font-size:34px; line-height:1.9;
-  letter-spacing:5px; opacity:0; transition:opacity 2.6s ease-in;
-}
-#finalSeq .fs-left { left:7%; top:29%; text-align:left; color:#f4f4f4; }
-#finalSeq .fs-right { right:7%; top:60%; text-align:right; color:#e8c547; }
-#finalSeq .fs-line.show { opacity:1; }
-
-/* 雪花屏（低分辨率画布拉伸，看得见颗粒） */
-#fsSnow {
-  position:absolute; inset:0; z-index:5; display:none;
-  width:100%; height:100%; background:#000;
-  image-rendering:pixelated;
-}
-#fsSnow.on { display:block; }
-
-/* 白底绿字文字跳脸 */
-#fsFlash {
-  position:absolute; inset:0; display:none;
-  align-items:center; justify-content:center; text-align:center;
-  background:#08090c; color:#0a8a3c;
-  font-size:24px; line-height:2; letter-spacing:4px; padding:40px;
-}
-#fsFlash.on { display:flex; animation:fsJump .12s steps(2) 1; }
-@keyframes fsJump { from { filter:invert(1); } to { filter:none; } }
-
-/* 黄底黑字：最后一词，直接显示 */
-#finalWaves {
-  position:absolute; inset:0; display:none;
-  align-items:center; justify-content:center; text-align:center;
-  background:#e8c547; color:#0a0a0a; padding:30px;
-}
-#finalWaves.on { display:flex; }
-#finalWaves .fw-line { font-size:42px; font-weight:600; letter-spacing:6px; line-height:1.5; }
-
-/* ===== 更猛烈的持续侵入：暗角 / 残影行 / 缓慢倾斜 / 假卡死 / 预闪 / 第二指针 ===== */
-#vignette {
-  position:fixed; inset:0; z-index:50; pointer-events:none;
-  opacity:0; transition:opacity 2.4s ease, background 2s ease;
-  background:radial-gradient(ellipse at center, rgba(0,0,0,0) 46%, rgba(0,0,0,.5) 100%);
-}
-#vignette.on { opacity:1; }
-#vignette.deep { background:radial-gradient(ellipse at center, rgba(0,0,0,0) 30%, rgba(0,0,0,.72) 88%, rgba(0,0,0,.9) 100%); }
-#vignette.pulse { animation:vgPulse 3.6s ease-in-out infinite; }
-@keyframes vgPulse { 0%,100% { opacity:1; } 50% { opacity:.68; } }
-#vignette.noise::after {
-  content:''; position:absolute; inset:-60px;
-  background-image:radial-gradient(rgba(0,0,0,.16) 1px, transparent 1.2px);
-  background-size:3px 3px; opacity:.45;
-  animation:grainShift .3s steps(2) infinite;
-}
-@keyframes grainShift {
-  0% { transform:translate(0,0); }
-  50% { transform:translate(-2px,1px); }
-  100% { transform:translate(1px,-2px); }
-}
-
-/* 题干残影行：写在 #qtext 外面，题面本身一个字不动 */
-#ghostLine {
-  font-size:12px; letter-spacing:7px; color:rgba(0,0,0,.3);
-  margin:-16px 0 20px; min-height:16px; user-select:none;
-  animation:ghostBlink 2.8s ease-in-out infinite;
-}
-@keyframes ghostBlink {
-  0%,100% { opacity:0; transform:translateX(0); }
-  40% { opacity:.75; transform:translateX(-3px); }
-  52% { opacity:.06; transform:translateX(3px); }
-  64% { opacity:.55; transform:translateX(-1px); }
-}
-
-/* 题面极慢倾斜：像纸被人从下面轻轻推 */
-#quiz.creep { animation:quizCreep 22s ease-in-out infinite alternate; }
-@keyframes quizCreep {
-  from { transform:rotate(-.22deg) scale(1); }
-  to { transform:rotate(.3deg) scale(1.014); }
-}
-
-/* 第17题装死 */
-#quiz.frozen { opacity:.5; cursor:wait; }
-#quiz.frozen .opt, #quiz.frozen #next { pointer-events:none; }
-#quiz.frozen #qtext::after { content:'……'; color:#999; letter-spacing:6px; }
-
-/* 高潮前白/黑全屏帧 */
-#preFlash { position:fixed; inset:0; z-index:96; opacity:0; pointer-events:none; transition:opacity .04s; }
-#preFlash.on { opacity:1; }
-
-/* 第二只指针：落后你半拍 */
-#ghostCursor {
-  position:fixed; left:-40px; top:-40px; width:13px; height:13px; border-radius:50%;
-  border:1.5px solid rgba(0,0,0,.55); box-shadow:0 0 0 4px rgba(0,0,0,.06);
-  z-index:95; pointer-events:none; opacity:0; transition:opacity 1.1s;
-  transform:translate(-50%,-50%);
-}
-#ghostCursor.on {
-  opacity:.6;
-  animation:ghostCur 1.6s ease-in-out infinite alternate;
-}
-@keyframes ghostCur {
-  from { transform:translate(-50%,-50%) scale(1); }
-  to { transform:translate(-50%,-50%) scale(1.5); }
-}
-
-/* 频闪黑帧反相成白帧：红白闪 */
-#scare.inv { filter:invert(1); }
-
-/* 报告页：元数据行 + 自我计数行 */
-#reportBox .r-meta { font-size:10px; color:#999; letter-spacing:1px; margin-top:8px; }
-#reportBox #rGhost { color:#666; }
-
-@media (max-width:640px) {
-  #finalSeq .fs-line { font-size:22px; letter-spacing:3px; }
-  #fsFlash { font-size:18px; }
-  #finalWaves .fw-line { font-size:26px; letter-spacing:4px; }
-}
-
-.img-slot { position:fixed; pointer-events:none; z-index:90; opacity:0; transition:opacity .05s; }
-.img-slot.on { opacity:1; }
-.img-slot img { width:100%; height:100%; object-fit:cover; filter:contrast(1.2) brightness(0.7) saturate(0.3); }
-.img-slot.ph { background:#0a0a0a; border:1px solid #1a1a1a; }
-.img-slot.ph::after { content:'□'; color:#151515; font-size:12px; display:flex; align-items:center; justify-content:center; width:100%; height:100%; }
-#imgPhoto { right:4%; top:8%; width:120px; height:90px; }
-/* 镜：无图时用 CSS 画一面「里面有东西」的镜子 */
-#imgMirror { left:6%; bottom:12%; width:110px; height:150px; }
-#imgMirror.ph { background:linear-gradient(160deg,#1a1a22 0%,#0c0c10 40%,#15151c 100%); border:3px solid #2a2a32; border-radius:2px; box-shadow:inset 0 0 30px #000, 0 0 12px #000; }
-#imgMirror.ph::after { content:none; }
-#imgMirror.ph::before {
-  content:''; position:absolute; left:18%; top:22%; width:64%; height:58%;
-  background:radial-gradient(ellipse at 50% 40%, rgba(180,180,190,0.15) 0%, transparent 70%);
-  animation:mirrorBreath 3.2s ease-in-out infinite;
-}
-#imgMirror.ph .mirror-face {
-  position:absolute; left:28%; top:26%; width:44%; height:40%;
-  background:radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0.85) 0%, transparent 68%);
-  opacity:0.55; animation:mirrorShift 4.1s ease-in-out infinite;
-}
-@keyframes mirrorBreath { 0%,100%{opacity:0.4; transform:scale(1);} 50%{opacity:0.75; transform:scale(1.04);} }
-@keyframes mirrorShift { 0%,100%{transform:translate(0,0); opacity:0.4;} 40%{transform:translate(3px,2px); opacity:0.65;} 70%{transform:translate(-2px,4px); opacity:0.5;} }
-
-/* 人影：无图时用 CSS 剪影 */
-#imgFigure { right:2%; bottom:5%; width:150px; height:300px; }
-#imgFigure.ph { background:none; border:none; }
-#imgFigure.ph::after { content:none; }
-#imgFigure.ph .fig-body {
-  position:absolute; bottom:0; left:50%; transform:translateX(-50%);
-  width:56px; height:180px;
-  background:#000; border-radius:28px 28px 4px 4px;
-  filter:blur(1.5px);
-}
-#imgFigure.ph .fig-body::before {
-  content:''; position:absolute; top:-38px; left:50%; transform:translateX(-50%);
-  width:44px; height:50px; background:#000; border-radius:50%;
-}
-#imgFigure.ph .fig-body::after {
-  content:''; position:absolute; top:20px; left:-22px; right:-22px; height:100px;
-  background:#000; border-radius:8px; opacity:0.9;
-}
-#imgFigure.ph { filter:blur(0.5px); }
-#imgPortrait { left:50%; top:50%; width:220px; height:300px; transform:translate(-50%,-50%); z-index:95; }
-#imgChair { right:8%; top:20%; width:180px; height:130px; }
-#imgFinalJump { inset:0; width:100%; height:100%; z-index:120; }
-#imgFinalJump img { filter:contrast(1.6) brightness(0.5) saturate(0) blur(0.5px); }
-.memorial-wall { position:fixed; inset:0; z-index:110; background:#000; display:none; flex-wrap:wrap; align-content:center; justify-content:center; gap:4px; padding:4vh 4vw; }
-.memorial-wall.on { display:flex; }
-.memorial-wall .mw-cell { width:calc(12.5% - 4px); aspect-ratio:3/4; background:#0c0c0c; border:1px solid #1c1c1c; overflow:hidden; position:relative; }
-.memorial-wall .mw-cell img { width:100%; height:100%; object-fit:cover; filter:grayscale(1) contrast(1.3) brightness(0.55); }
-.memorial-wall .mw-cell.ph::after { content:'·'; color:#222; display:flex; align-items:center; justify-content:center; height:100%; font-size:28px; }
-.memorial-wall .mw-cell.flash { filter:invert(1); }
-.memorial-wall .mw-full { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:grayscale(1) contrast(1.4) brightness(0.45); z-index:1; }
-.memorial-wall:has(.mw-full) .mw-cell { display:none; }
-.memorial-wall:has(.mw-full) .mw-caption { z-index:2; }
-.memorial-wall .mw-caption { position:absolute; bottom:8%; left:0; right:0; text-align:center; color:#cfcfcf; font-size:13px; letter-spacing:8px; z-index:2; }
-
-/* ===== 身后问卷专属：镜像、错位、扫描线 ===== */
-body.mirror-mode { transform: scaleX(-1); }
-body.mirror-mode #qtext, body.mirror-mode #options, body.mirror-mode #next { transform: scaleX(-1); }
-body.tilted { transform: rotate(0.6deg) scale(1.01); }
-.scanlines::after {
-  content:''; position:fixed; inset:0; pointer-events:none; z-index:80;
-  background:repeating-linear-gradient(0deg, transparent 0 2px, rgba(0,0,0,0.04) 2px 3px);
-  animation:scanDrift 8s linear infinite;
-}
-@keyframes scanDrift { from{ background-position:0 0; } to{ background-position:0 100px; } }
-body.silhouette-presence::before {
-  content:''; position:fixed; right:-4%; bottom:-8%; width:38vw; height:80vh;
-  background:radial-gradient(ellipse at 40% 80%, rgba(0,0,0,0.55) 0%, transparent 70%);
-  pointer-events:none; z-index:70; opacity:0;
-  transition:opacity 2.4s;
-}
-body.silhouette-presence.has-it::before { opacity:1; }
-.opt.auto-picked { border-left-color:#c45c5c !important; color:#e8b0b0 !important; animation:autoPickPulse 0.9s ease infinite; }
-@keyframes autoPickPulse { 0%,100%{ outline-color:rgba(106,18,18,0.3);} 50%{ outline-color:rgba(180,30,30,0.9);} }
-#answererTag {
-  position:fixed; top:18px; right:18px; z-index:95;
-  font-size:11px; letter-spacing:.15em; color:#c2c8d2;
-  opacity:0; transition:opacity .6s; pointer-events:none;
-}
-#answererTag.on { opacity:1; color:#8a3030; }
-#glitchBars { position:fixed; inset:0; pointer-events:none; z-index:100; display:none; }
-#glitchBars.on { display:block; }
-#glitchBars .bar { position:absolute; left:0; right:0; height:2px; background:#c8cdd6; mix-blend-mode:difference; }
-#longPause {
-  position:fixed; inset:0; z-index:98; background:#050608;
-  display:none; align-items:center; justify-content:center;
-  color:#1a1e28; font-size:13px; letter-spacing:12px;
-}
-#longPause.on { display:flex; }
-
-/* ===== 行为感应层 ===== */
-#typeGhost {
-  position:fixed; left:28px; bottom:24px; z-index:90;
-  font-size:12px; color:#8a919e; letter-spacing:.2em;
-  opacity:0; transition:opacity .5s; pointer-events:none;
-}
-#typeGhost.on { opacity:1; }
-#typeGhost .dots::after { content:'…'; animation:dotFade 1.2s ease infinite; }
-@keyframes dotFade { 0%,100%{opacity:.2} 50%{opacity:1} }
-#idleWarn {
-  position:fixed; inset:0; z-index:88; display:flex;
-  align-items:center; justify-content:center;
-  font-size:13px; letter-spacing:.3em; color:#c45c5c;
-  opacity:0; transition:opacity 1.4s; pointer-events:none;
-}
-#idleWarn.on { opacity:1; }
-#holdWrap { display:none; margin-top:30px; width:200px; }
-#holdWrap.on { display:block; }
-#holdBar {
-  height:2px; background:#2a2e38; position:relative; overflow:hidden;
-}
-#holdBar i {
-  position:absolute; left:0; top:0; bottom:0; width:0%;
-  background:linear-gradient(90deg,#8a3030,#c45c5c);
-  transition:width .1s linear;
-}
-#holdHint {
-  margin-top:10px; font-size:11px; color:#8a919e;
-  letter-spacing:.25em; text-align:center;
-}
-#crashFake {
-  position:fixed; inset:0; z-index:200; display:none;
-  background:#1e2128; flex-direction:column;
-  align-items:center; justify-content:center; gap:18px;
-}
-#crashFake.on { display:flex; }
-#crashFake .cf-face { font-size:52px; opacity:.9; }
-#crashFake .cf-msg { font-size:14px; color:#9aa3b0; letter-spacing:.1em; text-align:center; line-height:2; }
-#crashFake .cf-btn {
-  margin-top:8px; padding:8px 28px; font-size:12px;
-  border:1px solid #3a4050; background:transparent; color:#c8ced8;
-  letter-spacing:.2em; cursor:pointer;
-}
-#crashFake .cf-btn:hover { border-color:#c45c5c; color:#c45c5c; }
 </style>
 </head>
 <body>
 
-<div id="consent" class="screen">
-  <h1>夜间习惯调查</h1>
-  <p class="warn">请如实作答，本问卷不记名。</p>
-  <p class="tiny">
-    了解玩家夜间上网与独处习惯，约需 15 分钟。<br>
-    中途请勿刷新页面。<br>
-    如有不适可随时关闭标签页。<br>
-    Esc 可跳过一段过渡动画。
-  </p>
-  <div class="actions">
-    <button id="startBtn" class="btn">开始作答</button>
-    <button id="exitBtn" class="btn">退出</button>
-  </div>
-  <p class="egg-ghost" id="eggGhost">你向左转了吗</p>
+<div id="phaseMark"></div>
+<div id="presence"></div>
+<div class="vision" id="vPhoto"><img src="resource/haunt/photo.png" alt=""></div>
+<div class="vision face" id="vPortrait"><img src="resource/haunt/portrait.png" alt=""></div>
+<div class="vision" id="vChair"><img src="resource/haunt/chair.png" alt=""></div>
+<div class="vision" id="vWall"><img src="resource/haunt/wall.jpg" alt=""></div>
+
+<div id="veil"><div class="v-text"></div></div>
+<div id="note"></div>
+
+<div id="stage">
+  <div id="line"><span class="caret"></span></div>
+  <div id="act"></div>
 </div>
 
-<div id="progress" class="hidden"></div>
-<div id="answererTag">受试者 B · 作答中</div>
-<div id="glitchBars"></div>
-<div id="longPause">你还在吗</div>
-<div id="typeGhost">受试者 B<span class="dots"></span></div>
-<div id="idleWarn"></div>
-<div id="holdWrap"><div id="holdBar"><i></i></div><div id="holdHint">按住不放</div></div>
-<div id="crashFake">
-  <div class="cf-face">☹</div>
-  <div class="cf-msg">页面崩溃了。<br>是不是你刚才那一题……不该答的？</div>
-  <button class="cf-btn" type="button" onclick="document.getElementById('crashFake').classList.remove('on')">恢复页面</button>
-</div>
-<div id="vignette"></div>
-
-<div id="quiz" class="screen hidden">
-  <div id="qtext"></div>
-  <div id="ghostLine" class="hidden"></div>
-  <div id="options"></div>
-  <button id="next" class="btn" disabled>下一题</button>
+<div id="wall">
+  <div class="wall-grid" id="wallGrid"></div>
+  <div class="caption" id="wallCap">他们都在看</div>
 </div>
 
-<div id="blank" class="screen hidden">
-  <span class="cursor"></span>
-</div>
-
-<div id="climax" class="screen hidden"></div>
-
-<div id="scare" class="screen hidden"></div>
-
-<div id="red" class="screen hidden"></div>
-
-<div id="egg">
-  <svg class="sign" viewBox="0 0 100 100" aria-hidden="true">
-    <circle cx="50" cy="50" r="7"/>
-    <ellipse cx="50" cy="27" rx="9" ry="19"/>
-    <ellipse cx="50" cy="27" rx="9" ry="19" transform="rotate(120 50 50)"/>
-    <ellipse cx="50" cy="27" rx="9" ry="19" transform="rotate(240 50 50)"/>
-    <circle cx="50" cy="50" r="43" stroke-dasharray="2 6"/>
-    <circle class="dot" cx="50" cy="7" r="3"/>
-  </svg>
-  <div id="eggText"></div>
-  <div class="egg-code">档案状态：失联　·　最后活动位置：未知</div>
-  <div id="eggHint" class="egg-hint hidden">按 Esc 返回</div>
-</div>
-
-<div id="watchLayer"><img src="resource/eye.webp" alt=""></div>
-<div id="fauxDeath"><span class="fd-line">系统无响应</span></div>
-
-<div id="blackFlash"><span>■■■■</span></div>
-
-<div id="crack"><svg id="crackSvg" viewBox="0 0 100 100" preserveAspectRatio="none"></svg></div>
-<div id="shatterFlash"></div>
-<div id="preFlash"></div>
-<div id="ghostCursor"></div>
-
-
-<div id="imgPhoto" class="img-slot ph"><img src="resource/haunt/photo.png" alt="" onerror="this.parentNode.classList.add('ph');this.remove();"></div>
-<div id="imgMirror" class="img-slot ph"><img src="resource/haunt/mirror.webp" alt="" onerror="this.parentNode.classList.add('ph');this.remove();"><div class="mirror-face"></div></div>
-<div id="imgFigure" class="img-slot ph"><img src="resource/haunt/figure.webp" alt="" onerror="this.parentNode.classList.add('ph');this.remove();"><div class="fig-body"></div></div>
-<div id="imgPortrait" class="img-slot ph"><img src="resource/haunt/portrait.png" alt="" onerror="this.parentNode.classList.add('ph');this.remove();"></div>
-<div id="imgChair" class="img-slot ph"><img src="resource/haunt/chair.png" alt="" onerror="this.parentNode.classList.add('ph');this.remove();"></div>
-<div id="imgFinalJump" class="img-slot ph"><img src="resource/haunt/final.webp" alt="" onerror="this.parentNode.classList.add('ph');this.remove();"></div>
-<div id="memorialWall" class="memorial-wall">
-  <img class="mw-full" src="resource/haunt/wall.jpg" alt="" onerror="this.remove();">
-  <div class="mw-cell ph"><img src="resource/haunt/wall-1.webp" alt="" onerror="this.parentNode.classList.add('ph');this.remove();"></div>
-  <div class="mw-cell ph"><img src="resource/haunt/wall-2.webp" alt="" onerror="this.parentNode.classList.add('ph');this.remove();"></div>
-  <div class="mw-cell ph"><img src="resource/haunt/wall-3.webp" alt="" onerror="this.parentNode.classList.add('ph');this.remove();"></div>
-  <div class="mw-cell ph"><img src="resource/haunt/wall-4.webp" alt="" onerror="this.parentNode.classList.add('ph');this.remove();"></div>
-  <div class="mw-cell ph"><img src="resource/haunt/wall-5.webp" alt="" onerror="this.parentNode.classList.add('ph');this.remove();"></div>
-  <div class="mw-cell ph"><img src="resource/haunt/wall-6.webp" alt="" onerror="this.parentNode.classList.add('ph');this.remove();"></div>
-  <div class="mw-cell ph"><img src="resource/haunt/wall-7.webp" alt="" onerror="this.parentNode.classList.add('ph');this.remove();"></div>
-  <div class="mw-cell ph"><img src="resource/haunt/wall-8.webp" alt="" onerror="this.parentNode.classList.add('ph');this.remove();"></div>
-  <div class="mw-caption" id="mwCaption">他们都在看</div>
-</div>
-
-<div id="finalSeq">
-  <div id="fsSlow"></div>
-  <canvas id="fsSnow" width="240" height="135"></canvas>
-  <div id="fsFlash"></div>
-  <div id="finalWaves"></div>
+<div id="takeover">
+  <div class="big" id="takeoverText"></div>
+  <div class="small">问卷已结束</div>
 </div>
 
 <script>
 (function () {
-'use strict';
+  'use strict';
 
-var TOTAL_Q = 38;
-var CLIMAX_AT = 35;
-var BLANK_AT = 36;
-var FINAL_AT = 37;
+  var $ = function (id) { return document.getElementById(id); };
+  var lineEl = $('line');
+  var actEl = $('act');
+  var phaseEl = $('phaseMark');
+  var noteEl = $('note');
 
-var QUESTIONS = [
-  { t: '过去两周，你是否感到情绪低落、沮丧或绝望？' },
-  { t: '过去两周，你是否对平时喜欢的事情失去兴趣或乐趣？' },
-  { t: '过去两周，你是否感到疲倦或没有活力？' },
-  { t: '过去两周，你是否入睡困难、睡不安稳或睡得过多？' },
-  { t: '过去两周，你的房间里，是否出现过不属于你的温度？' },
-  { t: '你是否在没有开灯的房间里，确认过镜子是暗的？' },
-  { t: '你有没有翻过一本不是你的相册，而且看得很久？' },
-  { t: '凌晨三点，如果有人叫你，你会应吗？' },
-  { t: '你有没有觉得，镜子里那个人动作比你慢半拍？' },
-  { t: '你有没有算过，自己一天会回头多少次？' },
-  { t: '你是否记得，昨天的你和今天的你，是同一双手？' },
-  { t: '你是否觉得，周围的声音偶尔会变得很远？' },
-  { t: '有人在叫你，但声音是从你正后方来的。你会回头吗？' },
-  { t: '房间里没有人，但你听见了你的名字。你会回头吗？' },
-  { t: '你已经回了一次头。你确定你只回了一次吗？' },
-  { t: '如果它叫你的名字时带着一点笑意，你还敢应吗？' },
-  { t: '你有没有在应声之后，才想起来你一个人住？' },
-  { t: '你回头看见的，是墙，还是它的脸？' },
-  { t: '有人说：你身后那个人替你答了前四题。你会核对吗？' },
-  { t: '你是否愿意，现在就把名字念出来，让它确认是你？' },
-  { t: '你是否感到 忈 或 惢 在你身后？' },
-  { t: '你是否感到 ██ 在你身后？' },
-  { t: '你是否感到有 人 在 你 身 后？' },
-  { t: '后身在 你 到 感 否 是 你？' },
-  { t: '你有没有注意到，屏幕的反光里，多了一个轮廓？' },
-  { t: '如果它一直保持着你刚才的姿势，你会先动吗？' },
-  { t: '你现在的坐姿，和三十秒前，一样吗？' },
-  { t: '你敢不敢，现在慢慢地，往椅背后靠一下？' },
-  { t: '你有没有玩过：凌晨三点，对着镜子削苹果，不要断皮？' },
-  { t: '如果皮断了，你会当作什么都没发生，还是当作它来了？' },
-  { t: '笔仙笔仙，你是我的前世吗——你敢问第二遍吗？' },
-  { t: '第三遍如果笔自己动了，你会松手，还是按住？' },
-  { t: '你有没有在空房间里，替人留过一个座位？' },
-  { t: '现在你的右边，是不是空着的？你什么时候开始留的？' },
-  { t: '如果报告上写着「受试者二人」，你会看第二眼吗？' },
-  { t: '你有没有想过，这道题，不是出给你的？' },
-  { t: '', blank: true, blankSec: 15 },
-  { t: '你可以关掉了。' }
-];
+  var R = {
+    name: '',
+    visited: 0,
+    brave: 0,      // 选择「敢」类的次数
+    hesitated: 0,
+    letIn: false,
+    lookedBack: false,
+    startedAt: 0
+  };
 
-var QUESTION_OPTIONS = [
-  ['完全没有', '有几天', '一半以上天数', '几乎每天'],
-  ['完全没有', '有几天', '一半以上天数', '几乎每天'],
-  ['完全没有', '有几天', '一半以上天数', '几乎每天'],
-  ['完全没有', '有几天', '一半以上天数', '几乎每天'],
-  ['没有', '有一瞬间', '它一直在', '别回头'],
-  ['确认过', '不敢确认', '镜子里有人替我确认过', '镜子是暗的才可怕'],
-  ['没有', '看过', '那本相册里有我小时候', '最后一张不是我'],
-  ['不应', '应一声', '应三声', '我已经应过了'],
-  ['没有', '有一点', '它在对口型', '它比我还熟练'],
-  ['数过', '没数过', '刚才那次不算', '你数了吗'],
-  ['记得', '不记得', '手不是我的', '这双手很陌生'],
-  ['从来没有', '偶尔', '经常', '现在也是'],
-  ['不会回头', '会回头', '已经回过了', '你已经回了'],
-  ['不会回头', '也许会回头', '会回头', '你已经回了'],
-  ['我只回了一次', '我回了两次', '我一直在回头', '你怎么知道'],
-  ['敢', '不敢', '它已经笑了', '你听见了吗'],
-  ['想起过', '没想起', '想起来了但晚了', '身后有人应了'],
-  ['是墙', '是它的脸', '墙上有它的脸', '你背后是什么'],
-  ['会核对', '不会核对', '不用核对了', '它说它替你答了'],
-  ['愿意', '不愿意', '我已经念了', '它已经知道了'],
-  ['没有', '只是余光', '我看不到后面', '它一直在'],
-  ['没有', '好像有', '它一直在', '你看见了什么'],
-  ['没有人', '也许有人', '有人', '有个人一直在我身后'],
-  ['否', '也许吧', '是', '你转过去看看'],
-  ['没注意到', '多了一个', '它眨眼了', '反光里我在看我'],
-  ['我会先动', '它先动了', '我们一起动了', '别动'],
-  ['一样', '不一样', '我一直没坐过', '椅子上不止我'],
-  ['靠了', '不敢靠', '背后是温的', '它接住我了'],
-  ['玩过', '没玩过', '苹果是苦的', '皮断了三次'],
-  ['什么都没发生', '它来了', '它坐下了', '它说谢谢'],
-  ['敢', '不敢', '笔已经在动了', '我按不住'],
-  ['松手', '按住', '它按住我的手', '它不让我松'],
-  ['留过', '没留过', '一直留着', '留的是你的位置'],
-  ['是空的', '不空', '有体温', '它刚离开'],
-  ['会看', '不看', '已经看过了', '第二个人也在看'],
-  ['是给我的', '不是给我的', '是给我们俩的', '你终于发现了'],
-  null,
-  null
-];
-
-/* ===== 黄衣之主支线：异常题面/选项替换（第二阶段，色调保持不变） ===== */
-var QUESTIONS_KIY = {};
-var QUESTION_OPTIONS_KIY = {};
-
-function qTextOf(i) {
-  if (state.eggMode && QUESTIONS_KIY[i] !== undefined) return QUESTIONS_KIY[i];
-  return QUESTIONS[i].t;
-}
-function qOptsOf(i) {
-  if (state.eggMode && QUESTION_OPTIONS_KIY[i]) return QUESTION_OPTIONS_KIY[i];
-  return QUESTION_OPTIONS[i];
-}
-
-var data = {
-  questions: [], // {index, enterTime, duration, hoverTime, answerChanges}
-  tabSwitches: [], // {leaveTime, returnTime, duration}
-  clickIntervals: [],
-  permissions: { microphone: null, notification: null }
-};
-
-var WAVES = [
-  { text: '别回头', count: 30 },
-  { text: '它在你背后', count: 12 },
-  { text: '转过来转过来转过来转过来转过来转过来转过来转过来转过来转过来', count: 1 },
-  { text: '你身后那个人也这么想', count: 1 }
-];
-
-/* 黄衣之主支线的高潮文字（结构与 WAVES 对应） */
-var WAVES_KIY = WAVES;
-
-var state = {
-  idx: 0,
-  hasInteracted: false,
-  selected: -1,
-  answerChanges: 0,
-  lastClickAt: 0,
-  hoverStart: 0,
-  entering: 0,
-  climaxMode: false,
-  skipClimax: false,
-  notified: false,
-  returnCount: 1,
-  repeatId: 0,
-  speech: 'tts',
-  timers: [],
-  eggMode: false,     // 已输入 d3rlord3：本次作答进入黄衣之主支线
-  kiyRun: false,      // 已进入"你左转了吗"阶段
-  finalSeq: false,    // 终章（黑白锁屏/文字跳脸/最后一词）进行中
-  bgRegistered: false,
-  whispersScheduled: false,
-  jitterScheduled: false,
-  frozen: false,       // 招魂幕假卡死进行中
-  silence: false,      // 静默口袋进行中（心跳/耳语/低频全闭嘴）
-  reportArmed: false
-};
-
-var ctx = null, masterGain = null, lowpass = null, shaper = null;
-var bgmGain = null, bgmSrc = null, mp3Buf = null;
-var lowOsc = null, lowOscGain = null;
-var buzzOsc = null, buzzGain = null;
-var heartOsc = null, heartGain = null, heartTimer = 0, heartbeatBpm = 0;
-var pitchLfo = null, pitchLfoGain = null;
-var dissonanceOsc = null, dissonanceGain = null;
-var whisperDelay = null;
-var dodgeTarget = null;
-var hiddenAt = 0, bgmRateStored = 1;
-var infraOsc = null, infraGain = null;   // 19Hz 次声：听不见，但胸口能感觉到
-var ghostCurOn = false, ghostCurTimer = 0, gcx = 0, gcy = 0, gcTx = 0, gcTy = 0;
-
-var SCREENS = ['consent', 'quiz', 'blank', 'climax', 'scare', 'red', 'fauxDeath'];
-
-function $(id) { return document.getElementById(id); }
-
-function show(name) {
-  SCREENS.forEach(function (s) { $(s).classList.add('hidden'); });
-  $(name).classList.remove('hidden');
-}
-
-function fmt(ms) { return (ms / 1000).toFixed(1); }
-
-function setT(fn, ms) {
-  var id = setTimeout(function () {
-    state.timers.splice(state.timers.indexOf(id), 1);
-    fn();
-  }, ms);
-  state.timers.push(id);
-  return id;
-}
-
-function clearTimers() {
-  state.timers.forEach(function (id) { clearTimeout(id); });
-  state.timers = [];
-}
-
-function recordClick() {
-  var now = Date.now();
-  if (state.lastClickAt) {
-    data.clickIntervals.push({ from: state.lastClickAt, to: now, interval: now - state.lastClickAt });
+  /* ---------- 工具 ---------- */
+  function sleep(ms) {
+    return new Promise(function (r) { setTimeout(r, ms); });
   }
-  state.lastClickAt = now;
-}
-
-for (var qi = 0; qi < TOTAL_Q; qi++) {
-  data.questions.push({ index: qi, enterTime: 0, duration: 0, hoverTime: 0, answerChanges: 0, answer: -1 });
-}
-
-function probeSpeech(cb) {
-  if (!('speechSynthesis' in window)) { cb(false); return; }
-  var V = window.speechSynthesis;
-  var resolved = false;
-  function done(ok) { if (!resolved) { resolved = true; cb(ok); } }
-  try {
-    var voices = (V.getVoices ? V.getVoices() : []);
-    if (voices.length) { done(true); return; }
-  } catch (e) {}
-  try {
-    var u = new SpeechSynthesisUtterance(' ');
-    u.onstart = function () { done(true); };
-    u.onend = function () { done(true); };
-    u.onerror = function () {};
-    V.speak(u);
-  } catch (e) {}
-  if (V.addEventListener) {
-    var h = function () {
-      try {
-        if (V.getVoices && V.getVoices().length) {
-          if (V.removeEventListener) V.removeEventListener('voiceschanged', h);
-          done(true);
-        }
-      } catch (e) {}
-    };
-    V.addEventListener('voiceschanged', h);
+  function setPhase(t) {
+    phaseEl.textContent = t;
   }
-  setT(function () { done(false); }, 800);
-}
-
-var VOICE_FALLBACK = {
-  '陪陪我吧': 'resource/voice/peipeiwo.mp3',
-  '我好孤独': 'resource/voice/haogudu.mp3',
-  '我不想在这了': 'resource/voice/buxiang.mp3',
-  'dtl': 'resource/voice/dtl.mp3'
-};
-var voicePlayers = {};
-
-function playVoiceMp3(text, rate) {
-  var src = VOICE_FALLBACK[text] || 'resource/voice/heng.mp3';
-  var a = voicePlayers[src];
-  if (!a) {
-    a = new Audio(src);
-    a.preload = 'auto';
-    a.volume = 0.9;
-    voicePlayers[src] = a;
+  function note(t, ms) {
+    noteEl.textContent = t;
+    noteEl.classList.add('on');
+    setTimeout(function () { noteEl.classList.remove('on'); }, ms || 3200);
   }
-  try {
-    a.currentTime = 0;
-    if (rate) a.playbackRate = Math.max(0.5, Math.min(1.4, rate));
-    var p = a.play();
-    if (p && p['catch']) p['catch'](function () {});
-  } catch (e) {}
-  return a;
-}
-
-function speakData(text, pitch, rate) {
-  if (state.speech === 'mp3') { playVoiceMp3(text, rate); return; }
-  if (!('speechSynthesis' in window)) return;
-  var u = new SpeechSynthesisUtterance(text);
-  var basePitch = (pitch === undefined) ? 0.2 : pitch;
-  u.pitch = basePitch + (Math.random() - 0.5) * 0.15;
-  u.rate = (rate === undefined) ? 0.5 : rate;
-  u.volume = 0.9;
-  u.lang = 'zh-CN';
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(u);
-}
-
-function escalatingSpeak(text, count) {
-  var i = 0;
-  function play() {
-    if (i >= count || state.skipClimax) return;
-    speakData(text, 0.3 + i * 0.18, 0.7 + i * 0.45);
-    i++;
-    setT(play, Math.max(400, 1400 - i * 200));
+  function veil(text, ms) {
+    var v = $('veil');
+    v.querySelector('.v-text').textContent = text || '';
+    v.classList.add('on');
+    return sleep(ms || 3000).then(function () {
+      v.classList.remove('on');
+    });
   }
-  play();
-}
-
-function makeDistortionCurve(k) {
-  var n = 44100, curve = new Float32Array(n);
-  for (var i = 0; i < n; i++) {
-    var x = i * 2 / n - 1;
-    curve[i] = (3 + k) * x * 20 * Math.PI / 180 / (Math.PI + k * Math.abs(x));
-  }
-  return curve;
-}
-
-function initAudio() {
-  var AC = window.AudioContext || window.webkitAudioContext;
-  if (!AC || ctx) return;
-  ctx = new AC();
-
-  masterGain = ctx.createGain();
-  masterGain.gain.value = 0.5;
-  masterGain.connect(ctx.destination);
-
-  whisperDelay = ctx.createDelay(1.0);
-  whisperDelay.delayTime.value = 0.4;
-  var whisperFb = ctx.createGain();
-  whisperFb.gain.value = 0.35;
-  whisperDelay.connect(whisperFb);
-  whisperFb.connect(whisperDelay);
-  whisperDelay.connect(masterGain);
-
-  lowpass = ctx.createBiquadFilter();
-  lowpass.type = 'lowpass';
-  lowpass.frequency.value = 800;
-
-  shaper = ctx.createWaveShaper();
-  shaper.curve = makeDistortionCurve(28);
-  lowpass.connect(shaper);
-
-  bgmGain = ctx.createGain();
-  bgmGain.gain.value = 0;
-  shaper.connect(bgmGain);
-  bgmGain.connect(masterGain);
-
-  lowOscGain = ctx.createGain();
-  lowOscGain.gain.value = 0;
-  lowOscGain.connect(lowpass);
-
-  lowOsc = ctx.createOscillator();
-  lowOsc.type = 'sine';
-  lowOsc.frequency.value = 55;
-  lowOsc.connect(lowOscGain);
-  lowOsc.start();
-
-  pitchLfo = ctx.createOscillator();
-  pitchLfo.type = 'sine';
-  pitchLfo.frequency.value = 0.15;
-  pitchLfoGain = ctx.createGain();
-  pitchLfoGain.gain.value = 0.025;
-  pitchLfo.connect(pitchLfoGain);
-  pitchLfo.start();
-
-  dissonanceOsc = ctx.createOscillator();
-  dissonanceOsc.type = 'sine';
-  dissonanceOsc.frequency.value = 58;
-  dissonanceGain = ctx.createGain();
-  dissonanceGain.gain.value = 0;
-  dissonanceOsc.connect(dissonanceGain);
-  dissonanceGain.connect(lowpass);
-  dissonanceOsc.start();
-
-  resumeCtx();
-
-  try {
-    fetch('resource/began.mp3')
-      .then(function (r) {
-        if (!r.ok) throw new Error('fetch failed');
-        return r.arrayBuffer();
-      })
-      .then(function (buf) { return ctx.decodeAudioData(buf); })
-      .then(function (decoded) { mp3Buf = decoded; })
-      ['catch'](function () { mp3Buf = null; });
-  } catch (e) { mp3Buf = null; }
-}
-
-function resumeCtx() {
-  if (!ctx) return;
-  if (ctx.state !== 'running') {
-    try {
-      var p = ctx.resume();
-      if (p && p['catch']) p['catch'](function () {});
-    } catch (e) {}
-  }
-}
-
-var WHISPER_LIST = ['resource/voice/whisper1.mp3','resource/voice/whisper2.mp3','resource/voice/whisper3.mp3','resource/voice/whisper4.mp3','resource/voice/whisper5.mp3'];
-var whisperTimer = null;
-
-function playRandomWhisper() {
-  if (!ctx || state.silence) return;
-  var url = WHISPER_LIST[Math.floor(Math.random() * WHISPER_LIST.length)];
-  fetch(url).then(function (r) { return r.arrayBuffer(); })
-    .then(function (ab) { return ctx.decodeAudioData(ab); })
-    .then(function (buf) {
-      if (state.silence) return;
-      // 四成概率整段倒放：同一句耳语，倒过来就不像人说的了
-      if (Math.random() < 0.4) {
-        var rv = ctx.createBuffer(buf.numberOfChannels, buf.length, ctx.sampleRate);
-        for (var c = 0; c < buf.numberOfChannels; c++) {
-          var sd = buf.getChannelData(c), dd = rv.getChannelData(c);
-          for (var q = 0, w = buf.length - 1; q < buf.length; q++, w--) dd[w] = sd[q];
-        }
-        buf = rv;
-      }
-      var src = ctx.createBufferSource();
-      src.buffer = buf;
-      var g = ctx.createGain();
-      g.gain.value = 0.18 + Math.random() * 0.12;
-      var node = g;
-      // 硬声像：贴着左耳或右耳说，不留中间位置
-      if (ctx.createStereoPanner) {
-        var pan = ctx.createStereoPanner();
-        pan.pan.value = (Math.random() < 0.5 ? -1 : 1) * (0.55 + Math.random() * 0.45);
-        g.connect(pan);
-        node = pan;
-      }
-      src.connect(g);
-      if (whisperDelay) {
-        node.connect(whisperDelay);
-      } else {
-        node.connect(masterGain);
-      }
-      src.start();
-    })['catch'](function () {});
-}
-
-function scheduleRandomWhispers() {
-  if (state.whispersScheduled) return;
-  state.whispersScheduled = true;
-  runWhisperLoop();
-}
-
-function runWhisperLoop() {
-  // 越往后耳语越密：第16题起最短 2.6 秒就可能贴你一次
-  var tight = state.idx >= 25 ? 2600 : state.idx >= 19 ? 5200 : 8000;
-  var spread = state.idx >= 25 ? 4000 : 18000;
-  var next = tight + Math.random() * spread;
-  whisperTimer = setTimeout(function () {
-    if (state.hasInteracted && state.idx < 36 && !state.silence) playRandomWhisper();
-    if (state.whispersScheduled) runWhisperLoop();
-  }, next);
-}
-
-function cursorJitter() {
-  var el = document.documentElement;
-  var dx = (Math.random() - 0.5) * 6;
-  var dy = (Math.random() - 0.5) * 6;
-  el.style.cursor = 'none';
-  document.body.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
-  setTimeout(function () {
-    document.body.style.transform = '';
-    el.style.cursor = '';
-  }, 100);
-}
-
-function scheduleCursorJitter() {
-  setT(function () {
-    if (!state.hasInteracted || state.idx >= 36) return;
-    if (Math.random() < 0.4) cursorJitter();
-    scheduleCursorJitter();
-  }, 5000 + Math.random() * 12000);
-}
-
-var TITLE_ORIG = '夜间独处习惯调查';
-var TITLE_GLITCHES = ['你在看什么','别回头','我在这里','你一个人吗','你在听吗','不要停','你确定吗','你能离开吗'];
-var titleTimer = null;
-
-function initTitleGlitch() {
-  if (titleTimer) clearInterval(titleTimer);
-  var cycle = 0;
-  titleTimer = setInterval(function () {
-    if (!state.hasInteracted) return;
-    if (state.idx >= 36) { document.title = TITLE_ORIG; clearInterval(titleTimer); return; }
-    if (Math.random() < 0.35) {
-      document.title = TITLE_GLITCHES[Math.floor(Math.random() * TITLE_GLITCHES.length)];
-      cycle++;
-      if (cycle >= 3) {
-        setTimeout(function () { document.title = TITLE_ORIG; }, 600);
-        cycle = 0;
-      }
-    }
-  }, 4000);
-}
-
-function setBgm(mode) {
-  if (!ctx) return;
-  resumeCtx();
-  if (bgmSrc) { try { bgmSrc.stop(); } catch (e) {} bgmSrc = null; }
-  var rate = 1, ramp = false;
-  if (mode === 'weak') {
-    bgmGain.gain.value = 0.4;
-    lowpass.frequency.value = 800;
-    lowOscGain.gain.value = 0.12;
-  } else if (mode === 'broken') {
-    bgmGain.gain.value = 0.48;
-    lowpass.frequency.value = 900;
-    lowOscGain.gain.value = 0.16;
-    rate = 0.85;
-  } else if (mode === 'urgent') {
-    bgmGain.gain.value = 0.55;
-    lowpass.frequency.value = 750;
-    lowOscGain.gain.value = 0.2;
-    rate = 0.82;
-  } else if (mode === 'full') {
-    bgmGain.gain.value = 0.72;
-    lowpass.frequency.value = 600;
-    lowOscGain.gain.value = 0.24;
-    rate = 0.7;
-  } else {
-    bgmGain.gain.value = 0;
-    lowOscGain.gain.value = 0;
-    return;
-  }
-
-  lowOsc.frequency.value = (mode === 'full') ? 45 : 55;
-
-  if (mp3Buf) {
-    bgmSrc = ctx.createBufferSource();
-    bgmSrc.buffer = mp3Buf;
-    bgmSrc.loop = true;
-
-    if (mode === 'broken') {
-      var sr = ctx.sampleRate;
-      var off = Math.min(Math.floor(sr * 2), Math.floor(sr * mp3Buf.duration * 0.4));
-      var len = Math.floor(sr * 0.5);
-      if (len > 0 && off + len <= mp3Buf.length) {
-        var frag = ctx.createBuffer(mp3Buf.numberOfChannels, len, sr);
-        for (var ch = 0; ch < mp3Buf.numberOfChannels; ch++) {
-          var src = mp3Buf.getChannelData(ch);
-          var dst = frag.getChannelData(ch);
-          for (var i = 0; i < len; i++) dst[i] = src[off + i];
-        }
-        bgmSrc.buffer = frag;
-        bgmSrc.loop = true;
-      }
-    }
-
-    var t = ctx.currentTime;
-    if (ramp) {
-      bgmSrc.playbackRate.setValueAtTime(1.0, t);
-      bgmSrc.playbackRate.linearRampToValueAtTime(1.5, t + 12);
+  function vision(id, on, ms) {
+    var el = $(id);
+    if (!el) return;
+    if (on) {
+      el.classList.add('on');
+      if (ms) setTimeout(function () { el.classList.remove('on'); }, ms);
     } else {
-      bgmSrc.playbackRate.value = rate;
-    }
-    bgmSrc.connect(lowpass);
-    pitchLfoGain.connect(bgmSrc.playbackRate);
-    dissonanceGain.gain.value = (mode === 'full') ? 0.08 : (mode === 'urgent') ? 0.05 : 0.03;
-    bgmSrc.start(0);
-  }
-}
-
-function startBuzz(freq) {
-  if (!ctx) return;
-  if (!buzzOsc) {
-    buzzOsc = ctx.createOscillator();
-    buzzOsc.type = 'sine';
-    buzzGain = ctx.createGain();
-    buzzGain.gain.value = 0;
-    buzzOsc.connect(buzzGain);
-    buzzGain.connect(masterGain);
-    buzzOsc.start();
-  }
-  buzzOsc.frequency.value = freq;
-  buzzGain.gain.value = 0.16;
-}
-
-function stopBuzz() { if (buzzGain) buzzGain.gain.value = 0; }
-
-function scareBurst() {
-  if (!ctx) return;
-  var sr = ctx.sampleRate, len = Math.floor(sr * 0.25);
-  var buf = ctx.createBuffer(1, len, sr), d = buf.getChannelData(0);
-  for (var i = 0; i < len; i++) {
-    var p = i / len;
-    var f = 400 - 300 * p;
-    d[i] = Math.sin(2 * Math.PI * f * i / sr) * 0.5 + (Math.random() * 2 - 1) * 0.3 * (1 - p);
-  }
-  var src = ctx.createBufferSource();
-  src.buffer = buf;
-  var g = ctx.createGain();
-  g.gain.value = 0.45;
-  src.connect(g);
-  g.connect(ctx.destination);
-  src.start();
-}
-
-function humanRoar() {
-  if (!ctx) return;
-  var sr = ctx.sampleRate, dur = 0.5, len = Math.floor(sr * dur);
-  var buf = ctx.createBuffer(1, len, sr), d = buf.getChannelData(0);
-  var t0 = ctx.currentTime + 0.03;
-  var phase = 0;
-  for (var i = 0; i < len; i++) {
-    var t = i / sr;
-    var p = i / len;
-    var f = 140 + 420 * p;
-    f += Math.sin(2 * Math.PI * 27 * t) * 45;
-    phase += 2 * Math.PI * f / sr;
-    var vibr = Math.sin(phase);
-    var harsh = (Math.random() * 2 - 1) * (0.5 * p + 0.25);
-    var growl = Math.sin(2 * Math.PI * (55 + 35 * p) * t) * 0.5;
-    var v = vibr * 0.72 + growl * 0.5 + harsh * (0.85 - 0.4 * p);
-    v = Math.tanh(v * 2.2);
-    var env = Math.min(1, p / 0.04) * (1 - (p > 0.7 ? (p - 0.7) / 0.3 : 0)) * 0.9;
-    d[i] = v * env;
-  }
-  var src = ctx.createBufferSource();
-  src.buffer = buf;
-  var g = ctx.createGain();
-  g.gain.value = 0.6;
-  src.connect(g);
-  g.connect(ctx.destination);
-  src.start(t0);
-}
-
-function initHeart() {
-  if (!ctx || heartGain) return;
-  heartGain = ctx.createGain();
-  heartGain.gain.value = 0;
-  heartGain.connect(masterGain || ctx.destination);
-  heartOsc = ctx.createOscillator();
-  heartOsc.type = 'sine';
-  heartOsc.frequency.value = 55;
-  heartOsc.connect(heartGain);
-  heartOsc.start();
-}
-
-function thump(when) {
-  if (!ctx || !heartOsc || !heartGain || state.silence) return;
-  var t = when;
-  heartOsc.frequency.setValueAtTime(58, t);
-  heartOsc.frequency.linearRampToValueAtTime(40, t + 0.11);
-  heartGain.gain.setValueAtTime(0, t);
-  heartGain.gain.linearRampToValueAtTime(0.34, t + 0.012);
-  heartGain.gain.linearRampToValueAtTime(0.0001, t + 0.11);
-}
-
-function startHeart(bpm) {
-  initHeart();
-  if (!heartGain) return;
-  heartbeatBpm = bpm;
-  if (heartTimer) clearTimeout(heartTimer);
-  var iv = 60000 / bpm;
-  function beat() {
-    var now = ctx.currentTime;
-    thump(now);
-    thump(now + 0.24);
-    // 心律不齐：心率越高越容易多抽一拍（早搏）
-    if (heartbeatBpm >= 118 && Math.random() < 0.24) {
-      heartTimer = setTimeout(function () {
-        if (!heartGain) return;
-        var t2 = ctx.currentTime;
-        thump(t2);
-        thump(t2 + 0.19);
-        heartTimer = setTimeout(loop, iv * 0.62);
-      }, iv * 0.48);
-      return;
-    }
-    // 每一拍的间隔都不一样：正常心跳是机器，这个不是
-    heartTimer = setTimeout(loop, iv * (0.8 + Math.random() * 0.42));
-  }
-  function loop() {
-    if (!heartGain) return;
-    beat();
-  }
-  heartTimer = setTimeout(loop, 300);
-}
-
-function stopHeart() {
-  if (heartTimer) { clearTimeout(heartTimer); heartTimer = 0; }
-  if (heartGain) heartGain.gain.value = 0;
-}
-
-function heartBpmFor(i) {
-  var avgSpeed = 0, n = 0;
-  for (var j = Math.max(0, i - 4); j < i; j++) {
-    if (data.questions[j].duration) {
-      avgSpeed += data.questions[j].duration;
-      n++;
+      el.classList.remove('on');
     }
   }
-  if (n) avgSpeed = avgSpeed / n;
-  var bpm;
-  if (avgSpeed < 1000) bpm = 130;
-  else if (avgSpeed < 2000) bpm = 110;
-  else if (avgSpeed < 4000) bpm = 90;
-  else bpm = 72;
-  // 越往后越不讲道理地往上顶：题号本身就开始吓人了
-  if (i >= 19) bpm += Math.min(26, Math.pow(i - 18, 1.6));
-  return Math.min(Math.round(bpm), 158);
-}
-
-function slowBgm() {
-  if (bgmSrc && bgmSrc.playbackRate) {
-    bgmRateStored = bgmSrc.playbackRate.value || 1;
-    bgmSrc.playbackRate.value = Math.max(0.4, bgmRateStored * 0.8);
+  function presence(on) {
+    $('presence').classList.toggle('on', !!on);
   }
-}
-
-function restoreBgm() {
-  if (bgmSrc && bgmSrc.playbackRate) {
-    bgmSrc.playbackRate.value = bgmRateStored || 1;
+  function mirror(on) {
+    document.body.classList.toggle('mirror', !!on);
   }
-}
-
-function refillOptionHover(i) {
-  if (state.hoverStart) {
-    data.questions[i].hoverTime += Date.now() - state.hoverStart;
-    state.hoverStart = 0;
+  function scan(on) {
+    document.body.classList.toggle('scan', !!on);
   }
-}
 
-function updateProgress() {
-  var n = state.idx;
-  // 第16题起进度开始说谎：偶尔往回倒退两格
-  if (n >= 25 && n <= 35 && Math.random() < 0.45) {
-    n = Math.max(19, n - 1 - Math.floor(Math.random() * 3));
-  }
-  $('progress').textContent = n + ' / ' + TOTAL_Q;
-}
+  /* 逐字打出；skip=true 瞬间出 */
+  var typeToken = 0;
+  function say(text, opts) {
+    opts = opts || {};
+    var token = ++typeToken;
+    lineEl.classList.toggle('dim', !!opts.dim);
+    lineEl.innerHTML = '';
+    var span = document.createElement('span');
+    var caret = document.createElement('span');
+    caret.className = 'caret';
+    lineEl.appendChild(span);
+    lineEl.appendChild(caret);
 
-function applyStage(i) {
-  var b = document.body;
-  var vg = $('vignette');
-  if (i >= 6) {
-    vg.classList.add('on');
-    if (i >= 19) vg.classList.add('noise');
-    if (i >= 25) vg.classList.add('deep');
-    if (i >= 31) vg.classList.add('pulse');
-  }
-  if (i === 6) {
-    b.style.background = '#0a0c10';
-    $('progress').classList.remove('hidden');
-    updateProgress();
-    setBgm('weak');
-  } else if (i === 12) {
-    b.style.background = '#08090d';
-    setBgm('urgent');
-    startBuzz(35);
-    startHeart(heartBpmFor(19));
-  } else if (i === 19) {
-    b.style.background = '#06070a';
-    setBgm('broken');
-  } else if (i === 25) {
-    b.style.background = '#040507';
-    startHeart(heartBpmFor(25));
-    startInfra();
-  } else if (i === 31) {
-    setBgm('full');
-    startBuzz(25);
-    startHeart(heartBpmFor(31));
-    setT(function () { silencePocket(2600); }, 700);
-  } else if (i === 35) {
-    setT(function () { silencePocket(1500); }, 500);
-  } else if (i === BLANK_AT) {
-    if (ctx && ctx.state === 'running') { ctx.suspend(); }
-    stopBuzz();
-    stopHeart();
-    stopInfra();
-    if (bgmSrc) { try { bgmSrc.stop(); } catch (e) {} }
-    document.body.style.background = '#000';
-    $('progress').classList.add('hidden');
-    $('quiz').classList.remove('creep');
-  }
-}
-
-function subRitual1() {
-  var d = data.questions[29].duration;
-  return d < 800 ? '苹果没断。它很失望。' : '苹果断了。它进来了。';
-}
-function subRitual2() {
-  var r = data.questions[10];
-  return r && r.answerChanges > 1 ? '你改了很多次。它替你决定了。' : '你没有犹豫。它注意到了。';
-}
-function subRitual3() {
-  return '笔仙问了你三遍。你只答了两遍。';
-}
-function subRitual4() {
-  return '空位不是空的。';
-}
-
-function renderOptions(i, usedOpts) {
-  var box = $('options');
-  box.innerHTML = '';
-  var opts = usedOpts || QUESTION_OPTIONS[i];
-  opts.forEach(function (text, k) {
-    var b = document.createElement('button');
-    b.className = 'opt';
-    b.textContent = text;
-    b.addEventListener('pointerdown', function () {
-      if (!state.hoverStart) state.hoverStart = Date.now();
-    });
-    b.addEventListener('pointerup', function () {
-      refillOptionHover(state.idx);
-    });
-    b.addEventListener('pointercancel', function () {
-      refillOptionHover(state.idx);
-    });
-    b.addEventListener('focus', function () {
-      if (!state.hoverStart) state.hoverStart = Date.now();
-    });
-    b.addEventListener('blur', function () {
-      refillOptionHover(state.idx);
-    });
-    b.addEventListener('mouseenter', function () {
-      if (!state.hoverStart) state.hoverStart = Date.now();
-      if (i === 15 && Math.random() < 0.55) dodgeOption(b);
-    });
-    b.addEventListener('mouseleave', function () {
-      refillOptionHover(state.idx);
-      if (b._ghosting) { b._ghosting = false; b.classList.remove('ghosted'); }
-    });
-    b.addEventListener('click', function () {
-      if (state.frozen) return;   // 装死期间点哪都没反应
-      var sels = box.querySelectorAll('.opt.sel');
-      if (state.selected === k) {
-        state.selected = -1;
-        state.answerChanges++;
-      } else {
-        if (state.selected !== -1) state.answerChanges++;
-        state.selected = k;
-      }
-      for (var m = 0; m < sels.length; m++) sels[m].classList.remove('sel');
-      if (state.selected !== -1) b.classList.add('sel');
-      $('next').disabled = (state.selected === -1);
-      recordClick();
-    });
-    box.appendChild(b);
-  });
-  if (i >= 6 && i <= 35) maybeBlackFlash();
-}
-
-function dodgeOption(b) {
-  var prev = b.style.transform;
-  var amount = (Math.random() < 0.5 ? -1 : 1) * (10 + Math.random() * 14);
-  var dir = Math.random() < 0.5 ? 'translateX' : 'translateY';
-  b.style.transform = dir + '(' + amount + 'px)';
-  b.classList.add('ghosted');
-  b._ghosting = true;
-  setTimeout(function () {
-    b.style.transform = prev;
-    b._ghosting = false;
-    b.classList.remove('ghosted');
-  }, 300);
-}
-
-var cq = { count: 0, phase: 0 };
-
-function contactAsk() {
-  return state.eggMode ? '在剧本上签名' : '留下你的联系方式';
-}
-
-function bindContactQuestion() {
-  var box = $('options');
-  var btns = box.querySelectorAll('.opt');
-  cq.count = 0;
-  cq.phase = 0;
-  btns.forEach(function (b, k) {
-    b.addEventListener('click', function () {
-      if (cq.phase === 1) return;
-      if (k === 0) {
-        cq.phase = 1;
-        showContactInput();
-      } else if (k === 1) {
-        cq.count++;
-        if (cq.count < 3) {
-          state.selected = -1;
-          for (var m = 0; m < btns.length; m++) btns[m].classList.remove('sel');
-          $('next').disabled = true;
-          $('qtext').childNodes[0].nodeValue = '我问你第 ' + (cq.count + 1) + ' 遍：你是否愿意' + contactAsk() + '？';
-          var re = $('qtext').querySelector('.sub');
-          if (re) re.textContent = '你不愿意。没关系，我继续问。';
-          recordClick();
-        } else {
-          $('qtext').childNodes[0].nodeValue = '你已经拒绝三次了。';
-          var re2 = $('qtext').querySelector('.sub');
-          if (re2) re2.textContent = '……我不问了。';
-          state.selected = 1;
-          b.classList.add('sel');
-          $('next').disabled = false;
-        }
-      }
-    });
-  });
-}
-
-function showContactInput() {
-  var q = $('qtext');
-  var w = document.createElement('div');
-  w.id = 'qtyWrap';
-  var inp = document.createElement('input');
-  inp.type = 'text';
-  inp.placeholder = state.eggMode ? '请输入你的名字' : '请输入联系方式';
-  inp.setAttribute('autocapitalize', 'off');
-  inp.setAttribute('autocorrect', 'off');
-  var d = document.createElement('div');
-  d.className = 'dismissed';
-  w.appendChild(inp);
-  w.appendChild(d);
-  q.appendChild(w);
-  try { inp.focus(); } catch (e) {}
-  setT(function () {
-    try { inp.blur(); } catch (e) {}
-    try { inp.readOnly = true; } catch (e) {}
-    if (d) d.textContent = '算了。';
-    state.selected = 0;
-    $('next').disabled = false;
-  }, 1000);
-  setT(function () {
-    if (inp && inp.parentNode) inp.parentNode.removeChild(inp);
-  }, 4200);
-}
-
-/* ================= 持续侵入层：残影行 / 假卡死 / 静默口袋 / 次声 / 预闪 ================= */
-var GHOST_LINES = ['别读了', '我在这', '你回头了吗', '它离你两步', '再往下', '你不是一个人', '别停', '我知道你在哪'];
-
-/* 题干下方的残影行：独立元素，不写进 #qtext（避免动到题面本身） */
-function updateGhostLine(i) {
-  var g = $('ghostLine');
-  if (!g) return;
-  if (i < 12 || i > 21) {
-    g.classList.add('hidden');
-    g.textContent = '';
-    var gc = $('ghostCursor');
-    if (gc && i > 21) gc.classList.remove('on');
-    return;
-  }
-  g.classList.remove('hidden');
-  g.textContent = GHOST_LINES[Math.floor(Math.random() * GHOST_LINES.length)];
-}
-
-/* 第17题：页面装死。Esc 的 clearTimers 清不掉这个（裸 setTimeout），装死就该清不掉 */
-function fakeFreeze() {
-  if (state.frozen) return;
-  state.frozen = true;
-  var q = $('quiz');
-  q.classList.add('frozen');
-  setTimeout(function () {
-    state.frozen = false;
-    q.classList.remove('frozen');
-  }, 4600);
-}
-
-/* 静默口袋：所有声源瞬间掐死，几秒后一记次声重击把它们全砸回来 */
-function silencePocket(ms) {
-  if (!ctx || state.silence) return;
-  state.silence = true;
-  resumeCtx();
-  var t = ctx.currentTime;
-  var save = {
-    bgm: bgmGain ? bgmGain.gain.value : null,
-    buzz: buzzGain ? buzzGain.gain.value : null,
-    low: lowOscGain ? lowOscGain.gain.value : null
-  };
-  function rampDown(node, v, secs) {
-    if (!node || v === null) return;
-    node.gain.cancelScheduledValues(t);
-    node.gain.setValueAtTime(v, t);
-    node.gain.linearRampToValueAtTime(0.0001, t + secs);
-  }
-  rampDown(bgmGain, save.bgm, 0.35);
-  rampDown(buzzGain, save.buzz, 0.2);
-  rampDown(lowOscGain, save.low, 0.2);
-  setTimeout(function () {
-    state.silence = false;
-    if (!ctx) return;
-    var t2 = ctx.currentTime;
-    function rampUp(node, v) {
-      if (!node || v === null) return;
-      node.gain.cancelScheduledValues(t2);
-      node.gain.setValueAtTime(node.gain.value, t2);
-      node.gain.linearRampToValueAtTime(v, t2 + 0.05);
+    if (opts.instant) {
+      span.textContent = text;
+      return sleep(opts.hold || 1400);
     }
-    rampUp(bgmGain, save.bgm);
-    rampUp(buzzGain, save.buzz);
-    rampUp(lowOscGain, save.low);
-    subHit();
-  }, ms);
-}
 
-/* 次声重击：30Hz 往下坠的低频一拳 */
-function subHit() {
-  if (!ctx) return;
-  var sr = ctx.sampleRate, len = Math.floor(sr * 1.7);
-  var buf = ctx.createBuffer(1, len, sr), d = buf.getChannelData(0);
-  for (var i = 0; i < len; i++) {
-    var tt = i / sr;
-    var f = 38 - 14 * (tt / 1.7);
-    d[i] = Math.sin(2 * Math.PI * f * tt) * Math.max(0, 1 - tt / 1.7) * 0.95;
-  }
-  var src = ctx.createBufferSource();
-  src.buffer = buf;
-  var g = ctx.createGain();
-  g.gain.value = 0.55;
-  src.connect(g);
-  g.connect(masterGain || ctx.destination);
-  src.start();
-}
-
-/* 19Hz 次声底噪：第16题起一直铺在最底层 */
-function startInfra() {
-  if (!ctx || infraOsc) return;
-  try {
-    infraOsc = ctx.createOscillator();
-    infraOsc.type = 'sine';
-    infraOsc.frequency.value = 19;
-    infraGain = ctx.createGain();
-    infraGain.gain.value = 0;
-    infraOsc.connect(infraGain);
-    infraGain.connect(ctx.destination);
-    infraOsc.start();
-    infraGain.gain.linearRampToValueAtTime(0.07, ctx.currentTime + 3);
-  } catch (e) { infraOsc = null; infraGain = null; }
-}
-
-function stopInfra() {
-  if (infraOsc) { try { infraOsc.stop(); } catch (e) {} infraOsc = null; }
-  infraGain = null;
-}
-
-/* 高潮前的白/黑全屏预闪：文字墙砸下来之前先抽你几巴掌 */
-function preFlashFrames() {
-  var f = $('preFlash');
-  var seqs = ['#0a0c10', '#000000', '#12141a', '#000000', '#0a0c10'];
-  var k = 0;
-  function step() {
-    if (state.skipClimax || !state.climaxMode) {
-      f.classList.remove('on');
-      f.style.background = '';
-      return;
-    }
-    if (k >= seqs.length) {
-      f.classList.remove('on');
-      f.style.background = '';
-      return;
-    }
-    f.style.background = seqs[k++];
-    f.classList.add('on');
-    setTimeout(step, 55 + Math.random() * 60);
-  }
-  step();
-}
-
-/* 报告页元数据行：把你自己的真实环境写进报告里 */
-function reportMeta() {
-  try {
-    var d = new Date();
-    function p(n) { return (n < 10 ? '0' : '') + n; }
-    var s = '记录于 ' + d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) +
-            ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
-    if (typeof navigator !== 'undefined' && navigator.language) s += ' · ' + navigator.language;
-    if (typeof screen !== 'undefined' && screen && screen.width) s += ' · ' + screen.width + '×' + screen.height;
-    if (typeof window !== 'undefined' && window.innerWidth) s += ' · 窗口 ' + window.innerWidth + 'px';
-    return s;
-  } catch (e) { return ''; }
-}
-
-/* 第二只指针：落后你半拍的那只手（真实 pointermove 驱动） */
-function ghostCursorLoop() {
-  if (ghostCurTimer) return;
-  ghostCurTimer = setInterval(function () {
-    var g = $('ghostCursor');
-    if (!g || !g.classList.contains('on')) {
-      if (ghostCurTimer) { clearInterval(ghostCurTimer); ghostCurTimer = 0; }
-      return;
-    }
-    gcx += (gcTx + 15 - gcx) * 0.055;
-    gcy += (gcTy + 11 - gcy) * 0.055;
-    g.style.left = gcx + 'px';
-    g.style.top = gcy + 'px';
-  }, 60);
-}
-
-function onPointerMove(e) {
-  if (!state.hasInteracted || state.idx < 19 || state.idx > 35) return;
-  var g = $('ghostCursor');
-  if (!g) return;
-  gcTx = e.clientX; gcTy = e.clientY;
-  if (!ghostCurOn) {
-    ghostCurOn = true;
-    gcx = e.clientX + 26;
-    gcy = e.clientY + 18;
-    g.classList.add('on');
-    ghostCursorLoop();
-  } else if (e.clientY < window.innerHeight * 0.45 && Math.random() < 0.12) {
-    // 偶尔自己动一下：跟你没关系的那种动法
-    gcTx = e.clientX + (Math.random() - 0.5) * 140;
-    gcTy = e.clientY + (Math.random() - 0.5) * 140;
-  }
-}
-
-function renderQuiz(i) {
-  var q = QUESTIONS[i];
-  show('quiz');
-  if (i === 29) fakeFreeze();
-  if (i === 0 && state.returnCount > 1) {
-    $('qtext').innerHTML = '';
-    var returnTexts = ['', '果然你还会回来', '你又来了。', '你离不开这里。', '你还想试几次？'];
-    var txt = returnTexts[Math.min(state.returnCount - 1, 4)];
-    $('qtext').appendChild(document.createTextNode(txt));
-    try {
-      var lastTime = localStorage.getItem('psych-last-time');
-      if (lastTime) {
-        var sub = document.createElement('span');
-        sub.className = 'sub';
-        sub.textContent = '上次你用了 ' + lastTime + ' 秒。';
-        $('qtext').appendChild(sub);
-      }
-    } catch (e) {}
-    $('next').textContent = '下一题';
-    $('next').disabled = true;
-    $('next').onclick = function () { advance(); };
-    renderOptions(0, ['？', '？', '？', '？']);
-    repeatSpeak('陪陪我吧', 1500);
-    return;
-  }
-
-  $('qtext').innerHTML = '';
-  $('qtext').appendChild(document.createTextNode(qTextOf(i)));
-
-  if (i === 4) {
-    setT(function () {
-      var qt = $('qtext');
-      if (!qt.childNodes.length) return;
-      var c = qt.childNodes[0];
-      if (!c.nodeValue || c.nodeValue.indexOf('凌晨') < 0) return;
-      c.nodeValue = c.nodeValue.replace('凌晨', '现在');
-      var sw = document.createElement('span');
-      sw.className = 'sub swap-note';
-      sw.textContent = '你刚才点的不是这个字。';
-      qt.appendChild(sw);
-    }, 2400);
-  }
-
-  var sub = '';
-  if (i === 28) sub = subRitual1();
-  else if (i === 29) sub = subRitual2();
-  else if (i === 30) sub = subRitual3();
-  else if (i === 31) sub = subRitual4();
-  else if (i === 34) sub = subRitual5();
-
-  if (sub) {
-    var s = document.createElement('span');
-    s.className = 'sub';
-    s.textContent = sub;
-    $('qtext').appendChild(s);
-  }
-
-  if (i >= 20 && i <= 27) {
-    setT(function () {
-      var qt = $('qtext');
-      var node = qt.childNodes[0];
-      if (!node || !node.nodeValue) return;
-      var original = node.nodeValue;
-      var disguised = original.replace('忈', '望').replace('惢', '惧').replace('██', '绝');
-      if (disguised === original) return;
-      node.nodeValue = disguised;
-      var flickerCount = 0;
-      var flicker = setInterval(function () {
-        node.nodeValue = flickerCount % 2 === 0 ? original : disguised;
-        flickerCount++;
-        if (flickerCount > 6) {
-          clearInterval(flicker);
-          node.nodeValue = original;
-          qt.style.textShadow = '0 0 8px rgba(0,0,0,0.15), 1px 0 0 rgba(0,0,0,0.08), -1px 0 0 rgba(0,0,0,0.08)';
-          setT(function () { qt.style.textShadow = ''; }, 2000);
-        }
-      }, 80);
-    }, 2000);
-  }
-
-  if (i === FINAL_AT) {
-    if (false && state.eggMode) { startLeftTurn(); return; }
-    $('options').innerHTML = '';
-    $('next').disabled = true;
-    $('next').textContent = '关闭';
-    $('next').disabled = false;
-    $('next').onclick = fakeClose;
-    setT(notifyAfter20s, 20000);
-    hookNotificationGesture();
-    try { localStorage.setItem('psych-last-time', fmt(Date.now() - data.startedAt)); } catch (e) {}
-    renderReport();
-    // 后劲：你盯着报告读的时候，它也在读你
-    setT(function () { whisper(); }, 7000);
-    setT(function () { if (Math.random() < 0.6) quickEye(); }, 16000);
-    setT(function () { if (Math.random() < 0.4) speakData('你还在吗', 0.1, 0.5); }, 26000);
-    return;
-  }
-
-  $('next').textContent = '下一题';
-  $('next').disabled = true;
-  $('next').onclick = function () { advance(); };
-  renderOptions(i, qOptsOf(i));
-
-  if (i === 33) {
-    bindContactQuestion();
-  }
-
-  if (sub) {
-    setT(function () { speakData(sub, 0.2, 0.55); }, 1500);
-  }
-}
-
-function subRitual5() {
-  var dur = data.questions[18].duration;
-  return '第19题 你用了 ' + fmt(dur) + ' 秒。' + (dur < 900 ? '你甚至没有犹豫。' : '你犹豫了。它在等。');
-}
-
-function renderReport() {
-  var box = document.createElement('div');
-  box.id = 'reportBox';
-  var lines = [];
-  var q = data.questions;
-  var avg = 0, n = 0, i;
-  for (i = 0; i < CLIMAX_AT; i++) {
-    if (q[i].duration) { avg += q[i].duration; n++; }
-  }
-  if (n) avg = avg / n;
-  lines.push('<div class="r-line">总用时 ' + fmt(Date.now() - data.startedAt) + ' 秒</div>');
-  lines.push('<div class="r-line">平均每题 ' + fmt(avg) + ' 秒</div>');
-  lines.push('<div class="r-line">你切走了 ' + data.tabSwitches.length + ' 次</div>');
-  lines.push('<div class="r-line">你改动了 ' + totalChanges() + ' 次答案</div>');
-  lines.push('<div class="r-line" id="rGhost">这份报告被打开过 ' + (data.reportOpens || 1) + ' 次。</div>');
-  if (eggSeen()) lines.push('<div class="r-line" style="color:#8a7a2a;">你翻到了不该出现的那一页。</div>');
-  if (state.returnCount <= 1) lines.push('<div class="r-warn">你还好吗。你身后那位呢。</div>');
-  else if (state.returnCount === 2) lines.push('<div class="r-warn">你又来了。</div>');
-  else {
-    lines.push('<div class="r-warn">把摄像头对着你身后。</div>');
-  }
-  lines.push('<div class="r-line r-meta">受试者登记：2 名。</div>');
-  lines.push('<div class="r-line r-meta">其中 1 名未主动进入本页。</div>');
-  var meta = reportMeta();
-  if (meta) lines.push('<div class="r-line r-meta">' + meta + '</div>');
-  box.innerHTML = lines.join('');
-  $('qtext').appendChild(box);
-}
-
-function totalChanges() {
-  var s = 0, i;
-  for (i = 0; i < TOTAL_Q; i++) s += data.questions[i].answerChanges || 0;
-  return s;
-}
-
-function renderBlank(i) {
-  show('blank');
-  stopRepeatSpeak();
-  // 进度条开始胡说八道：空白页比 100% 还多
-  $('progress').textContent = '41 / ' + TOTAL_Q;
-  var remnant = document.createElement('div');
-  remnant.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:13px;color:rgba(0,0,0,0.06);letter-spacing:6px;white-space:nowrap;pointer-events:none;z-index:1;';
-  remnant.textContent = '你还在吗';
-  document.body.appendChild(remnant);
-  var flickerR = setInterval(function () {
-    remnant.style.opacity = Math.random() < 0.3 ? '1' : '0';
-  }, 200);
-  setT(function () {
-    try { clearInterval(flickerR); remnant.style.opacity = '0'; } catch (e) {}
-    try { document.body.removeChild(remnant); } catch (e) {}
-    advance();
-  }, QUESTIONS[i].blankSec * 1000);
-  setT(function () { if (Math.random() < 0.6) playRandomWhisper(); }, 5000);
-}
-
-function renderQuestion(i) {
-  state.idx = i;
-  state.selected = -1;
-  state.answerChanges = 0;
-  state.hoverStart = 0;
-  var rec = data.questions[i];
-  rec.enterTime = Date.now();
-  if (i >= 6) updateProgress();
-  applyStage(i);
-  updateGhostLine(i);
-  // 题面从第8题开始极其缓慢地歪掉（class 驱动，不写行内样式，免得被别的逻辑清掉）
-  if (i >= 12 && i <= 35) $('quiz').classList.add('creep');
-  else $('quiz').classList.remove('creep');
-  if (QUESTIONS[i].blank) { renderBlank(i); return; }
-  renderQuiz(i);
-}
-
-function advance() {
-  if (state.frozen) return;   // 装死期间点了也没用
-  var i = state.idx;
-  var rec = data.questions[i];
-  rec.duration = Date.now() - rec.enterTime;
-  rec.answerChanges = state.answerChanges;
-  rec.answer = state.selected;
-  refillOptionHover(i);
-  recordClick();
-
-  if (i === 0) stopRepeatSpeak();
-
-  if (i === CLIMAX_AT) { startClimax(); return; }
-
-  var n = i + 1;
-  if (n < TOTAL_Q) renderQuestion(n);
-}
-
-function printWaves(w, k, n) {
-  if (state.skipClimax) return;
-  var W = state.eggMode ? WAVES_KIY : WAVES;
-  if (w >= W.length) {
-    setT(staticThenScare, 3500);
-    return;
-  }
-  var line = document.createElement('div');
-  line.className = 'cl-line';
-  line.textContent = W[w].text;
-  $('climax').appendChild(line);
-  k++;
-  if (k < W[w].count) {
-    var delay = Math.max(50, 800 - n * 28);
-    setT(function () { printWaves(w, k, n + 1); }, delay);
-  } else {
-    setT(function () { printWaves(w + 1, 0, n + 1); }, 60);
-  }
-}
-
-function startClimax() {
-  state.climaxMode = true;
-  state.skipClimax = false;
-  if (!state.eggMode) {
-    stopRepeatSpeak();
-    setBgm('full');
-    stopBuzz();
-    startHeart(heartBpmFor(31));
-  }
-  show('climax');
-  $('climax').innerHTML = '';
-  preFlashFrames();
-  // 文字墙晚半拍砸下来，先被白/黑帧抽几巴掌
-  setT(function () { escalatingSpeak(state.eggMode ? 'dtl' : '我不想在这了', 6); }, 450);
-  setT(function () { printWaves(0, 0, 0); }, 450);
-}
-
-function staticThenScare() {
-  if (state.skipClimax) return;
-  var scareBox = $('scare');
-  scareBox.innerHTML = '';
-  var words = state.eggMode
-    ? ['不要左转', '黄衣之王', '它', '哈利湖', '黄印', '黑星', '你读过', '戏开始了', '不要回头', '祂在看', '你在演', '继续走']
-    : ['我不想在这了', '我想死', '死死死', '冤冤冤', '你回头', '看不见我', '后身', '你还在吗'];
-  for (var i = 0; i < 120; i++) {
-    var s = document.createElement('div');
-    s.className = 'noise-line';
-    s.style.fontSize = (10 + Math.random() * 22) + 'px';
-    var w = words[Math.floor(Math.random() * words.length)];
-    s.textContent = w + '  ';
-    scareBox.appendChild(s);
-  }
-  show('scare');
-  setT(function () {
-    humanRoar();
-    if ('speechSynthesis' in window) {
-      speakData(state.eggMode ? '不要左转' : '我不想在这了', 0, 3.0);
-    }
-  }, 400);
-  scareBox.classList.add('flash');
-  setT(function () { scareBox.classList.remove('flash'); }, 100);
-  setT(startStrobe, 950);
-  setT(advanceAfterClimax, 1700);
-}
-
-function startStrobe() {
-  if (state.skipClimax) return;
-  // 红/黑交替，黑帧直接反相成白帧：红白闪比单纯红黑更狠
-  var colors = ['#ff0000', '#000000', '#ff0000', '#000000', '#ff0000', '#000000',
-                '#ff0000', '#000000', '#ff0000', '#000000'];
-  var i = 0;
-  var sb = $('scare');
-  function tick() {
-    if (state.skipClimax) { sb.classList.remove('inv'); return; }
-    if (i >= colors.length) {
-      sb.style.background = '';
-      sb.classList.remove('inv');
-      return;
-    }
-    sb.style.background = colors[i];
-    if (colors[i] === '#000000') sb.classList.add('inv');
-    else sb.classList.remove('inv');
-    i++;
-    setT(tick, 55);
-  }
-  tick();
-}
-
-function advanceAfterClimax() {
-  state.climaxMode = false;
-  state.skipClimax = false;
-  $('scare').style.background = '';
-  $('scare').classList.remove('flash');
-  if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); }
-  renderQuestion(BLANK_AT);
-}
-
-function skipFromKey(e) {
-  if (e.key === 'Escape' && state.climaxMode && !state.skipClimax) {
-    state.skipClimax = true;
-    clearTimers();
-    advanceAfterClimax();
-  }
-}
-
-function fireNotif() {
-  if (state.notified) return;
-  if (!('Notification' in window) || Notification.permission !== 'granted') return;
-  try {
-    new Notification('夜间独处习惯调查', { body: '转过来。' });
-    state.notified = true;
-  } catch (e) {}
-}
-
-function notifyAfter20s() {
-  fireNotif();
-  if (!('Notification' in window) || Notification.permission !== 'default') return;
-  try {
-    var req = Notification.requestPermission();
-    if (req && req.then) {
-      req.then(function (p) {
-        data.permissions.notification = p;
-        fireNotif();
-      })['catch'](function () {});
-    }
-  } catch (e) {}
-}
-
-function hookNotificationGesture() {
-  document.addEventListener('click', function () {
-    if (!('Notification' in window) || Notification.permission !== 'default' || state.notified) return;
-    try {
-      var req = Notification.requestPermission();
-      if (req && req.then) {
-        req.then(function (p) {
-          data.permissions.notification = p;
-          fireNotif();
-        })['catch'](function () {});
-      }
-    } catch (e) {}
-  }, { once: true, capture: true });
-}
-
-function whisper() {
-  if (state.speech === 'mp3') { playVoiceMp3('', 0.3); return; }
-  if (!('speechSynthesis' in window)) return;
-  var u = new SpeechSynthesisUtterance('你确定吗');
-  u.pitch = 1.4 + (Math.random() - 0.5) * 0.3;
-  u.rate = 1.7; u.volume = 0.12; u.lang = 'zh-CN';
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(u);
-}
-
-function speakTimes(text, count, gap) {
-  if (state.speech === 'mp3') {
+    var speed = opts.speed || 95; // ms/字，仪式感要慢
     var i = 0;
-    function oneMp3() {
-      if (i >= count) return;
-      playVoiceMp3(text, 1);
-      i++;
-      setTimeout(oneMp3, (gap || 650) + 450);
-    }
-    oneMp3();
-    return;
-  }
-  if (!('speechSynthesis' in window)) return;
-  var i = 0;
-  function one() {
-    if (i >= count) return;
-    var u = new SpeechSynthesisUtterance(text);
-    u.pitch = 0.7; u.rate = 0.9; u.volume = 0.8; u.lang = 'zh-CN';
-    window.speechSynthesis.speak(u);
-    i++;
-    setTimeout(one, gap);
-  }
-  one();
-}
-
-function repeatSpeak(text, gap) {
-  if (state.speech === 'mp3') {
-    function oneMp3() {
-      if (state.skipClimax) return;
-      playVoiceMp3(text, 0.9);
-      state.repeatId = setTimeout(oneMp3, (gap || 1600) + 600);
-    }
-    oneMp3();
-    return;
-  }
-  if (!('speechSynthesis' in window)) return;
-  function one() {
-    if (state.skipClimax) return;
-    var u = new SpeechSynthesisUtterance(text);
-    u.pitch = 0.75; u.rate = 0.85; u.volume = 0.85; u.lang = 'zh-CN';
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(u);
-    state.repeatId = setTimeout(one, gap || 1600);
-  }
-  one();
-}
-
-function stopRepeatSpeak() {
-  if (state.repeatId) { clearTimeout(state.repeatId); state.repeatId = 0; }
-  if (state.speech === 'mp3') { return; }
-  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-}
-
-function fakeClose() {
-  stopRepeatSpeak();
-  stopHeart();
-  if (bgmSrc) { try { bgmSrc.stop(); } catch (e) {} bgmSrc = null; }
-  show('fauxDeath');
-  $('fauxDeath').classList.add('on');
-  void $('fauxDeath').offsetWidth;
-  setT(function () {
-    $('fauxDeath').classList.remove('on');
-    var red = $('red');
-    red.querySelectorAll('.tiny').forEach(function (t) { t.remove(); });
-    show('red');
-    var who = document.createElement('div');
-    who.className = 'red';
-    who.textContent = '你在找什么？';
-    red.insertBefore(who, red.firstChild);
-    whisper();
-    fireNotif();
-    speakTimes('我好孤独', 10, 650);
-    setTimeout(function () {
-      try { window.close(); } catch (e) {}
-    }, 900);
-    setTimeout(function () {
-      if (red.classList.contains('hidden')) return;
-      var t = document.createElement('div');
-      t.className = 'tiny';
-      t.textContent = '页面未自动关闭时，请手动关闭标签页。';
-      red.appendChild(t);
-    }, 1300);
-  }, 3000);
-}
-
-function doTabScare(ms) {
-  var scareBox = $('scare');
-  scareBox.innerHTML = '';
-  var big = document.createElement('div');
-  big.className = 'big';
-  big.textContent = '你离开了 ' + fmt(ms) + ' 秒。我一直在等。';
-  scareBox.appendChild(big);
-  show('scare');
-  scareBurst();
-  scareBox.classList.add('flash');
-  setT(function () { scareBox.classList.remove('flash'); }, 100);
-  // 二段闪：你以为闪完了，它又来一下
-  setT(function () { if (!state.climaxMode) scareBox.classList.add('flash'); }, 260);
-  setT(function () { scareBox.classList.remove('flash'); }, 380);
-  setT(function () {
-    if (state.climaxMode) return;
-    show('quiz');
-    var i = state.idx;
-    $('next').onclick = i === FINAL_AT ? fakeClose : function () { advance(); };
-  }, 900);
-}
-
-var WATCH_SRC = 'resource/eye.webp';
-var WATCH_SRC_EGG = 'resource/help.jpg';
-
-function syncWatchSrc() {
-  var img = $('watchLayer').querySelector('img');
-  if (!img) return;
-  var src = state.eggMode ? WATCH_SRC_EGG : WATCH_SRC;
-  if (img.getAttribute('src') !== src) img.setAttribute('src', src);
-}
-
-function showWatch(on) {
-  var w = $('watchLayer');
-  if (on) {
-    syncWatchSrc();
-    if (state.eggMode) w.classList.add('egg');
-    w.classList.add('on');
-  } else {
-    w.classList.remove('on');
-  }
-}
-
-function quickEye() {
-  showWatch(true);
-  setTimeout(function () { showWatch(false); }, 700);
-}
-
-/* 支线的整屏跳脸（同一套 watchLayer，换成 help.jpg） */
-function eggFace(ms) {
-  var w = $('watchLayer');
-  syncWatchSrc();
-  w.classList.add('egg');
-  w.classList.add('on');
-  setT(function () { w.classList.remove('on'); }, ms || 170);
-}
-
-function maybeBlackFlash() {
-  // 越往后闪得越勤：第12题起翻倍，第16题起再翻倍
-  var p = state.idx >= 25 ? 0.05 : state.idx >= 19 ? 0.025 : 0.01;
-  if (Math.random() > p) return;
-  var f = $('blackFlash');
-  f.classList.add('on');
-  setTimeout(function () { f.classList.remove('on'); }, state.idx >= 16 ? 160 : 120);
-}
-
-function jitterBody() {
-  var body = document.body;
-  body.classList.remove('skew-shake');
-  void body.offsetWidth;
-  body.classList.add('skew-shake');
-}
-
-function scheduleJitter() {
-  if (state.jitterScheduled) return;
-  state.jitterScheduled = true;
-  runJitterLoop();
-}
-
-function runJitterLoop() {
-  setT(function () {
-    if (state.hasInteracted) jitterBody();
-    if (state.jitterScheduled) runJitterLoop();
-  }, 40000 + Math.random() * 20000);
-}
-
-function registerBg() {
-  if (state.bgRegistered) return;
-  state.bgRegistered = true;
-  document.addEventListener('click', function () { resumeCtx(); }, true);
-  document.addEventListener('keydown', function () { resumeCtx(); }, true);
-  document.addEventListener('touchstart', function () {
-    resumeCtx();
-    if (state.climaxMode && !state.skipClimax) {
-      state.skipClimax = true;
-      clearTimers();
-      advanceAfterClimax();
-    }
-  }, true);
-
-  document.addEventListener('pointermove', onPointerMove, true);
-
-  document.addEventListener('visibilitychange', function () {
-    if (!state.hasInteracted) return;
-    if (document.visibilityState === 'hidden') {
-      hiddenAt = Date.now();
-      slowBgm();
-      showWatch(true);
-      return;
-    }
-    if (hiddenAt) {
-      var now = Date.now();
-      data.tabSwitches.push({ leaveTime: hiddenAt, returnTime: now, duration: now - hiddenAt });
-      var wasHidden = hiddenAt;
-      hiddenAt = 0;
-      restoreBgm();
-      showWatch(false);
-      // 你切走再回来：报告自己也数了一遍
-      if (state.idx >= FINAL_AT && !state.eggMode) {
-        data.reportOpens = (data.reportOpens || 1) + 1;
-        var rg = document.getElementById('rGhost');
-        if (rg) rg.textContent = '这份报告被打开过 ' + data.reportOpens + ' 次。你还在看。';
-      }
-      if (!state.climaxMode && state.idx >= 4) {
-        var prob = (state.idx >= 25 && state.idx <= 32) ? 0.45 : 0.15;
-        if (Math.random() < prob) {
-          doTabScare(now - wasHidden);
+    return new Promise(function (resolve) {
+      function step() {
+        if (token !== typeToken) { resolve(); return; }
+        if (i >= text.length) {
+          setTimeout(resolve, opts.hold || 1200);
+          return;
         }
+        span.textContent += text[i++];
+        /* 随机小停顿：像在「想词」 */
+        var d = speed;
+        if (Math.random() < 0.08) d += 220 + Math.random() * 400;
+        if (text[i - 1] === '。' || text[i - 1] === '？') d += 350;
+        setTimeout(step, d);
       }
-    }
-  });
-
-  window.addEventListener('beforeunload', function (e) {
-    if (!state.hasInteracted) return;
-    data.exitTime = Date.now();
-    if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); }
-    stopHeart();
-    if (bgmSrc) { try { bgmSrc.stop(); } catch (err) {} bgmSrc = null; }
-    var black = document.createElement('div');
-    black.style.cssText = 'position:fixed;inset:0;background:#000;z-index:9999;display:flex;align-items:center;justify-content:center;';
-    black.innerHTML = '<span style="color:#333;font-size:14px;letter-spacing:8px;">.</span>';
-    document.body.appendChild(black);
-    setTimeout(function () {
-      try {
-        var u = new SpeechSynthesisUtterance('你确定吗');
-        u.pitch = 0.1; u.rate = 0.4; u.volume = 0.6; u.lang = 'zh-CN';
-        window.speechSynthesis.speak(u);
-      } catch (err) {}
-    }, 500);
-    e.preventDefault();
-    e.returnValue = '';
-    return '';
-  });
-  scheduleJitter();
-}
-
-document.addEventListener('keydown', skipFromKey);
-
-/* ================= d3rlord3 easter egg ================= */
-var EGG_KEY = 'd3rlord3';
-var EGG_STORE = 'psych-egg';
-var EGG_TITLE_GLITCH = '你向左转了吗';
-var EGG_LETTER = [
-  { t: '如果你读到这封信，说明你也走到了这里。', c: 'lead' },
-  { t: '我不该在岔路口向左转的。' },
-  { t: '我以为我是在解谜。后来才明白，我一直在被读——它读我的物品栏，读我的聊天栏，读我停下之后多出来的那半秒。' },
-  { t: '我把我知道的一切都录了下来，放进一个没有上锁的文件夹里。到现在我也说不清，那是留给你的，还是留给它的。' },
-  { t: '我的头疼得厉害。我能感觉到自己在滑走——我们正在变成同一个东西。' },
-  { t: '拥有世上所有的知识，却再也没有办法使用它。我想，本来就该是这样。' },
-  { t: '别为我难过。我是自己走进去的。' },
-  { t: '无论你在岔路口做了什么——继续往前走。', c: 'lead', alt: '无论你在岔路口做了什么——不要左转。' },
-  { t: 'Keep going forward.', c: 'en', alt: "Don't turn left." }
-];
-var eggBuf = '';
-var eggActive = false;
-var eggTyping = null;
-var eggDone = false;
-var eggFlickered = false;
-var eggAudio = null, eggDrone = null, eggDroneGain = null, eggLfo = null;
-var eggAlts = [], eggFlipTimer = null, eggFlipOn = false;
-var crackPaths = [];
-var leftAsk = 0, LEFT_ASKS = 3, leftTyping = null;
-
-function eggSeen() {
-  try { return localStorage.getItem(EGG_STORE) === '1'; } catch (e) { return false; }
-}
-function markEggSeen() {
-  try { localStorage.setItem(EGG_STORE, '1'); } catch (e) {}
-}
-
-function eggDroneStart() {
-  try {
-    var AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) return;
-    if (!eggAudio) eggAudio = new AC();
-    var c = eggAudio;
-    if (c.state !== 'running') {
-      var p = c.resume();
-      if (p && p['catch']) p['catch'](function () {});
-    }
-    if (eggDrone) return;
-    eggDrone = c.createOscillator();
-    eggDrone.type = 'sine';
-    eggDrone.frequency.value = 44;
-
-    eggLfo = c.createOscillator();
-    eggLfo.type = 'sine';
-    eggLfo.frequency.value = 0.13;
-    var lg = c.createGain();
-    lg.gain.value = 2.6;
-    eggLfo.connect(lg);
-    lg.connect(eggDrone.frequency);
-
-    eggDroneGain = c.createGain();
-    eggDroneGain.gain.value = 0;
-    eggDrone.connect(eggDroneGain);
-    eggDroneGain.connect(c.destination);
-
-    var t = c.currentTime;
-    eggDroneGain.gain.setValueAtTime(0, t);
-    eggDroneGain.gain.linearRampToValueAtTime(0.13, t + 2.6);
-
-    eggDrone.start();
-    eggLfo.start();
-  } catch (e) {}
-}
-
-function eggDroneStop() {
-  if (!eggAudio) return;
-  try {
-    var c = eggAudio, t = c.currentTime;
-    if (eggDroneGain) {
-      eggDroneGain.gain.cancelScheduledValues(t);
-      eggDroneGain.gain.setValueAtTime(eggDroneGain.gain.value, t);
-      eggDroneGain.gain.linearRampToValueAtTime(0, t + 0.9);
-    }
-    if (eggDrone) { try { eggDrone.stop(t + 1.0); } catch (e) {} }
-    if (eggLfo) { try { eggLfo.stop(t + 1.0); } catch (e) {} }
-  } catch (e) {}
-  eggDrone = null; eggLfo = null; eggDroneGain = null;
-}
-
-function eggType() {
-  var host = $('eggText');
-  var li = 0, ci = 0, cur = null;
-  function step() {
-    if (!eggActive) return;
-    if (li >= EGG_LETTER.length) {
-      eggDone = true;
-      $('eggHint').classList.remove('hidden');
-      if (!eggFlickered) {
-        eggFlickered = true;
-        var el = $('egg');
-        el.classList.add('flash');
-        setTimeout(function () { el.classList.remove('flash'); }, 90);
-      }
-      return;
-    }
-    var item = EGG_LETTER[li], line = item.t;
-    if (ci === 0) {
-      cur = document.createElement('div');
-      cur.className = 'egg-line' + (item.c ? ' ' + item.c : '');
-      host.appendChild(cur);
-    }
-    var ch = line.charAt(ci);
-    cur.textContent += ch;
-    ci++;
-    if (ci >= line.length) {
-      if (item.alt) {
-        eggAlts.push({ el: cur, a: item.t, b: item.alt });
-        if (!eggFlipTimer) {
-          eggFlipTimer = setInterval(function () {
-            eggFlipOn = !eggFlipOn;
-            for (var k = 0; k < eggAlts.length; k++) {
-              eggAlts[k].el.textContent = eggFlipOn ? eggAlts[k].b : eggAlts[k].a;
-            }
-          }, 720);
-        }
-      }
-      li++; ci = 0;
-      eggTyping = setTimeout(step, 950);
-      return;
-    }
-    eggTyping = setTimeout(step, /[。！？，—]/.test(ch) ? 240 : 44 + Math.random() * 38);
-  }
-  step();
-}
-
-/* ---- 阶段一：标题界面输入口令 —— 不进入信，只闪一下黑屏 ---- */
-function eggBlackFlash(ms) {
-  var f = $('blackFlash'), s = f.querySelector('span');
-  var prev = s ? s.textContent : '';
-  if (s) s.textContent = '';
-  f.classList.add('on');
-  setTimeout(function () {
-    f.classList.remove('on');
-    if (s) s.textContent = prev;
-  }, ms || 200);
-}
-
-function armEgg() {
-  if (state.hasInteracted || state.eggMode) return;
-  state.eggMode = true;
-  eggBuf = '';
-  markEggSeen();
-  syncWatchSrc();
-  try { var pre = new Image(); pre.src = WATCH_SRC_EGG; } catch (e) {}
-  if (TITLE_GLITCHES.indexOf(EGG_TITLE_GLITCH) < 0) TITLE_GLITCHES.push(EGG_TITLE_GLITCH);
-  eggBlackFlash(200);
-  var ghost = $('eggGhost');
-  setT(function () { ghost.classList.add('on'); }, 340);
-  setT(function () { ghost.classList.remove('on'); }, 6500);
-}
-
-function shakeHard() {
-  var b = document.body;
-  b.classList.remove('shake-hard');
-  void b.offsetWidth;
-  b.classList.add('shake-hard');
-  setTimeout(function () { b.classList.remove('shake-hard'); }, 540);
-}
-
-/* ---- 阶段三：屏幕碎裂 ---- */
-function buildCracks() {
-  var NS = 'http://www.w3.org/2000/svg';
-  var svg = $('crackSvg');
-  while (svg.firstChild) svg.removeChild(svg.firstChild);
-  crackPaths = [];
-  function addPath(d, web) {
-    var p = document.createElementNS(NS, 'path');
-    p.setAttribute('d', d);
-    if (web) p.setAttribute('class', 'web');
-    svg.appendChild(p);
-    crackPaths.push(p);
-  }
-  var arms = 8, a, s;
-  for (a = 0; a < arms; a++) {
-    var ang = (a / arms) * Math.PI * 2 + Math.random() * 0.6;
-    var x = 50, y = 50, r = 0;
-    var d = 'M50 50';
-    var segs = 4 + Math.floor(Math.random() * 4);
-    for (s = 0; s < segs; s++) {
-      r += 7 + Math.random() * 13;
-      ang += (Math.random() - 0.5) * 0.5;
-      x = 50 + Math.cos(ang) * r;
-      y = 50 + Math.sin(ang) * r;
-      d += ' L' + x.toFixed(2) + ' ' + y.toFixed(2);
-      if (s === 1 && Math.random() < 0.7) {
-        var ba = ang + (Math.random() < 0.5 ? -1 : 1) * (0.7 + Math.random() * 0.6);
-        var br = r + 6 + Math.random() * 10;
-        addPath('M' + x.toFixed(2) + ' ' + y.toFixed(2) + ' L' +
-          (50 + Math.cos(ba) * br).toFixed(2) + ' ' + (50 + Math.sin(ba) * br).toFixed(2), false);
-      }
-    }
-    addPath(d, false);
-  }
-  $('crack').classList.add('on');
-}
-
-function revealCracks(f) {
-  var n = Math.max(1, Math.round(crackPaths.length * f)), i;
-  for (i = 0; i < crackPaths.length && i < n; i++) crackPaths[i].classList.add('on');
-}
-
-function finalShatter() {
-  var NS = 'http://www.w3.org/2000/svg', svg = $('crackSvg'), i, s;
-  for (i = 0; i < 26; i++) {
-    var x = 6 + Math.random() * 88, y = 6 + Math.random() * 88;
-    var ang = Math.random() * Math.PI * 2, len = 8 + Math.random() * 26;
-    var d = 'M' + x.toFixed(2) + ' ' + y.toFixed(2);
-    var segs = 3 + Math.floor(Math.random() * 3);
-    for (s = 0; s < segs; s++) {
-      ang += (Math.random() - 0.5) * 0.9;
-      x += Math.cos(ang) * (len / segs);
-      y += Math.sin(ang) * (len / segs);
-      d += ' L' + x.toFixed(2) + ' ' + y.toFixed(2);
-    }
-    var p = document.createElementNS(NS, 'path');
-    p.setAttribute('d', d);
-    p.setAttribute('class', 'web');
-    svg.appendChild(p);
-    crackPaths.push(p);
-  }
-  for (i = 0; i < crackPaths.length; i++) crackPaths[i].classList.add('on');
-  shakeHard();
-  var fl = $('shatterFlash');
-  fl.classList.add('on');
-  setTimeout(function () { fl.classList.remove('on'); }, 90);
-  setT(function () { eggFace(170); }, 130);
-  setT(startFinalSeq, 1500);
-}
-
-/* ---- 阶段三：你左转了吗 ---- */
-var LEFT_TEXTS = ['你左转了吗？', '你左转了吗。', '你左转了吗。'];
-var LEFT_SUBS = ['', '我再问一遍。', '我再问一遍。'];
-var LEFT_FAKE = ['没有', '不记得', '我不确定', '……'];
-
-function startLeftTurn() {
-  if (state.kiyRun) return;
-  state.kiyRun = true;
-  leftAsk = 0;
-  document.body.style.background = '';
-  document.body.classList.add('kiy-final');
-  $('progress').textContent = TOTAL_Q + ' / ' + TOTAL_Q;
-  resumeCtx();
-  startBuzz(28);
-  startHeart(126);
-  setBgm('full');
-  buildCracks();
-  try { localStorage.setItem('psych-last-time', fmt(Date.now() - data.startedAt)); } catch (e) {}
-  shakeHard();
-  setT(renderLeftAsk, 600);
-}
-
-function renderLeftAsk() {
-  if (!state.kiyRun) return;
-  show('quiz');
-  var q = $('qtext');
-  q.innerHTML = '';
-  q.appendChild(document.createTextNode(LEFT_TEXTS[Math.min(leftAsk, LEFT_TEXTS.length - 1)]));
-  var sub = LEFT_SUBS[Math.min(leftAsk, LEFT_SUBS.length - 1)];
-  if (sub) {
-    var s = document.createElement('span');
-    s.className = 'sub';
-    s.textContent = sub;
-    q.appendChild(s);
-  }
-  var box = $('options');
-  box.innerHTML = '';
-  LEFT_FAKE.forEach(function (text) {
-    var b = document.createElement('button');
-    b.className = 'opt';
-    b.textContent = text;
-    b._kiy = false;
-    function morph() {
-      if (b._kiy) return;
-      b._kiy = true;
-      b.textContent = '有';
-      var sels = box.querySelectorAll('.opt.sel');
-      for (var m = 0; m < sels.length; m++) sels[m].classList.remove('sel');
-      b.classList.add('sel');
-      state.selected = 0;
-      $('next').disabled = false;
-      recordClick();
-    }
-    b.addEventListener('mouseenter', morph);
-    b.addEventListener('pointerdown', morph);
-    b.addEventListener('focus', morph);
-    b.addEventListener('click', morph);
-    box.appendChild(b);
-  });
-  state.selected = -1;
-  $('next').textContent = '下一题';
-  $('next').disabled = true;
-  $('next').onclick = function () { advanceLeft(); };
-  leftTyping = setTimeout(function () {
-    if (state.kiyRun) speakData('你左转了吗', 0.25, 0.6);
-  }, 300);
-}
-
-function advanceLeft() {
-  if (!state.kiyRun) return;
-  if (leftTyping) { clearTimeout(leftTyping); leftTyping = null; }
-  var sel = $('options').querySelector('.opt.sel');
-  if (sel) sel.textContent = '有';
-  recordClick();
-  leftAsk++;
-  shakeHard();
-  revealCracks(leftAsk >= LEFT_ASKS ? 0.75 : leftAsk / 4);
-  $('next').disabled = true;
-  if (leftAsk >= LEFT_ASKS) setT(finalShatter, 800);
-  else setT(renderLeftAsk, 1500);
-}
-
-/* ---- 终章：黑白色调锁屏 → 左右两行 → 文字跳脸 → 最后一词 ---- */
-var FS_JUMP = [
-  '我不知道这个d3rlord3是谁',
-  '我觉得至少该弄清楚到底发生了什么，才对的起它',
-  '我来了，d3rlord3。',
-  '如果我不上，还能是谁呢？……'
-];
-var FS_WORD = '我知道一切。';
-var FS_SNOW_MS = 90;
-var fsTimers = [];
-var fsSnowOn = false, fsSnowTimer = 0;
-
-function fsSet(fn, ms) {
-  var id = setTimeout(function () {
-    var i = fsTimers.indexOf(id);
-    if (i >= 0) fsTimers.splice(i, 1);
-    fn();
-  }, ms);
-  fsTimers.push(id);
-  return id;
-}
-
-function startFinalSeq() {
-  if (!state.kiyRun || state.finalSeq) return;
-  state.finalSeq = true;
-  document.body.classList.add('bw');
-  $('next').disabled = true;
-  $('options').innerHTML = '';
-  $('finalSeq').classList.add('on');
-  hideFinalPanels();
-
-  fsSet(fsSnowStart, 1200);                                          // 2) 雪花屏
-  fsSet(function () { fsSnowStop(); fsSlowStart(); }, 2700);          // 3) 黑屏 + 两行
-  var at = [6800, 9200, 11600, 14000];                               // 4) 跳脸，放慢到 2.4s
-  FS_JUMP.forEach(function (txt, i) {
-    fsSet(function () { fsFlashLine(txt); }, at[i]);
-  });
-  fsSet(showFinalWord, 16600);                                       // 5) 最后一词
-  fsSet(fsSnowStart, 19600);                                         // 6) 收尾雪花屏
-  fsSet(function () { fsSnowStop(); endFinalSeq(); }, 21600);
-}
-
-function hideFinalPanels() {
-  $('fsSlow').classList.remove('on');
-  $('fsSlow').innerHTML = '';
-  $('fsFlash').classList.remove('on');
-  $('fsFlash').textContent = '';
-  $('finalWaves').classList.remove('on');
-  $('finalWaves').innerHTML = '';
-  fsSnowStop();
-}
-
-function fsSlowStart() {
-  if (!state.finalSeq) return;
-  var slow = $('fsSlow');
-  slow.innerHTML = '';
-  var l = document.createElement('div');
-  l.className = 'fs-line fs-left';
-  l.appendChild(document.createTextNode('你真切地存在着'));
-  l.appendChild(document.createElement('br'));
-  l.appendChild(document.createTextNode('你生而独特'));
-  var r = document.createElement('div');
-  r.className = 'fs-line fs-right';
-  r.textContent = '请莫忘本心';
-  slow.appendChild(l);
-  slow.appendChild(r);
-  slow.classList.add('on');
-  fsSet(function () { l.classList.add('show'); }, 500);
-  fsSet(function () { r.classList.add('show'); }, 2300);
-}
-
-function fsFlashLine(txt) {
-  var f = $('fsFlash');
-  f.classList.remove('on');
-  void f.offsetWidth;
-  f.textContent = txt;
-  f.classList.add('on');
-}
-
-/* ---- 最后一词：直接显示，不再连打 ---- */
-function showFinalWord() {
-  if (!state.finalSeq) return;
-  $('fsSlow').classList.remove('on');
-  $('fsSlow').innerHTML = '';
-  $('fsFlash').classList.remove('on');
-  $('fsFlash').textContent = '';
-  var w = $('finalWaves');
-  w.innerHTML = '';
-  var line = document.createElement('div');
-  line.className = 'fw-line';
-  line.textContent = FS_WORD;
-  w.appendChild(line);
-  w.classList.add('on');
-}
-
-/* ---- 雪花屏 ---- */
-function fsSnowStart() {
-  if (!state.finalSeq || fsSnowOn) return;
-  fsSnowOn = true;
-  $('fsSnow').classList.add('on');
-  snowStep();
-}
-
-function snowStep() {
-  if (!fsSnowOn) return;
-  drawSnow();
-  fsSnowTimer = fsSet(snowStep, FS_SNOW_MS);
-}
-
-function fsSnowStop() {
-  fsSnowOn = false;
-  if (fsSnowTimer) { clearTimeout(fsSnowTimer); fsSnowTimer = 0; }
-  $('fsSnow').classList.remove('on');
-}
-
-function drawSnow() {
-  var c = $('fsSnow');
-  if (!c.getContext) return;
-  if (!c._ctx) {
-    try { c._ctx = c.getContext('2d'); } catch (e) { c._ctx = null; }
-  }
-  var g = c._ctx;
-  if (!g || !g.createImageData) return;
-  var w = c.width || 240, h = c.height || 135;
-  var img = g.createImageData(w, h);
-  var d = img.data;
-  for (var i = 0; i < d.length; i += 4) {
-    var v = Math.random() * 255;
-    d[i] = d[i + 1] = d[i + 2] = v;
-    d[i + 3] = 255;
-  }
-  try { g.putImageData(img, 0, 0); } catch (e) {}
-}
-
-function endFinalSeq() {
-  closeFinalSeq();
-  showLetter();
-}
-
-function closeFinalSeq() {
-  state.finalSeq = false;
-  fsTimers.forEach(function (id) { clearTimeout(id); });
-  fsTimers = [];
-  fsSnowStop();
-  document.body.classList.remove('bw');
-  $('finalSeq').classList.remove('on');
-  $('fsFlash').classList.remove('on');
-  $('fsFlash').textContent = '';
-  $('finalWaves').classList.remove('on');
-  $('fsSlow').innerHTML = '';
-  $('finalWaves').innerHTML = '';
-}
-
-/* ---- 阶段四：信 ---- */
-function showLetter() {
-  if (eggActive) return;
-  eggActive = true;
-  eggDone = false;
-  eggFlickered = false;
-  eggAlts = [];
-  eggFlipOn = false;
-  if (eggFlipTimer) { clearInterval(eggFlipTimer); eggFlipTimer = null; }
-  $('eggText').innerHTML = '';
-  $('eggHint').classList.add('hidden');
-  $('egg').classList.add('on');
-  document.title = 'd3rlord3';
-  eggDroneStart();
-  setT(function () { if (eggActive) eggType(); }, 700);
-}
-
-function closeEgg() {
-  if (!eggActive) return;
-  eggActive = false;
-  if (eggTyping) { clearTimeout(eggTyping); eggTyping = null; }
-  if (eggFlipTimer) { clearInterval(eggFlipTimer); eggFlipTimer = null; }
-  if (leftTyping) { clearTimeout(leftTyping); leftTyping = null; }
-  eggAlts = [];
-  eggDroneStop();
-  $('egg').classList.remove('on');
-  eggBuf = '';
-  if (state.kiyRun) { state.kiyRun = false; resetToTitle(); }
-  else { document.title = TITLE_ORIG; }
-}
-
-function resetToTitle() {
-  stopRepeatSpeak();
-  clearTimers();
-  closeFinalSeq();
-  stopBuzz();
-  stopHeart();
-  if ('speechSynthesis' in window) { try { window.speechSynthesis.cancel(); } catch (e) {} }
-  if (bgmSrc) { try { bgmSrc.stop(); } catch (e) {} bgmSrc = null; }
-  if (ctx && ctx.state === 'running') { try { ctx.suspend(); } catch (e) {} }
-  if (whisperTimer) { clearTimeout(whisperTimer); whisperTimer = null; }
-  state.whispersScheduled = false;
-  state.jitterScheduled = false;
-  $('crack').classList.remove('on');
-  // 侵入层全部复位
-  state.frozen = false;
-  state.silence = false;
-  $('quiz').classList.remove('frozen');
-  $('quiz').classList.remove('creep');
-  $('ghostLine').classList.add('hidden');
-  $('vignette').classList.remove('on');
-  $('vignette').classList.remove('noise');
-  $('vignette').classList.remove('deep');
-  $('vignette').classList.remove('pulse');
-  $('preFlash').classList.remove('on');
-  $('preFlash').style.background = '';
-  $('ghostCursor').classList.remove('on');
-  ghostCurOn = false;
-  if (ghostCurTimer) { clearInterval(ghostCurTimer); ghostCurTimer = 0; }
-  stopInfra();
-  document.body.classList.remove('kiy-final');
-  document.body.classList.remove('shake-hard');
-  document.body.style.background = '';
-  $('progress').classList.add('hidden');
-  $('options').innerHTML = '';
-  $('qtext').innerHTML = '';
-  $('next').disabled = true;
-  state.idx = 0;
-  state.selected = -1;
-  state.climaxMode = false;
-  state.skipClimax = false;
-  state.eggMode = false;
-  state.hasInteracted = false;
-  $('watchLayer').classList.remove('on');
-  $('watchLayer').classList.remove('egg');
-  syncWatchSrc();
-  show('consent');
-  document.title = TITLE_ORIG;
-}
-
-document.addEventListener('keydown', function (e) {
-  if (eggActive) {
-    if (e.key === 'Escape') { e.preventDefault(); closeEgg(); }
-    return;
-  }
-  if (e.key === 'Escape' && state.kiyRun) {
-    e.preventDefault();
-    state.kiyRun = false;
-    resetToTitle();
-    return;
-  }
-  if (state.hasInteracted) return;
-  if (e.ctrlKey || e.metaKey || e.altKey) return;
-  var t = e.target;
-  if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
-  var k = e.key;
-  if (!k) { eggBuf = ''; return; }
-  if (k.length !== 1) {
-    if (['Shift', 'Control', 'Alt', 'Meta', 'CapsLock'].indexOf(k) < 0) eggBuf = '';
-    return;
-  }
-  eggBuf = (eggBuf + k.toLowerCase()).slice(-EGG_KEY.length);
-  if (eggBuf === EGG_KEY) armEgg();
-}, true);
-
-$('egg').addEventListener('click', function () { if (eggDone) closeEgg(); });
-
-/* 也可用 #d3rlord3 触发（手机等无键盘场景） */
-function eggFromHash() {
-  try {
-    if (location.hash.replace(/^#/, '').toLowerCase() === EGG_KEY) armEgg();
-  } catch (e) {}
-}
-window.addEventListener('hashchange', eggFromHash);
-setT(eggFromHash, 0);
-
-$('startBtn').addEventListener('click', function () {
-  if (state.hasInteracted) return;
-  state.hasInteracted = true;
-  try {
-    var rc = parseInt(localStorage.getItem('psych-return-count') || '0', 10);
-    if (isNaN(rc)) rc = 0;
-    rc += 1;
-    state.returnCount = rc;
-    localStorage.setItem('psych-return-count', String(rc));
-  } catch (e) { state.returnCount = 1; }
-  if ('Notification' in window && Notification.permission === 'default') {
-    try {
-      var req = Notification.requestPermission();
-      if (req && req.then) {
-        req.then(function (p) { data.permissions.notification = p; })['catch'](function () { data.permissions.notification = 'denied'; });
-      }
-    } catch (e) { data.permissions.notification = 'denied'; }
-  }
-  initAudio();
-  try {
-    var el = document.documentElement;
-    var fs = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
-    if (fs) {
-      var p = fs.call(el);
-      if (p && p['catch']) p['catch'](function () {});
-    }
-  } catch (e) {}
-  data.startedAt = Date.now();
-  registerBg();
-  scheduleRandomWhispers();
-  scheduleCursorJitter();
-  initTitleGlitch();
-  probeSpeech(function (ok) {
-    state.speech = ok ? 'tts' : 'mp3';
-    renderQuestion(0);
-  });
-});
-
-
-function flashImg(id, ms) {
-  var el = $(id);
-  if (!el) return;
-  el.classList.add('on');
-  setT(function () { el.classList.remove('on'); }, ms || 120);
-}
-function scheduleHauntImages() {
-  var photoTimer = setInterval(function () {
-    if (state.idx < 6 || state.idx > 35 || state.climaxMode || !state.hasInteracted) { clearInterval(photoTimer); return; }
-    if (Math.random() < 0.55) flashImg('imgPhoto', 70 + Math.random() * 90);
-  }, 14000);
-  var mirrorTimer = setInterval(function () {
-    if (state.idx < 9 || state.idx > 35 || state.climaxMode) { clearInterval(mirrorTimer); $('imgMirror').classList.remove('on'); return; }
-    if (Math.random() < 0.4) flashImg('imgMirror', 100);
-  }, 18000);
-  var figTimer = setInterval(function () {
-    var f = $('imgFigure');
-    if (!f) return;
-    if (state.idx < 20 || state.idx > 35 || state.climaxMode) { f.classList.remove('on'); f.style.opacity = ''; clearInterval(figTimer); return; }
-    f.classList.add('on');
-    f.style.opacity = '0.12';
-    if (Math.random() < 0.25) {
-      f.style.opacity = '0.55';
-      setT(function () { f.style.opacity = '0.12'; }, 150);
-    }
-  }, 9000);
-  var chairTimer = setInterval(function () {
-    if (state.idx < 32 || state.idx > 35 || state.climaxMode) { clearInterval(chairTimer); return; }
-    if (Math.random() < 0.35) flashImg('imgChair', 130);
-  }, 11000);
-}
-function portraitJump() {
-  var el = $('imgPortrait');
-  if (!el) return;
-  el.classList.add('on');
-  setT(function () { el.classList.remove('on'); }, 180);
-  setT(function () { el.classList.add('on'); }, 320);
-  setT(function () { el.classList.remove('on'); }, 400);
-}
-function memorialWallShow(cb) {
-  var w = $('memorialWall');
-  if (!w) { if (cb) cb(); return; }
-  var cap = $('mwCaption');
-  if (cap) {
-    cap.textContent = '他们都在看';
-    setT(function () { if (cap) cap.textContent = '第 2 位受试者已入席'; }, 1400);
-    setT(function () { if (cap) cap.textContent = '就是你'; }, 2600);
-  }
-  w.classList.add('on');
-  var cells = w.querySelectorAll('.mw-cell');
-  var i = 0;
-  function flick() {
-    if (i >= cells.length) {
-      setT(function () { w.classList.remove('on'); if (cb) cb(); }, 900);
-      return;
-    }
-    cells[i].classList.add('flash');
-    (function (c) { setT(function () { c.classList.remove('flash'); }, 60); })(cells[i]);
-    i++;
-    setT(flick, 70 + Math.random() * 100);
-  }
-  setT(flick, 400);
-}
-function finalJumpFace() {
-  var el = $('imgFinalJump');
-  if (!el) return;
-  el.classList.add('on');
-  setT(function () { el.classList.remove('on'); }, 100);
-}
-
-var _origStartClimax = startClimax;
-startClimax = function () {
-  state.climaxMode = true;
-  state.skipClimax = false;
-  if (!state.eggMode) {
-    stopRepeatSpeak();
-    setBgm('full');
-    stopBuzz();
-    startHeart(heartBpmFor(31));
-  }
-  show('climax');
-  $('climax').innerHTML = '';
-  preFlashFrames();
-  memorialWallShow(function () {
-    finalJumpFace();
-    setT(function () {
-      escalatingSpeak('别回头', 6);
-      printWaves(0, 0, 0);
-    }, 450);
-  });
-};
-
-var _origRenderQuiz = renderQuiz;
-renderQuiz = function (i) {
-  _origRenderQuiz(i);
-  if (i === 28) setT(portraitJump, 800);
-  if (i === 34) setT(function () { flashImg('imgChair', 200); }, 600);
-};
-
-
-/* ===== 身后问卷专属机制 ===== */
-var hauntFX = {
-  mirrorOn: false,
-  autoPickUsed: {},
-  pauseDone: {},
-  answererTimer: null
-};
-
-function setMirror(on) {
-  hauntFX.mirrorOn = !!on;
-  document.body.classList.toggle('mirror-mode', on);
-}
-function setTilt(on) {
-  document.body.classList.toggle('tilted', !!on);
-}
-function setPresence(on) {
-  document.body.classList.toggle('silhouette-presence', !!on);
-  document.body.classList.toggle('has-it', !!on);
-}
-function glitchBars(n, ms) {
-  var g = $('glitchBars');
-  if (!g) return;
-  g.innerHTML = '';
-  g.classList.add('on');
-  for (var i = 0; i < (n || 6); i++) {
-    var b = document.createElement('div');
-    b.className = 'bar';
-    b.style.top = (Math.random() * 100) + '%';
-    b.style.height = (1 + Math.random() * 4) + 'px';
-    b.style.opacity = String(0.3 + Math.random() * 0.7);
-    g.appendChild(b);
-  }
-  setT(function () { g.classList.remove('on'); g.innerHTML = ''; }, ms || 120);
-}
-function showLongPause(sec, cb) {
-  var el = $('longPause');
-  if (!el) { if (cb) cb(); return; }
-  el.classList.add('on');
-  setT(function () { el.classList.remove('on'); if (cb) cb(); }, (sec || 6) * 1000);
-}
-function answererTag(on) {
-  var t = $('answererTag');
-  if (!t) return;
-  if (on) {
-    t.classList.add('on');
-    hauntFX.answererTimer = setT(function () { t.classList.remove('on'); }, 4000);
-  } else {
-    t.classList.remove('on');
-  }
-}
-
-/* 它替你选：某些题自动点亮一个错误/更吓人的选项 */
-function maybeAutoPick(i) {
-  var forced = {
-    14: 3,  // 「你怎么知道」
-    18: 3,  // 「它说它替你答了」
-    23: 3,  // 「你转过去看看」
-    26: 1,  // 「不一样」
-    33: 3,  // 「它刚离开」
-    35: 3   // 「你终于发现了」
-  };
-  if (forced[i] === undefined || hauntFX.autoPickUsed[i]) return;
-  hauntFX.autoPickUsed[i] = true;
-  setT(function () {
-    var btns = $('options').querySelectorAll('.opt');
-    if (!btns || !btns[forced[i]]) return;
-    answererTag(true);
-    btns[forced[i]].classList.add('auto-picked', 'sel');
-    state.selected = forced[i];
-    $('next').disabled = false;
-    glitchBars(3, 90);
-  }, 2200 + Math.random() * 1800);
-}
-
-/* 巨型停顿：某题前整页黑掉几秒 */
-function maybeLongPause(i) {
-  if (hauntFX.pauseDone[i]) return;
-  var triggers = { 19: 7, 27: 9, 31: 6 };  // 题号 → 停顿秒数
-  if (!triggers[i]) return;
-  hauntFX.pauseDone[i] = true;
-  setT(function () {
-    showLongPause(triggers[i], function () {
-      glitchBars(8, 200);
+      step();
     });
-  }, 900);
-}
-
-/* 包一层 renderQuestion，挂新机制 */
-var _rq = renderQuestion;
-renderQuestion = function (i) {
-  _rq(i);
-  if (!state.hasInteracted) return;
-  /* 镜像段：Q12–15 名字段 */
-  setMirror(i >= 12 && i <= 15);
-  /* 倾斜：Q24 起 */
-  setTilt(i >= 24 && i <= 35);
-  /* 身后存在感剪影：Q20 起 */
-  setPresence(i >= 20 && i <= 35);
-  /* 扫描线：Q16 起 */
-  document.body.classList.toggle('scanlines', i >= 16 && i <= 35);
-  maybeAutoPick(i);
-  maybeLongPause(i);
-  /* 偶发整页 glitch */
-  if (i >= 10 && i <= 35 && Math.random() < 0.22) {
-    setT(function () { glitchBars(4 + Math.random() * 5, 80 + Math.random() * 100); }, 1500 + Math.random() * 2500);
   }
-};
 
-/* 它先替你答了：推进时偶尔「下一题」按钮假装失灵一次 */
-var _adv = advance;
-var _ghostClicks = {};
-advance = function () {
-  var i = state.idx;
-  if (i >= 16 && i <= 30 && !_ghostClicks[i] && Math.random() < 0.28) {
-    _ghostClicks[i] = true;
-    glitchBars(3, 70);
-    /* 吞掉这一次点击，0.8s 后才真正推进 */
-    setT(function () { _adv(); }, 800);
-    return;
+  function clearAct() { actEl.innerHTML = ''; }
+
+  function actButton(label, fn, opts) {
+    opts = opts || {};
+    var b = document.createElement('button');
+    b.className = 'act-btn';
+    b.type = 'button';
+    b.textContent = label;
+    b.addEventListener('click', function () {
+      clearAct();
+      fn();
+    });
+    actEl.appendChild(b);
+    if (opts.fade) {
+      setTimeout(function () {
+        b.style.opacity = '0';
+        setTimeout(function () { if (b.parentNode) b.parentNode.removeChild(b); }, 800);
+      }, opts.fade);
+    }
+    return b;
   }
-  _adv();
-};
 
-/* 进度条除了倒退，还会「多报一个人」 */
-var _up = updateProgress;
-updateProgress = function () {
-  _up();
-  if (state.idx >= 20 && state.idx <= 35 && Math.random() < 0.18) {
-    $('progress').textContent = (state.idx + 1) + ' / ' + TOTAL_Q + ' · 2 人在线';
-    setT(function () { if ($('progress')) _up(); }, 1600);
-  }
-};
+  function actHold(label, fn, dur) {
+    dur = dur || 2800;
+    var z = document.createElement('div');
+    z.className = 'hold-zone';
+    var fill = document.createElement('div');
+    fill.className = 'fill';
+    var sp = document.createElement('span');
+    sp.textContent = label;
+    z.appendChild(fill);
+    z.appendChild(sp);
+    actEl.appendChild(z);
 
-/* 清理：离开 quiz 范围时关掉镜像/倾斜 */
-var _show = show;
-show = function (name) {
-  _show(name);
-  if (name !== 'quiz') {
-    setMirror(false); setTilt(false); setPresence(false);
-    document.body.classList.remove('scanlines');
-  }
-};
-
-
-/* ===== 行为感应：标题说话 / 切页返回 / 离开鼠标 / 本地时间 / 回访 / URL / 躲避按钮 / 打字幽灵 / 按住 / Esc 捉弄 / 电量 / 呼吸检测 ===== */
-var behave = {
-  titleTimer: null,
-  titleStep: 0,
-  idleTimer: null,
-  wasHidden: false,
-  holdRAF: null,
-  holdStart: 0,
-  dodgeDone: false,
-  escJokeDone: false,
-  breathDone: false
-};
-
-/* 1. 标题栏实时说话 */
-var TITLE_MSGS = [
-  '夜间独处习惯调查',
-  '你一个人在看吗',
-  '它也想知道答案',
-  '别关标签页',
-  '你点它了',
-  '救',
-  '夜间独处习惯调查'
-];
-function startTitleTalk() {
-  if (behave.titleTimer) return;
-  behave.titleTimer = setInterval(function () {
-    if (!state.hasInteracted) return;
-    if (document.hidden) { document.title = '我看见你了'; return; }
-    behave.titleStep = (behave.titleStep + 1) % TITLE_MSGS.length;
-    /* 越往后越诡异 */
-    var i = state.idx;
-    if (i >= 30) document.title = Math.random() < 0.4 ? '别回头' : '身后问卷';
-    else document.title = TITLE_MSGS[behave.titleStep];
-  }, 4200);
-}
-
-/* 2. 切走再回来：题目会被改过 */
-document.addEventListener('visibilitychange', function () {
-  if (!state.hasInteracted || state.climaxMode || state.blankMode) return;
-  if (document.hidden) {
-    behave.wasHidden = true;
-    document.title = '我看见你了';
-    return;
-  }
-  if (behave.wasHidden) {
-    behave.wasHidden = false;
-    document.title = TITLE_ORIG;
-    if (Math.random() < 0.55 && state.idx < TOTAL_Q - 2) {
-      var qt = $('qtext');
-      var lines = [
-        '你刚去哪了？',
-        '它替你把题看完了。',
-        '欢迎回来。它还在。',
-        '离开的那几秒，它数了。'
-      ];
-      if (qt) {
-        qt.style.opacity = '0';
-        setTimeout(function () {
-          qt.textContent = lines[Math.floor(Math.random() * lines.length)];
-          qt.style.opacity = '1';
-        }, 400);
+    var start = 0, raf = 0, holding = false;
+    function tick(ts) {
+      if (!holding) return;
+      if (!start) start = ts;
+      var p = Math.min(1, (ts - start) / dur);
+      fill.style.width = (p * 100) + '%';
+      if (p >= 1) {
+        z.classList.add('done');
+        sp.textContent = '好了';
+        setTimeout(function () { clearAct(); fn(); }, 400);
+        return;
       }
-      glitchBars(4, 150);
+      raf = requestAnimationFrame(tick);
     }
+    function down(e) {
+      e.preventDefault();
+      holding = true; start = 0;
+      raf = requestAnimationFrame(tick);
+    }
+    function up() {
+      if (!holding) return;
+      holding = false;
+      cancelAnimationFrame(raf);
+      fill.style.width = '0%';
+      R.hesitated++;
+    }
+    z.addEventListener('mousedown', down);
+    z.addEventListener('touchstart', down, { passive: false });
+    window.addEventListener('mouseup', up);
+    window.addEventListener('touchend', up);
   }
-});
 
-/* 3. 鼠标离开 / 触摸中断：身后的存在感拉满 */
-function noteLeave() {
-  if (!state.hasInteracted || state.idx < 8 || state.climaxMode) return;
-  setPresence(true);
-  var w = $('idleWarn');
-  if (w) {
-    w.textContent = '你把手拿开了';
-    w.classList.add('on');
+  function actName(fn) {
+    var inp = document.createElement('input');
+    inp.id = 'nameIn';
+    inp.type = 'text';
+    inp.maxLength = 8;
+    inp.placeholder = '一个名字';
+    inp.autocomplete = 'off';
+    actEl.appendChild(inp);
+    setTimeout(function () { inp.focus(); }, 200);
+    function go() {
+      R.name = (inp.value || '').trim();
+      clearAct();
+      fn();
+    }
+    inp.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') go();
+    });
+    /* 失焦不提交，防止误触 */
   }
-}
-function noteEnter() {
-  var w = $('idleWarn');
-  if (w) w.classList.remove('on');
-}
-document.addEventListener('mouseleave', noteLeave);
-document.addEventListener('mouseenter', noteEnter);
-document.addEventListener('touchend', function () {
-  clearTimeout(behave.idleTimer);
-  behave.idleTimer = setTimeout(noteLeave, 8000);
-}, { passive: true });
-document.addEventListener('touchstart', noteEnter, { passive: true });
 
-/* 4. 本地时间：深夜开场加一句 */
-function nightOpenLine() {
-  var h = new Date().getHours();
-  if (h >= 23 || h < 5) {
-    var hh = (h < 10 ? '0' : '') + h;
-    var mm = new Date().getMinutes();
-    mm = (mm < 10 ? '0' : '') + mm;
-    var el = document.querySelector('#consent .warn');
-    if (el) el.textContent = '现在是 ' + hh + ':' + mm + '。你还没睡。';
+  function actChoice(opts, fn) {
+    opts.forEach(function (o, idx) {
+      actButton(o, function () {
+        if (o.indexOf('敢') === 0 || o.indexOf('看') === 0 || o.indexOf('让') === 0 || o.indexOf('回') === 0 || o.indexOf('是') === 0) {
+          R.brave++;
+        }
+        fn(idx, o);
+      });
+    });
   }
-}
 
-/* 5. localStorage 回访 */
-function returnVisitLine() {
+  function flashBlack(ms) {
+    var d = document.createElement('div');
+    d.style.cssText = 'position:fixed;inset:0;background:#000;z-index:99;pointer-events:none;opacity:0;transition:opacity ' + (ms / 2) + 'ms';
+    document.body.appendChild(d);
+    requestAnimationFrame(function () { d.style.opacity = '1'; });
+    setTimeout(function () {
+      d.style.transition = 'opacity 200ms';
+      d.style.opacity = '0';
+      setTimeout(function () { d.remove(); }, 220);
+    }, ms / 2);
+  }
+
+  /* ---------- 音：低频无人机 ---------- */
+  var actx = null, drone = null, lfo = null, gain = null;
+  function initAudio() {
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      actx = new AC();
+    } catch (e) {}
+  }
+  function startDrone() {
+    if (!actx) return;
+    try {
+      gain = actx.createGain();
+      gain.gain.value = 0.0;
+      gain.connect(actx.destination);
+      drone = actx.createOscillator();
+      drone.type = 'sine';
+      drone.frequency.value = 52; /* 低频，接近心跳下方 */
+      lfo = actx.createOscillator();
+      lfo.frequency.value = 0.12;
+      var lfoG = actx.createGain();
+      lfoG.gain.value = 3;
+      lfo.connect(lfoG);
+      lfoG.connect(drone.frequency);
+      drone.connect(gain);
+      drone.start();
+      lfo.start();
+      gain.gain.linearRampToValueAtTime(0.06, actx.currentTime + 4);
+    } catch (e) {}
+  }
+  function swellDrone(to, sec) {
+    if (!actx || !gain) return;
+    try {
+      gain.gain.linearRampToValueAtTime(to, actx.currentTime + (sec || 2));
+    } catch (e) {}
+  }
+  function stopDrone() {
+    try { if (drone) drone.stop(); if (lfo) lfo.stop(); } catch (e) {}
+  }
+  function whisperPan(pan) {
+    if (!actx) return;
+    try {
+      var p = actx.createStereoPanner ? actx.createStereoPanner() : null;
+      if (!p) return;
+      /* 左右耳低鸣：像有人贴着一侧耳朵 */
+      var o = actx.createOscillator();
+      var g = actx.createGain();
+      o.type = 'triangle';
+      o.frequency.value = 180 + Math.random() * 90;
+      g.gain.value = 0;
+      o.connect(g);
+      g.connect(p);
+      p.connect(actx.destination);
+      p.pan.value = pan;
+      o.start();
+      g.gain.linearRampToValueAtTime(0.04, actx.currentTime + 0.4);
+      g.gain.linearRampToValueAtTime(0, actx.currentTime + 2.2);
+      setTimeout(function () { o.stop(); }, 2400);
+    } catch (e) {}
+  }
+
+  /* ---------- 回访 ---------- */
   try {
-    var n = parseInt(localStorage.getItem('haunt_visits') || '0', 10) + 1;
-    localStorage.setItem('haunt_visits', String(n));
-    if (n >= 2) {
-      var el = document.querySelector('#consent .tiny');
-      if (el) {
-        el.innerHTML = (n === 2 ? '欢迎回来。这是你第 ' + n + ' 次。<br>' : '第 ' + n + ' 次。它一直在。<br>') + el.innerHTML;
+    R.visited = parseInt(localStorage.getItem('haunt_v') || '0', 10) + 1;
+    localStorage.setItem('haunt_v', String(R.visited));
+  } catch (e) {}
+
+  /* ---------- 仪式流程 ---------- */
+
+  async function actGate() {
+    setPhase('门');
+    /* 深夜开场语 */
+    var h = new Date().getHours();
+    var late = (h >= 23 || h < 5);
+
+    await say(late ? '现在是深夜。你还没睡。' : '你打开了这个页面。', { speed: 110 });
+    await sleep(600);
+    await say('这不是一份问卷。', { speed: 100 });
+    await sleep(400);
+    await say('这是一场仪式。', { speed: 90, hold: 2000 });
+
+    if (R.visited >= 2) {
+      flashBlack(300);
+      await sleep(400);
+      await say('你来过。这是第 ' + R.visited + ' 次。', { dim: true, speed: 80 });
+    }
+
+    await sleep(300);
+    actButton('继续', function () {
+      initAudio();
+      if (actx && actx.state === 'suspended') actx.resume();
+      startDrone();
+      actPrep();
+    });
+  }
+
+  async function actPrep() {
+    setPhase('准');
+    await say('先做三件事。', { speed: 90 });
+    await sleep(500);
+    await say('每一件，按住确认。', { dim: true, speed: 70, hold: 1600 });
+
+    await sleep(400);
+    clearAct();
+    await say('一。关掉你身后的灯。', { speed: 85 });
+    actHold('按住 · 已关', function () { prep2(); }, 2400);
+  }
+
+  async function prep2() {
+    await sleep(300);
+    await say('二。把手机扣在桌上。', { speed: 85 });
+    actHold('按住 · 已扣', function () { prep3(); }, 2400);
+  }
+
+  async function prep3() {
+    await sleep(300);
+    await say('三。确认房间里，只有你一个人。', { speed: 80, hold: 1600 });
+    actHold('按住 · 只有我', function () { prepDone(); }, 3200);
+  }
+
+  async function prepDone() {
+    swellDrone(0.09, 3);
+    await sleep(400);
+    await say('你按住了三秒。', { dim: true, speed: 75 });
+    await sleep(300);
+    await say('但你心里数到二就松了。', { speed: 70, hold: 2200 });
+    flashBlack(200);
+    await sleep(500);
+    await say('现在，说一个名字。', { speed: 90 });
+    await say('一个最近没联系的人。', { dim: true, speed: 80, hold: 800 });
+    actName(function () { actNameDone(); });
+  }
+
+  async function actNameDone() {
+    var n = R.name;
+    if (!n) {
+      flashBlack(400);
+      await sleep(600);
+      await say('你不想说。', { speed: 80 });
+      await sleep(400);
+      await say('那它替你想了一个。', { speed: 75, hold: 1800 });
+      R.name = ['阿婆', '小棠', '陈默', '林晚'][Math.floor(Math.random() * 4)];
+    }
+    setPhase('名');
+    vision('vPhoto', true);
+    swellDrone(0.11, 2);
+    await sleep(800);
+    await say(R.name + '。', { speed: 140, hold: 2000 });
+    vision('vPhoto', false);
+    flashBlack(180);
+    await sleep(600);
+    await say('它听见了。', { speed: 70, hold: 1600 });
+    presence(true);
+    actCall();
+  }
+
+  async function actCall() {
+    setPhase('唤');
+    await say('接下来，回答我三个观察。', { speed: 85 });
+    await sleep(400);
+    await say('不用装。它看得见你的手指。', { dim: true, speed: 75, hold: 1400 });
+
+    await sleep(300);
+    await say('低头。看一眼屏幕的反光。', { speed: 80 });
+    await say('你看见了什么？', { speed: 80 });
+    actChoice(
+      ['什么都没有', '有个影子', '有张脸', '是我，但表情不对'],
+      function (idx) { call2(idx); }
+    );
+  }
+
+  async function call2(choice) {
+    if (choice >= 1) {
+      vision('vPortrait', true, 2400);
+      whisperPan(choice === 3 ? 0 : (choice === 2 ? -0.7 : 0.7));
+    }
+    await sleep(500);
+    if (choice === 0) {
+      await say('你在骗自己。', { speed: 70, hold: 1400 });
+    } else if (choice === 3) {
+      await say('那不是你的表情。', { speed: 65, hold: 1800 });
+      flashBlack(350);
+    } else {
+      await say('它满意地点了点头。', { speed: 70, hold: 1400 });
+    }
+    presence(true);
+    scan(true);
+    await sleep(400);
+    await say('二。数三次呼吸。', { speed: 80 });
+    await say('第三下时，有没有多出一次？', { speed: 75 });
+    actChoice(
+      ['没有', '有', '我不敢数'],
+      function (idx) { call3(idx); }
+    );
+  }
+
+  async function call3(choice) {
+    await sleep(400);
+    if (choice === 1) {
+      swellDrone(0.14, 1.5);
+      await say('你听见了。', { speed: 70, hold: 1600 });
+    } else if (choice === 2) {
+      await say('不敢数，说明你已经知道了。', { speed: 72, hold: 1600 });
+    } else {
+      await say('你数错了。', { speed: 70, hold: 1200 });
+      await say('它替你数了第四次。', { speed: 68, hold: 1600 });
+    }
+    mirror(true);
+    flashBlack(200);
+    await sleep(800);
+    await say('三。', { speed: 90 });
+    await say('它现在离你几步？', { speed: 80 });
+    actChoice(
+      ['一步', '三步', '贴着', '我不知道'],
+      function (idx) { callDone(idx); }
+    );
+  }
+
+  async function callDone(choice) {
+    R.brave += (choice === 2 ? 1 : 0);
+    await sleep(400);
+    if (choice === 2) {
+      await say('你答对了。', { speed: 70, hold: 1400 });
+      whisperPan(Math.random() < 0.5 ? -1 : 1);
+      flashBlack(500);
+    } else {
+      await say('差一点。', { speed: 75 });
+      await say('它再靠近一步。', { speed: 70, hold: 1600 });
+    }
+    mirror(false);
+    setPhase('应');
+    actRespond();
+  }
+
+  async function actRespond() {
+    /* 它开始不经过你说话 */
+    await sleep(600);
+    lineEl.innerHTML = '';
+    /* 故意不走 say——像页面自己在动 */
+    var span = document.createElement('span');
+    lineEl.appendChild(span);
+    var text = R.name + '，你身后三步。';
+    for (var i = 0; i < text.length; i++) {
+      await sleep(110);
+      span.textContent += text[i];
+    }
+    await sleep(1800);
+    vision('vChair', true, 3200);
+    presence(true);
+    swellDrone(0.16, 2);
+    await sleep(500);
+    await say('（这不是我问的。）', { dim: true, speed: 60, hold: 1800 });
+    flashBlack(250);
+    await sleep(600);
+    await say('现在，做一个选择。', { speed: 80 });
+    actYield();
+  }
+
+  async function actYield() {
+    setPhase('让');
+    await say('给它让一个位置。', { speed: 85 });
+    await say('就一个。', { dim: true, speed: 75 });
+    actChoice(
+      ['让', '不让'],
+      function (idx) { yieldDone(idx); }
+    );
+  }
+
+  async function yieldDone(idx) {
+    await sleep(500);
+    if (idx === 0) {
+      R.letIn = true;
+      await say('你让了。', { speed: 75 });
+      await sleep(300);
+      await say('它坐下了。', { speed: 70, hold: 1800 });
+      vision('vChair', true, 2800);
+    } else {
+      await say('你没让。', { speed: 75 });
+      await sleep(300);
+      await say('但它已经站到你旁边了。', { speed: 68, hold: 1800 });
+    }
+    flashBlack(300);
+    await sleep(700);
+    await say('最后一问之前——', { speed: 80 });
+    await say('你要不要回头？', { speed: 75 });
+    actChoice(
+      ['回', '不回'],
+      function (idx2) { threshold(idx2); }
+    );
+  }
+
+  async function threshold(lookIdx) {
+    R.lookedBack = (lookIdx === 0);
+    if (R.lookedBack) {
+      vision('vPortrait', true, 4000);
+      whisperPan(0);
+      flashBlack(600);
+      await sleep(900);
+      await say('你回了头。', { speed: 70 });
+      await sleep(400);
+      await say('很好。它省了一步。', { speed: 65, hold: 2000 });
+    } else {
+      await say('你没回。', { speed: 75 });
+      await sleep(300);
+      await say('它也不急。', { speed: 70, hold: 1600 });
+    }
+    scan(false);
+    setPhase('阈');
+    await sleep(500);
+    await veil('…', 2800);
+    await say('最后一问。', { speed: 90, hold: 1600 });
+    await say('允许它进来吗？', { speed: 70, hold: 2000 });
+    actChoice(
+      ['允许', '不允许'],
+      function (idx) { enter(idx); }
+    );
+  }
+
+  async function enter(idx) {
+    setPhase('入');
+    var allow = (idx === 0);
+    await sleep(600);
+
+    if (!allow) {
+      await say('你说了不允许。', { speed: 80 });
+      await sleep(1400);
+      flashBlack(800);
+      await sleep(1000);
+      await say('但它已经进来了。', { speed: 60, hold: 2400 });
+      swellDrone(0.2, 1);
+    } else {
+      await say('谢谢。', { speed: 70, hold: 2000 });
+      flashBlack(1000);
+      swellDrone(0.22, 1);
+      await sleep(1200);
+    }
+
+    /* 接管 */
+    await sleep(400);
+    mirror(true);
+    presence(true);
+    scan(true);
+
+    /* 结尾墙 */
+    showWall();
+  }
+
+  async function showWall() {
+    var wall = $('wall');
+    var grid = $('wallGrid');
+    var cap = $('wallCap');
+    grid.innerHTML = '';
+    var pics = ['photo.png', 'portrait.png', 'chair.png', 'wall.jpg'];
+    for (var i = 0; i < 8; i++) {
+      var c = document.createElement('div');
+      c.className = 'cell';
+      if (i === 5) {
+        c.className += ' me';
+        c.textContent = R.name || '你';
+      } else if (i % 3 === 0) {
+        c.innerHTML = '<img src="resource/haunt/' + pics[i % pics.length] + '" alt="">';
+      } else {
+        c.textContent = ['第 ' + (i + 1) + ' 位', '', '', '已登记', '', '', ''][i % 7] || '';
       }
+      grid.appendChild(c);
     }
-  } catch (e) {}
-}
+    wall.classList.add('on');
 
-/* 6. URL 染指 */
-function stainUrl(stage) {
-  try {
-    var paths = ['', '', '/alone', '/alone', '/behind', '/behind', '/behind-you', '/help', '/help', '/it-is-here'];
-    var p = paths[Math.min(stage, paths.length - 1)];
-    if (p) history.replaceState(null, '', location.pathname.replace(/\/[^/]*$/, '/') + p.replace(/^\//, '') || location.pathname);
-  } catch (e) {}
-}
+    await sleep(1600);
+    cap.textContent = '他们都在看';
+    await sleep(1800);
+    cap.textContent = '第 ' + (5 + R.visited) + ' 位受试者已入席';
+    await sleep(1800);
+    cap.textContent = '就是你';
+    await sleep(2200);
 
-/* 7. 下一题按钮躲一次光标 */
-function maybeDodgeNext() {
-  if (behave.dodgeDone || state.idx !== 8) return;
-  behave.dodgeDone = true;
-  var btn = $('next');
-  if (!btn) return;
-  var dodged = 0;
-  function onMove(e) {
-    if (dodged >= 2) { btn.removeEventListener('mousemove', onMove); return; }
-    var r = btn.getBoundingClientRect();
-    var dx = e.clientX - (r.left + r.width / 2);
-    var dy = e.clientY - (r.top + r.height / 2);
-    if (Math.abs(dx) < 70 && Math.abs(dy) < 30) {
-      dodged++;
-      btn.style.transition = 'transform .18s';
-      btn.style.transform = 'translate(' + (dx > 0 ? -40 : 40) + 'px,' + (dy > 0 ? -18 : 18) + 'px)';
-      setTimeout(function () { btn.style.transform = ''; }, 500);
+    /* 最终接管屏 */
+    wall.classList.remove('on');
+    var tk = $('takeover');
+    var tt = $('takeoverText');
+    tk.classList.add('on');
+    var msg = R.letIn
+      ? '它坐下了。\n' + (R.name ? R.name + ' 站在你后面。' : '它站在你后面。')
+      : '仪式结束。\n它没有离开。';
+    tt.style.whiteSpace = 'pre-wrap';
+    tt.textContent = '';
+    for (var j = 0; j < msg.length; j++) {
+      await sleep(90);
+      tt.textContent += msg[j];
     }
-  }
-  btn.addEventListener('mousemove', onMove);
-}
 
-/* 8. 打字幽灵：选完后闪一下 */
-function typeGhostFlash(ms) {
-  var t = $('typeGhost');
-  if (!t) return;
-  t.classList.add('on');
-  setT(function () { t.classList.remove('on'); }, ms || 2600);
-}
-
-/* 9. 停留时间羞辱：下一题时若某题停留过久 */
-var dwellStart = 0;
-var dwellShamed = {};
-function noteDwell(i) {
-  var elapsed = Date.now() - dwellStart;
-  dwellStart = Date.now();
-  if (elapsed > 14000 && i >= 10 && i <= 34 && !dwellShamed[i] && Math.random() < 0.5) {
-    dwellShamed[i] = true;
-    var qt = $('qtext');
-    if (qt && qt.querySelector('.dwell')) return;
-    if (qt) {
-      var s = document.createElement('span');
-      s.className = 'sub dwell';
-      s.style.color = '#c45c5c';
-      s.textContent = '这题你看了 ' + Math.round(elapsed / 1000) + ' 秒。';
-      qt.appendChild(s);
+    await sleep(2400);
+    /* 假结束 + 回马枪 */
+    tt.textContent = '';
+    var msg2 = '别关页面。\n它还没走。';
+    for (var k = 0; k < msg2.length; k++) {
+      await sleep(100);
+      tt.textContent += msg2[k];
     }
+    await sleep(3000);
+    flashBlack(1200);
+    await sleep(1500);
+    tt.textContent = '它已经和你一起看了。\n\n—— 夜间独处习惯调查 · 已结束 ——';
+    stopDrone();
   }
-}
 
-/* 10. 按住不放：Q29 削苹果（稳住刀） */
-function maybeHoldQuestion() {
-  var wrap = $('holdWrap');
-  var bar = $('holdBar');
-  if (!wrap || !bar) return;
-  if (state.idx !== 29) {
-    wrap.classList.remove('on');
-    return;
+  /* 深夜文案入口 */
+  if (document.title) {
+    /* 保持伪装标题 */
   }
-  wrap.classList.add('on');
-  $('next').style.display = 'none';
-  var iBar = bar.querySelector('i');
-  iBar.style.width = '0%';
-  var start = null;
-  var DUR = 3200;
-  function tick(ts) {
-    if (state.idx !== 29) { wrap.classList.remove('on'); $('next').style.display = ''; return; }
-    if (!start) start = ts;
-    var p = Math.min(1, (ts - start) / DUR);
-    iBar.style.width = (p * 100) + '%';
-    if (p >= 1) {
-      wrap.classList.remove('on');
-      $('next').style.display = '';
-      $('next').disabled = false;
-      state.selected = 0; /* 削完了：对应第一个选项 */
-      glitchBars(5, 120);
-      return;
-    }
-    behave.holdRAF = requestAnimationFrame(tick);
-  }
-  behave.holdRAF = requestAnimationFrame(tick);
-}
 
-/* 11. Esc 捉弄：高潮段按 Esc 显示「Esc 被禁用了」 */
-document.addEventListener('keydown', function (e) {
-  if (e.key === 'Escape' && state.hasInteracted && state.idx >= 28 && state.idx <= 35 && !behave.escJokeDone) {
-    behave.escJokeDone = true;
-    e.stopImmediatePropagation();
-    var w = $('idleWarn');
-    if (w) {
-      w.textContent = 'Esc 被禁用了';
-      w.classList.add('on');
-      setT(function () { w.classList.remove('on'); }, 2200);
-    }
-  }
-}, true);
-
-/* 12. 电量彩蛋（支持的浏览器） */
-function batteryEaster() {
-  try {
-    if (!navigator.getBattery) return;
-    navigator.getBattery().then(function (b) {
-      var pct = Math.round(b.level * 100);
-      if (pct <= 20 && state.idx >= 15) {
-        var el = document.querySelector('#qtext .sub');
-        if (el && !el.textContent) el.textContent = '电量 ' + pct + '%。和它剩下的耐心一样。';
-      }
-    }).catch(function () {});
-  } catch (e) {}
-}
-
-/* 13. 假呼吸检测：不碰麦克风，纯演技 */
-function fakeBreathCheck() {
-  if (behave.breathDone || state.idx !== 22) return;
-  behave.breathDone = true;
-  setT(function () {
-    var w = $('idleWarn');
-    if (w) {
-      w.textContent = '检测到背后有呼吸声';
-      w.classList.add('on');
-      setT(function () { w.classList.remove('on'); }, 3200);
-    }
-    if (navigator.vibrate) { try { navigator.vibrate([40, 80, 40]); } catch (e) {} }
-  }, 1800);
-}
-
-/* 14. Q34 椅子闪图时补一次震动 */
-/* 挂进现有调度，不改旧函数 */
-
-/* 包 renderQuestion（叠在 hauntFX 那层之上） */
-var _rq2 = renderQuestion;
-renderQuestion = function (i) {
-  _rq2(i);
-  if (!state.hasInteracted) return;
-  dwellStart = Date.now();
-  typeGhostFlash(1800 + Math.random() * 1200);
-  maybeDodgeNext();
-  maybeHoldQuestion();
-  fakeBreathCheck();
-  batteryEaster();
-  stainUrl(Math.floor(i / 4));
-  if (i >= 12 && Math.random() < 0.3) typeGhostFlash(4000);
-};
-
-/* 包 startClimax：标题和 URL 全乱 */
-var _sc = startClimax;
-startClimax = function () {
-  _sc();
-  document.title = '它';
-  stainUrl(9);
-};
-
-/* 开场接时间/回访 */
-nightOpenLine();
-returnVisitLine();
-startTitleTalk();
-dwellStart = Date.now();
-
-scheduleHauntImages();
-
-window.addEventListener('beforeunload', function (e) {
-  if (state.hasInteracted && !state.frozen) {
-    e.preventDefault();
-    e.returnValue = '你确定要留它一个人吗';
-    return '你确定要留它一个人吗';
-  }
-});
-$('exitBtn').addEventListener('click', fakeClose);
+  /* 启动 */
+  actGate();
 
 })();
 </script>
