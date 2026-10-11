@@ -9,9 +9,9 @@
 html,body{height:100%}
 html{-webkit-text-size-adjust:100%}
 body{
-  background:#050608;
-  color:#b9b4a8;
-  font-family:'Songti SC','SimSun','Noto Serif SC','STSong',serif;
+  background:#000;
+  color:#a8b898;
+  font-family:'Songti SC','SimSun','Noto Serif SC',serif;
   -webkit-font-smoothing:antialiased;
   overflow:hidden;
   letter-spacing:.08em;
@@ -21,367 +21,212 @@ body{
 }
 body.touch{cursor:auto}
 
-/* ===== 电影颗粒 + 暗角 ===== */
-#grain{
-  position:fixed;inset:-50%;z-index:45;pointer-events:none;
-  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
-  opacity:.045;
-  animation:grainShift .45s steps(2) infinite;
+/* ===== 夜视监控底：真实照片 ===== */
+#feed{
+  position:fixed;inset:0;z-index:5;
+  background:#0a1208;
+  overflow:hidden;
 }
-@keyframes grainShift{
-  0%{transform:translate(0,0)}25%{transform:translate(-2%,1%)}
-  50%{transform:translate(1%,-2%)}75%{transform:translate(-1%,2%)}
-  100%{transform:translate(2%,-1%)}
+#feed img.bg{
+  position:absolute;inset:0;
+  width:100%;height:100%;
+  object-fit:cover;
+  object-position:center 40%;
+  filter:brightness(1.05) contrast(1.15) saturate(1.3) hue-rotate(-8deg);
+  image-rendering:auto;
+  transform:scale(1.02);
 }
-#vignette{
-  position:fixed;inset:0;z-index:44;pointer-events:none;
-  background:radial-gradient(ellipse 75% 70% at 50% 48%, transparent 0%, rgba(0,0,0,.35) 55%, rgba(0,0,0,.88) 100%);
+/* 夜视绿叠层 */
+#feed .tint{
+  position:absolute;inset:0;
+  background:rgba(20,60,20,.12);
+  mix-blend-mode:color;
+  pointer-events:none;
+}
+/* 扫描线 */
+#feed .scan{
+  position:absolute;inset:0;
+  background:repeating-linear-gradient(0deg,
+    transparent 0 2px, rgba(0,0,0,.12) 2px 3px);
+  pointer-events:none;
+  animation:scanRoll 9s linear infinite;
+}
+@keyframes scanRoll{from{background-position:0 0}to{background-position:0 100px}}
+/* 暗角 */
+#feed .vig{
+  position:absolute;inset:0;
+  background:radial-gradient(ellipse 80% 75% at 50% 45%, transparent 40%, rgba(0,0,0,.55) 100%);
+  pointer-events:none;
+}
+/* 时间码 OSD */
+#osd{
+  position:fixed;top:18px;left:20px;z-index:70;
+  font-family:'SF Mono','Consolas','Courier New',monospace;
+  font-size:11px;letter-spacing:.12em;color:rgba(140,200,120,.55);
+  pointer-events:none;
+  text-shadow:0 0 6px rgba(80,180,60,.3);
+}
+#osd .rec{
+  display:inline-block;width:7px;height:7px;border-radius:50%;
+  background:#c44040;margin-right:8px;vertical-align:middle;
+  animation:recBlink 1.2s ease infinite;
+  box-shadow:0 0 8px rgba(200,60,60,.5);
+}
+@keyframes recBlink{0%,100%{opacity:1}50%{opacity:.25}}
+#osd2{
+  position:fixed;top:18px;right:20px;z-index:70;
+  font-family:'SF Mono','Consolas',monospace;
+  font-size:10px;letter-spacing:.15em;color:rgba(140,200,120,.4);
+  pointer-events:none;text-align:right;
 }
 
-/* ===== 手电筒：柔光，不是硬圆 ===== */
+/* ===== 手电/光标 ===== */
 #dark{
   position:fixed;inset:0;z-index:40;pointer-events:none;
-  background:radial-gradient(ellipse 180px 160px at var(--mx,50%) var(--my,50%),
-    rgba(0,0,0,0) 0%, rgba(0,0,0,0) 30%, rgba(2,3,5,.72) 58%, rgba(2,3,5,.94) 82%, #020305 100%);
+  background:radial-gradient(ellipse 200px 170px at var(--mx,50%) var(--my,50%),
+    rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,.55) 65%, rgba(0,0,0,.88) 100%);
 }
 body.wide #dark{
-  background:radial-gradient(ellipse 340px 300px at var(--mx,50%) var(--my,50%),
-    rgba(0,0,0,0) 0%, rgba(0,0,0,0) 32%, rgba(2,3,5,.55) 60%, rgba(2,3,5,.88) 85%, #020305 100%);
+  background:radial-gradient(ellipse 380px 340px at var(--mx,50%) var(--my,50%),
+    rgba(0,0,0,0) 0%, rgba(0,0,0,0) 38%, rgba(0,0,0,.4) 68%, rgba(0,0,0,.82) 100%);
 }
 #cursorDot{
-  position:fixed;z-index:50;width:4px;height:4px;border-radius:50%;
-  background:rgba(200,180,140,.55);pointer-events:none;
+  position:fixed;z-index:50;width:5px;height:5px;border-radius:50%;
+  border:1px solid rgba(160,220,140,.7);
+  background:transparent;pointer-events:none;
   transform:translate(-50%,-50%);
-  box-shadow:0 0 12px rgba(200,180,140,.25);
+  box-shadow:0 0 10px rgba(120,200,100,.3);
 }
 
-/* ===== 房间底：故意的摄影感渐变，不是色块 ===== */
-#room{
-  position:fixed;inset:0;z-index:10;
-  background:
-    /* 窗外微光 */
-    radial-gradient(ellipse 30% 40% at 18% 30%, rgba(30,50,70,.18) 0%, transparent 70%),
-    /* 台灯余温 */
-    radial-gradient(ellipse 20% 18% at 55% 42%, rgba(80,60,30,.08) 0%, transparent 70%),
-    /* 地板反光 */
-    linear-gradient(180deg, transparent 0 62%, rgba(12,10,8,.4) 62%, rgba(8,7,5,.9) 100%),
-    /* 墙 */
-    linear-gradient(175deg, #0a0b0e 0%, #0c0d11 40%, #0e0e12 62%, transparent 62%);
-}
-#room.tilt{transform:rotate(.35deg) scale(1.008)}
-
-/* ===== 热区：镜头式金圈，不是方框 ===== */
+/* ===== 热区：标在照片实物上 ===== */
 .hot{
   position:absolute;z-index:12;
   cursor:none;
-  transition:opacity .6s;
 }
 .hot::before{
   content:'';position:absolute;left:50%;top:50%;
-  width:56px;height:56px;border-radius:50%;
+  width:52px;height:52px;border-radius:50%;
   transform:translate(-50%,-50%);
-  border:1px solid rgba(170,150,110,.18);
-  transition:border-color .4s, box-shadow .4s, transform .4s, opacity .4s;
-  opacity:.55;
+  border:1px dashed rgba(160,220,140,.25);
+  transition:border-color .35s, box-shadow .35s, transform .35s, background .35s;
+  opacity:.6;
 }
 .hot:hover::before{
-  border-color:rgba(190,165,110,.65);
-  box-shadow:0 0 28px rgba(170,140,80,.18), inset 0 0 18px rgba(170,140,80,.06);
-  transform:translate(-50%,-50%) scale(1.12);
+  border:1px solid rgba(180,240,160,.75);
+  box-shadow:0 0 24px rgba(120,200,100,.2), inset 0 0 14px rgba(120,200,100,.06);
+  transform:translate(-50%,-50%) scale(1.15);
+  background:rgba(120,200,100,.04);
   opacity:1;
 }
 .hot.visited::before{
-  border-color:rgba(120,110,90,.22);
-  opacity:.35;
+  border-style:solid;
+  border-color:rgba(100,140,90,.2);
+  opacity:.3;
 }
 .hot.pulse::before{
-  border-color:rgba(196,120,80,.7) !important;
-  box-shadow:0 0 36px rgba(196,120,80,.22) !important;
-  animation:hotPulse 1.8s ease-in-out infinite !important;
+  border:1px solid rgba(200,240,160,.85) !important;
+  box-shadow:0 0 32px rgba(160,240,120,.3) !important;
+  animation:hotPulse 1.6s ease-in-out infinite !important;
   opacity:1 !important;
 }
 @keyframes hotPulse{
-  0%,100%{transform:translate(-50%,-50%) scale(1);opacity:.45}
-  50%{transform:translate(-50%,-50%) scale(1.18);opacity:1}
+  0%,100%{transform:translate(-50%,-50%) scale(1);opacity:.4}
+  50%{transform:translate(-50%,-50%) scale(1.22);opacity:1}
 }
 .hot .lbl{
-  position:absolute;left:50%;top:calc(50% + 36px);transform:translateX(-50%);
-  font-size:11px;letter-spacing:.35em;color:#8a7d68;
-  white-space:nowrap;opacity:0;transition:opacity .3s, color .3s;
+  position:absolute;left:50%;top:calc(50% + 34px);transform:translateX(-50%);
+  font-size:10px;letter-spacing:.35em;color:rgba(160,220,140,.45);
+  white-space:nowrap;opacity:0;transition:opacity .3s;
+  pointer-events:none;
+  font-family:'SF Mono','Consolas',monospace;
+  text-shadow:0 0 8px rgba(0,0,0,.8);
+}
+.hot:hover .lbl{opacity:1;color:rgba(180,240,160,.9)}
+
+/* 物件位置：对准 chair.png 里的实物 */
+/* 摇椅 — 画面中央 */
+#hChair{left:42%;top:38%;width:18%;height:32%}
+/* 左侧柜子/桌子 */
+#hCab{left:12%;top:42%;width:16%;height:22%}
+/* 右侧床/沙发 */
+#hBed{left:70%;top:48%;width:24%;height:30%}
+/* 地上杂物 */
+#hFloor{left:28%;top:72%;width:28%;height:18%}
+/* 左下角物件 */
+#hLow{left:6%;top:72%;width:16%;height:18%}
+/* 背景深处/门 */
+#hDoor{left:55%;top:8%;width:22%;height:28%}
+/* 天花板（上沿） */
+#hCeil{left:20%;top:0;width:60%;height:10%}
+/* 右下床底 */
+#hUnder{left:72%;top:72%;width:22%;height:18%}
+
+/* 高亮标记：点过的物件在照片上留一个淡圈 */
+.hot.visited::after{
+  content:'';position:absolute;left:50%;top:50%;
+  width:48px;height:48px;border-radius:50%;
+  transform:translate(-50%,-50%);
+  border:1px solid rgba(120,160,100,.15);
   pointer-events:none;
 }
-.hot:hover .lbl{opacity:1;color:#c4b088}
-.hot::after{
-  content:'';position:absolute;left:50%;top:50%;
-  width:3px;height:3px;border-radius:50%;
-  transform:translate(-50%,-50%);
-  background:rgba(170,150,110,.5);
-  transition:background .3s;
-}
-.hot:hover::after{background:rgba(200,175,120,.9)}
 
-/* ===== 物件剪影：极简线稿，不画家具 ===== */
-.sil{
-  position:absolute;pointer-events:none;
-  opacity:.5;transition:opacity 1.2s, filter 1.2s;
-}
-.hot:hover .sil{opacity:.85}
-
-/* 窗：细长竖框 + 十字棂 */
-#hWindow{left:10%;top:14%;width:16%;height:40%}
-#hWindow .sil{
-  inset:0;
-  border:1px solid rgba(90,100,120,.4);
-  background:linear-gradient(180deg, rgba(18,28,40,.5), rgba(10,14,20,.7));
-}
-#hWindow .sil::before{
-  content:'';position:absolute;inset:0;
-  background:
-    linear-gradient(90deg, transparent 49.5%, rgba(90,100,120,.35) 49.5% 50.5%, transparent 50.5%),
-    linear-gradient(0deg, transparent 49.5%, rgba(90,100,120,.35) 49.5% 50.5%, transparent 50.5%);
-}
-#hWindow .figure{
-  position:absolute;left:50%;bottom:12%;transform:translateX(-50%);
-  width:22px;height:56px;
-  background:radial-gradient(ellipse at 50% 12%, #0e1014 0 28%, transparent 70%),
-             linear-gradient(180deg,#0c0e12,#08090c);
-  border-radius:11px 11px 2px 2px;
-  opacity:0;transition:opacity 2.5s;
-}
-#hWindow.figure .figure{opacity:.9}
-#hWindow .curtain{
-  position:absolute;top:0;bottom:0;width:42%;
-  background:linear-gradient(90deg,#0a0b10,#12141a 50%,#0a0b10);
-  z-index:2;transition:transform 1.4s cubic-bezier(.4,0,.2,1);
-  opacity:.92;
-}
-#hWindow .curtain.l{left:-1px}
-#hWindow .curtain.r{right:-1px}
-#hWindow.open .curtain.l{transform:translateX(-78%)}
-#hWindow.open .curtain.r{transform:translateX(78%)}
-
-/* 门：高瘦轮廓 */
-#hDoor{right:8%;top:10%;width:11%;height:56%}
-#hDoor .sil{
-  inset:0;
-  border:1px solid rgba(80,75,65,.45);
-  background:linear-gradient(180deg, rgba(16,14,12,.6), rgba(10,9,8,.85));
-}
-#hDoor .knob{
-  position:absolute;right:14%;top:48%;width:5px;height:5px;border-radius:50%;
-  background:rgba(160,140,100,.55);box-shadow:0 0 6px rgba(160,140,100,.2);
-}
-#hDoor .under{
-  position:absolute;left:5%;right:5%;bottom:-4px;height:4px;
-  background:radial-gradient(ellipse at 50% 50%, #000 0%, transparent 80%);
-  opacity:0;transition:opacity 1.2s;
-}
-#hDoor.wrong .under{opacity:1}
-#hDoor .crack{
-  position:absolute;inset:1px;
-  background:linear-gradient(90deg,#000 0%, #000 85%, transparent 100%);
-  transform-origin:left center;transform:scaleX(0);
-  transition:transform 2.2s ease;opacity:.92;
-}
-#hDoor.openish .crack{transform:scaleX(.1)}
-
-/* 椅子：只有轮廓线 */
-#hChair{left:60%;bottom:20%;width:12%;height:24%}
-#hChair .sil{
-  inset:0;
-  border:none;
-}
-#hChair .sil::before{
-  content:'';position:absolute;left:15%;right:15%;bottom:18%;height:1px;
-  background:rgba(90,85,75,.45);box-shadow:0 -1px 0 rgba(90,85,75,.2);
-}
-#hChair .sil::after{
-  content:'';position:absolute;left:22%;right:22%;bottom:20%;height:55%;
-  border:1px solid rgba(90,85,75,.4);border-bottom:none;
-  border-radius:2px 2px 0 0;
-}
-#hChair .shadow{
-  position:absolute;inset:5% 0 0;
-  background:radial-gradient(ellipse at 50% 85%, rgba(0,0,0,.55), transparent 70%);
-  opacity:0;transition:opacity 2s;
-}
-#hChair.occupied .shadow{opacity:1}
-#hChair.occupied .sil::before,
-#hChair.occupied .sil::after{border-color:rgba(140,100,80,.5)}
-#hChair.occupied .sil::before{background:rgba(140,100,80,.5)}
-
-/* 手机 */
-#hPhone{left:34%;bottom:30%;width:7%;height:11%}
-#hPhone .sil{
-  inset:12% 18%;
-  border:1px solid rgba(100,100,110,.5);
-  border-radius:2px;
-  background:rgba(8,9,12,.8);
-}
-#hPhone .glow{
-  position:absolute;inset:-30%;border-radius:6px;
-  background:radial-gradient(circle, rgba(90,140,170,.2), transparent 70%);
-  opacity:0;transition:opacity .6s;
-}
-#hPhone.lit .glow{opacity:1}
-#hPhone.lit .sil{border-color:rgba(120,170,200,.65);box-shadow:0 0 16px rgba(90,140,170,.2)}
-
-/* 屏幕 */
-#hScreen{left:38%;top:30%;width:24%;height:26%}
-#hScreen .sil{
-  inset:0;
-  border:1px solid rgba(70,75,85,.5);
-  background:linear-gradient(180deg, rgba(10,12,16,.7), rgba(8,9,12,.85));
-}
-#hScreen .inner{
-  position:absolute;inset:8%;
-  display:flex;align-items:center;justify-content:center;
-  font-size:11px;letter-spacing:.4em;color:#4a4840;
-  overflow:hidden;
-}
-#hScreen .inner .msg{opacity:.55;transition:opacity .6s,color .6s}
-#hScreen.watching .inner .msg{color:#b89060;opacity:.95}
-#hScreen.watching .sil{border-color:rgba(150,120,70,.45)}
-
-/* 镜子：椭圆框 */
-#hMirror{left:14%;top:16%;width:12%;height:32%}
-#hMirror .sil{
-  inset:0;
-  border:1px solid rgba(100,105,120,.4);
-  border-radius:50% 50% 48% 48%;
-  background:linear-gradient(160deg, rgba(16,20,28,.65), rgba(10,12,16,.8));
-}
-#hMirror .ref{
-  position:absolute;inset:6px;
-  border-radius:50%;
-  opacity:0;transition:opacity 2s;
-}
-#hMirror .ref .head{
-  position:absolute;left:50%;bottom:10%;transform:translateX(-50%);
-  width:28px;height:34px;border-radius:50% 50% 40% 40%;
-  background:radial-gradient(ellipse at 50% 30%, #141820, #0a0c10 80%);
-}
-#hMirror.showref .ref{opacity:1}
-#hMirror.blink .ref .head{animation:refBlink 3.2s ease infinite}
-@keyframes refBlink{0%,88%,100%{opacity:1}93%{opacity:0}}
-
-/* 相框 */
-#hPhoto{left:50%;top:18%;width:8%;height:14%}
-#hPhoto .sil{
-  inset:0;
-  border:3px solid rgba(90,75,50,.55);
-  background:#0c0a08;
-  overflow:hidden;
-}
-#hPhoto .sil img{
-  width:100%;height:100%;object-fit:cover;
-  filter:grayscale(.55) brightness(.55) contrast(1.05);
-  opacity:.9;transition:filter .8s, opacity .8s;
-}
-#hPhoto.wrong .sil img{filter:grayscale(.1) brightness(.75) contrast(1.15);opacity:1}
-#hPhoto .stamp{
-  position:absolute;right:1px;bottom:0;
-  font-size:7px;color:#6a5840;letter-spacing:.08em;
-}
-
-/* 床 */
-#hBed{left:8%;bottom:16%;width:18%;height:18%}
-#hBed .sil{
-  inset:auto 0 0 0;height:55%;
-  border:1px solid rgba(80,78,70,.4);
-  border-radius:2px 2px 0 0;
-  background:linear-gradient(180deg, rgba(14,13,12,.5), rgba(10,9,8,.75));
-}
-#hBed .pill{
-  position:absolute;left:8%;top:18%;width:24%;height:36%;
-  border:1px solid rgba(80,78,70,.35);border-radius:6px;
-  opacity:.7;
-}
-#hBed .dip{
-  position:absolute;left:38%;top:25%;width:42%;height:50%;
-  background:radial-gradient(ellipse at 50% 50%, rgba(0,0,0,.45), transparent 70%);
-  opacity:0;transition:opacity 1.5s;
-}
-#hBed.slept .dip{opacity:1}
-
-/* 天花板 */
-#hCeil{left:25%;top:4%;width:50%;height:10%}
-#hCeil .sil{inset:0;border:none}
-#hCeil .stain{
-  position:absolute;inset:0;
-  background:radial-gradient(ellipse at 50% 50%, rgba(50,18,14,.35), transparent 70%);
-  opacity:0;transition:opacity 2.5s;
-}
-#hCeil.wet .stain{opacity:1}
-
-/* 桌下 */
-#hUnder{left:30%;bottom:8%;width:26%;height:12%}
-#hUnder .sil{
-  inset:0;
-  background:linear-gradient(180deg, transparent 0%, rgba(0,0,0,.5) 50%, #000 100%);
-  border:none;
-}
-#hUnder .eyes{
-  position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);
-  display:flex;gap:12px;opacity:0;transition:opacity .25s;
-}
-#hUnder .eyes i{
-  width:4px;height:4px;border-radius:50%;
-  background:#c47050;box-shadow:0 0 10px #c47050;
-}
-#hUnder.peek .eyes{opacity:1}
-
-/* ===== 旁白 ===== */
+/* ===== 旁白（监控字幕风） ===== */
 #narr{
   position:fixed;left:0;right:0;bottom:0;z-index:60;
-  padding:36px 32px 36px;
-  background:linear-gradient(180deg, transparent, rgba(2,3,5,.92) 45%);
-  min-height:130px;
+  padding:40px 28px 32px;
+  background:linear-gradient(180deg, transparent, rgba(0,0,0,.88) 50%);
+  min-height:120px;
   pointer-events:none;
 }
 #narr .nline{
-  max-width:560px;margin:0 auto;
-  font-size:15px;line-height:2.2;
-  color:#c8c0b0;
-  min-height:2.4em;
+  max-width:520px;margin:0 auto;
+  font-size:14.5px;line-height:2.1;
+  color:#b0c4a0;
+  min-height:2.2em;
   text-align:center;
   white-space:pre-wrap;
-  text-shadow:0 1px 8px rgba(0,0,0,.8);
+  text-shadow:0 1px 6px rgba(0,0,0,.9), 0 0 20px rgba(0,0,0,.5);
+  font-family:'Songti SC','SimSun',serif;
 }
-#narr .nline.dim{color:#7a7468;font-size:12.5px;letter-spacing:.12em}
+#narr .nline.dim{color:#6a8060;font-size:12px;letter-spacing:.15em}
 #narr .nline .caret{
-  display:inline-block;width:1px;height:1em;background:#b89060;
+  display:inline-block;width:1px;height:1em;background:#a0d080;
   vertical-align:text-bottom;margin-left:2px;animation:blink 1s step-end infinite;
 }
 @keyframes blink{50%{opacity:0}}
 
-#prog{
-  position:fixed;top:22px;right:26px;z-index:70;
-  font-size:10px;letter-spacing:.35em;color:#4a4538;
-  pointer-events:none;
-}
 #hint{
-  position:fixed;top:22px;left:26px;z-index:70;
-  font-size:10px;letter-spacing:.3em;color:#4a4538;
+  position:fixed;bottom:20px;right:24px;z-index:70;
+  font-size:9px;letter-spacing:.25em;color:rgba(140,180,120,.35);
   pointer-events:none;transition:opacity 1s;
+  font-family:'SF Mono',monospace;
 }
 
 /* ===== 特效 ===== */
-#flash{position:fixed;inset:0;background:#000;z-index:90;opacity:0;pointer-events:none;transition:opacity .12s}
+#flash{position:fixed;inset:0;background:#000;z-index:90;opacity:0;pointer-events:none;transition:opacity .1s}
 #flash.on{opacity:1}
-#invertFx{position:fixed;inset:0;background:#f0ebe0;z-index:91;opacity:0;pointer-events:none;mix-blend-mode:difference}
+#staticFx{
+  position:fixed;inset:0;z-index:89;opacity:0;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:256px;
+  mix-blend-mode:screen;
+  transition:opacity .08s;
+}
+#staticFx.on{opacity:.35;animation:staticShift .1s steps(2) infinite}
+@keyframes staticShift{0%{background-position:0 0}50%{background-position:128px 64px}100%{background-position:64px 128px}}
+
+#invertFx{position:fixed;inset:0;background:#c0e0b0;z-index:91;opacity:0;pointer-events:none;mix-blend-mode:difference}
 
 #bigWord{
   position:fixed;inset:0;z-index:95;display:flex;
   align-items:center;justify-content:center;
-  font-size:clamp(32px,9vw,72px);letter-spacing:.35em;
-  color:#e8e0d0;opacity:0;pointer-events:none;
+  font-size:clamp(30px,8vw,64px);letter-spacing:.4em;
+  color:#c8e8b0;opacity:0;pointer-events:none;
   transition:opacity .08s;
-  text-shadow:0 0 60px rgba(0,0,0,.95);
-  font-weight:400;
+  text-shadow:0 0 40px rgba(0,0,0,.9), 0 0 80px rgba(80,160,60,.2);
 }
 #bigWord.on{opacity:1}
-#bigWord.inv{color:#0a0a08;background:#e8e0d0}
+#bigWord.inv{color:#0a1208;background:#c8e8b0}
 
 #jump{
   position:fixed;inset:0;z-index:100;display:none;
@@ -390,73 +235,75 @@ body.wide #dark{
 #jump.on{display:flex}
 #jump img{max-width:100%;max-height:100%;object-fit:contain}
 #jump.full img{width:100%;height:100%;object-fit:cover}
-#jump.inv{filter:invert(1)}
-#jumpShake{
-  position:fixed;inset:-20px;z-index:99;display:none;pointer-events:none;
-}
+#jump.inv{filter:invert(1) hue-rotate(90deg)}
+#jumpShake{position:fixed;inset:-20px;z-index:99;display:none;pointer-events:none}
 #jumpShake.on{display:block;animation:shake .07s linear infinite}
 @keyframes shake{
-  0%{transform:translate(0,0)}25%{transform:translate(-7px,3px)}
-  50%{transform:translate(5px,-5px)}75%{transform:translate(-3px,7px)}
+  0%{transform:translate(0,0)}25%{transform:translate(-6px,3px)}
+  50%{transform:translate(5px,-4px)}75%{transform:translate(-3px,6px)}
   100%{transform:translate(0,0)}
 }
 
 #sysNote{
-  position:fixed;top:28px;left:50%;transform:translateX(-50%);
-  z-index:96;background:rgba(12,12,14,.92);
-  border:1px solid rgba(140,120,80,.3);
-  border-radius:8px;
-  padding:12px 22px;min-width:240px;
-  opacity:0;transition:opacity .45s;pointer-events:none;
-  backdrop-filter:blur(8px);
+  position:fixed;top:52px;left:20px;z-index:96;
+  background:rgba(8,16,6,.88);
+  border:1px solid rgba(140,200,120,.3);
+  padding:10px 16px;min-width:200px;
+  opacity:0;transition:opacity .4s;pointer-events:none;
+  font-family:'SF Mono',monospace;
+  backdrop-filter:blur(4px);
 }
 #sysNote.on{opacity:1}
-#sysNote .sn-t{font-size:12px;color:#c8c0b0;letter-spacing:.12em}
-#sysNote .sn-s{font-size:11px;color:#7a7468;margin-top:5px;letter-spacing:.06em}
+#sysNote .sn-t{font-size:11px;color:#a0d080;letter-spacing:.1em}
+#sysNote .sn-s{font-size:10px;color:#6a8060;margin-top:4px}
 
 #voiceTag{
-  position:fixed;bottom:22px;right:26px;z-index:70;
-  font-size:9px;letter-spacing:.25em;color:#2e2c28;
-  pointer-events:none;transition:color .4s, opacity .4s;opacity:0;
+  position:fixed;bottom:48px;right:24px;z-index:70;
+  font-size:9px;letter-spacing:.2em;color:rgba(100,140,80,.3);
+  pointer-events:none;transition:color .4s,opacity .4s;opacity:0;
+  font-family:'SF Mono',monospace;
 }
-#voiceTag.on{opacity:1;color:#5a5548}
-#voiceTag.live{color:#c47050}
+#voiceTag.on{opacity:1;color:rgba(140,200,120,.5)}
+#voiceTag.live{color:#c0e0a0}
 
 /* 来电 */
 #call{
   position:fixed;inset:0;z-index:110;display:none;
-  background:rgba(3,4,6,.97);
+  background:rgba(0,4,0,.96);
   flex-direction:column;align-items:center;justify-content:center;gap:22px;
 }
 #call.on{display:flex}
-#call .cf{font-size:10px;letter-spacing:.5em;color:#5a5548}
+#call .cf{font-size:10px;letter-spacing:.5em;color:#5a7050;font-family:'SF Mono',monospace}
 #call .cn{
-  font-size:clamp(20px,5.5vw,28px);letter-spacing:.15em;color:#e0d8c8;
-  animation:cp 1.6s ease infinite;font-weight:400;
+  font-size:clamp(20px,5.5vw,28px);letter-spacing:.15em;color:#c0e0a0;
+  animation:cp 1.5s ease infinite;
 }
-@keyframes cp{0%,100%{opacity:1}50%{opacity:.55}}
+@keyframes cp{0%,100%{opacity:1}50%{opacity:.5}}
 #call .cbtns{display:flex;gap:48px;margin-top:28px}
 #call button{
   background:none;border:none;
-  border-bottom:1px solid rgba(140,120,80,.35);
-  color:#a89d88;font-family:inherit;font-size:13px;letter-spacing:.4em;
+  border-bottom:1px solid rgba(140,200,120,.35);
+  color:#a0c080;font-family:inherit;font-size:13px;letter-spacing:.4em;
   padding:12px 8px;cursor:pointer;transition:color .3s,border-color .3s;
 }
-#call button:hover{color:#c47050;border-bottom-color:#c47050}
+#call button:hover{color:#c0e0a0;border-bottom-color:#c0e0a0}
 
 /* 结尾 */
 #end{
   position:fixed;inset:0;z-index:120;display:none;
-  background:#020203;
+  background:#020402;
   flex-direction:column;align-items:center;justify-content:center;
   padding:40px 28px;text-align:center;
 }
 #end.on{display:flex}
 #end .etext{
-  font-size:clamp(15px,3.5vw,18px);line-height:2.6;color:#b9b4a8;
+  font-size:clamp(14px,3.5vw,17px);line-height:2.6;color:#a0b890;
   letter-spacing:.15em;white-space:pre-wrap;min-height:6em;
 }
-#end .emeta{margin-top:40px;font-size:10px;color:#4a4538;letter-spacing:.3em}
+#end .emeta{
+  margin-top:40px;font-size:10px;color:#4a5a40;letter-spacing:.25em;
+  font-family:'SF Mono',monospace;
+}
 
 #presence{
   position:fixed;right:-8%;bottom:-12%;width:42vw;height:82vh;z-index:35;
@@ -466,42 +313,49 @@ body.wide #dark{
 #presence.on{opacity:1}
 
 #typeGhost{
-  position:fixed;left:28px;bottom:110px;z-index:65;
-  font-size:11px;letter-spacing:.25em;color:#4a4538;
+  position:fixed;left:24px;bottom:100px;z-index:65;
+  font-size:10px;letter-spacing:.2em;color:rgba(120,160,100,.35);
   opacity:0;transition:opacity .5s;pointer-events:none;
+  font-family:'SF Mono',monospace;
 }
 #typeGhost.on{opacity:1}
 #typeGhost .dots::after{content:'…';animation:df 1.2s ease infinite}
 @keyframes df{0%,100%{opacity:.2}50%{opacity:1}}
 
 @media (max-width:640px){
-  #narr{padding:24px 18px 28px;min-height:110px}
-  #narr .nline{font-size:14px;line-height:2}
-  #hWindow{left:6%;top:12%;width:22%;height:36%}
-  #hDoor{right:4%;width:14%}
-  #hMirror{display:none}
-  #hPhoto{left:44%;width:12%;height:12%}
-  #hScreen{left:22%;width:56%;top:28%}
+  #narr{padding:28px 16px 24px;min-height:100px}
+  #narr .nline{font-size:13px;line-height:1.95}
+  .hot::before{width:42px;height:42px}
   .hot .lbl{display:none}
-  .hot::before{width:44px;height:44px}
+  #osd,#osd2{font-size:9px}
+  /* 手机上物件位置微调 */
+  #hChair{left:38%;width:24%}
+  #hCab{left:8%;width:20%}
+  #hBed{left:65%;width:30%}
 }
 </style>
 </head>
 <body>
 
-<div id="room"></div>
+<div id="feed">
+  <img class="bg" src="resource/haunt/chair.png" alt="" draggable="false">
+  <div class="tint"></div>
+  <div class="scan"></div>
+  <div class="vig"></div>
+</div>
 <div id="presence"></div>
-<div id="grain"></div>
-<div id="vignette"></div>
 <div id="dark"></div>
 <div id="cursorDot"></div>
 
+<div id="osd"><span class="rec"></span>REC &nbsp; CAM_07 &nbsp; <span id="osdClock">00:00:00</span></div>
+<div id="osd2">NIGHT VISION<br>SENS  HIGH<br><span id="osdVis">VISIT 1</span></div>
+
 <div id="narr"><div class="nline" id="nline"></div></div>
-<div id="prog"></div>
-<div id="hint">移动光标 · 点击发光的物件</div>
-<div id="typeGhost">受试者 B<span class="dots"></span></div>
+<div id="hint">移动 · 点击虚线圈</div>
+<div id="typeGhost">CAM_07<span class="dots"></span></div>
 <div id="voiceTag">语音 · 待命</div>
 
+<div id="staticFx"></div>
 <div id="flash"></div>
 <div id="invertFx"></div>
 <div id="bigWord"></div>
@@ -510,7 +364,7 @@ body.wide #dark{
 <div id="sysNote"><div class="sn-t" id="snT"></div><div class="sn-s" id="snS"></div></div>
 
 <div id="call">
-  <div class="cf">来电</div>
+  <div class="cf">来电 · 加密线路</div>
   <div class="cn" id="callName">未知号码</div>
   <div class="cbtns">
     <button type="button" id="callAns">接 听</button>
@@ -523,12 +377,21 @@ body.wide #dark{
   <div class="emeta" id="endMeta"></div>
 </div>
 
+<!-- 热区定义（绝对定位在照片实物上） -->
+<div id="hChair" class="hot" data-id="chair" style="left:42%;top:38%;width:18%;height:32%"><span class="lbl">摇椅</span></div>
+<div id="hCab" class="hot" data-id="cab" style="left:12%;top:42%;width:16%;height:22%"><span class="lbl">柜子</span></div>
+<div id="hBed" class="hot" data-id="bed" style="left:70%;top:48%;width:24%;height:30%"><span class="lbl">床</span></div>
+<div id="hFloor" class="hot" data-id="floor" style="left:28%;top:72%;width:28%;height:18%"><span class="lbl">地上</span></div>
+<div id="hLow" class="hot" data-id="low" style="left:6%;top:72%;width:16%;height:18%"><span class="lbl">角落</span></div>
+<div id="hDoor" class="hot" data-id="door" style="left:55%;top:8%;width:22%;height:28%"><span class="lbl">深处</span></div>
+<div id="hCeil" class="hot" data-id="ceil" style="display:none;left:20%;top:0;width:60%;height:10%"><span class="lbl">上沿</span></div>
+<div id="hUnder" class="hot" data-id="under" style="display:none;left:72%;top:72%;width:22%;height:18%"><span class="lbl">床底</span></div>
+
 <script>
 (function () {
   'use strict';
 
   var $ = function (id) { return document.getElementById(id); };
-  var room = $('room');
   var nline = $('nline');
   var isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
   if (isTouch) document.body.classList.add('touch');
@@ -537,28 +400,36 @@ body.wide #dark{
   var S = {
     name: '',
     visits: 0,
-    done: {},          /* 物件 → 访问次数 */
-    order: [],         /* 点击顺序 */
+    done: {},
     started: false,
     ending: false,
     callSeen: false,
-    presenceOn: false,
-    startedAt: 0,
-    facts: []
+    facts: [],
+    startedAt: 0
   };
-
   try {
     S.visits = parseInt(localStorage.getItem('haunt_v') || '0', 10) + 1;
     localStorage.setItem('haunt_v', String(S.visits));
   } catch (e) {}
+  $('osdVis').textContent = 'VISIT ' + S.visits;
 
-  /* 真实浏览器事实 */
   try {
     var city = (Intl.DateTimeFormat().resolvedOptions().timeZone || '').split('/').pop();
     if (city) S.facts.push(city);
   } catch (e) {}
   if (screen.width) S.facts.push(screen.width + '×' + screen.height);
   try { if (navigator.language) S.facts.push(navigator.language); } catch (e) {}
+
+  /* 时钟 OSD */
+  var t0 = Date.now();
+  setInterval(function () {
+    var s = Math.floor((Date.now() - t0) / 1000);
+    var hh = String(Math.floor(s / 3600)).padStart(2, '0');
+    var mm = String(Math.floor(s / 60) % 60).padStart(2, '0');
+    var ss = String(s % 60).padStart(2, '0');
+    var el = $('osdClock');
+    if (el) el.textContent = hh + ':' + mm + ':' + ss;
+  }, 1000);
 
   /* ---------- 工具 ---------- */
   function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
@@ -574,12 +445,11 @@ body.wide #dark{
     caret.className = 'caret';
     nline.appendChild(span);
     nline.appendChild(caret);
-
     if (opts.instant) {
       span.textContent = text;
       return sleep(opts.hold || 1200);
     }
-    var speed = opts.speed || 70;
+    var speed = opts.speed || 68;
     var i = 0;
     return new Promise(function (resolve) {
       function step() {
@@ -590,8 +460,8 @@ body.wide #dark{
         }
         span.textContent += text[i++];
         var d = speed;
-        if (Math.random() < 0.06) d += 150 + Math.random() * 300;
-        if (text[i - 1] === '。' || text[i - 1] === '？') d += 280;
+        if (Math.random() < 0.06) d += 140 + Math.random() * 280;
+        if (text[i - 1] === '。' || text[i - 1] === '？') d += 260;
         setTimeout(step, d);
       }
       step();
@@ -601,7 +471,13 @@ body.wide #dark{
   function flash(ms) {
     var f = $('flash');
     f.classList.add('on');
-    setTimeout(function () { f.classList.remove('on'); }, ms || 200);
+    setTimeout(function () { f.classList.remove('on'); }, ms || 180);
+  }
+
+  function staticBurst(ms) {
+    var el = $('staticFx');
+    el.classList.add('on');
+    setTimeout(function () { el.classList.remove('on'); }, ms || 350);
   }
 
   function invertPulse(n, gap) {
@@ -622,7 +498,7 @@ body.wide #dark{
     b.textContent = word;
     b.classList.toggle('inv', !!invert);
     b.classList.add('on');
-    scream(ms || 700, 0.45);
+    scream(ms || 700, 0.4);
     setTimeout(function () { b.classList.remove('on', 'inv'); }, ms || 700);
   }
 
@@ -635,17 +511,16 @@ body.wide #dark{
     j.classList.toggle('full', !!opts.full);
     j.classList.add('on');
     if (opts.shake !== false) sh.classList.add('on');
-    scream(opts.ms || 900, opts.vol || 0.55);
+    scream(opts.ms || 900, opts.vol || 0.5);
     if (opts.invert) {
       j.classList.add('inv');
-      setTimeout(function () { j.classList.remove('inv'); }, 110);
-      setTimeout(function () { j.classList.add('inv'); }, 260);
-      setTimeout(function () { j.classList.remove('inv'); }, 380);
+      setTimeout(function () { j.classList.remove('inv'); }, 100);
+      setTimeout(function () { j.classList.add('inv'); }, 250);
+      setTimeout(function () { j.classList.remove('inv'); }, 360);
     }
     setTimeout(function () {
       j.classList.remove('on', 'full', 'inv');
       sh.classList.remove('on');
-      if (opts.after) opts.after();
     }, opts.hold || 1000);
   }
 
@@ -668,10 +543,7 @@ body.wide #dark{
     }, 90);
   }
 
-  function presence(on) {
-    S.presenceOn = !!on;
-    $('presence').classList.toggle('on', !!on);
-  }
+  function presence(on) { $('presence').classList.toggle('on', !!on); }
 
   function typeGhost(ms) {
     var t = $('typeGhost');
@@ -686,10 +558,8 @@ body.wide #dark{
 
   function markVisited(id) {
     S.done[id] = (S.done[id] || 0) + 1;
-    S.order.push(id);
     var el = $(id);
     if (el) el.classList.add('visited');
-    $('prog').textContent = Object.keys(S.done).length + ' / 9';
   }
 
   /* ---------- 音频 ---------- */
@@ -710,9 +580,9 @@ body.wide #dark{
       droneGain.connect(actx.destination);
       droneOsc = actx.createOscillator();
       droneOsc.type = 'sine';
-      droneOsc.frequency.value = 48;
+      droneOsc.frequency.value = 46;
       lfoOsc = actx.createOscillator();
-      lfoOsc.frequency.value = 0.1;
+      lfoOsc.frequency.value = 0.09;
       var lg = actx.createGain();
       lg.gain.value = 2.5;
       lfoOsc.connect(lg);
@@ -732,7 +602,6 @@ body.wide #dark{
   function stopDrone() {
     try { if (droneOsc) droneOsc.stop(); if (lfoOsc) lfoOsc.stop(); } catch (e) {}
   }
-
   function whisperPan(pan) {
     if (!actx) return;
     try {
@@ -741,19 +610,16 @@ body.wide #dark{
       var o = actx.createOscillator();
       var g = actx.createGain();
       o.type = 'triangle';
-      o.frequency.value = 160 + Math.random() * 100;
+      o.frequency.value = 150 + Math.random() * 90;
       g.gain.value = 0;
-      o.connect(g);
-      g.connect(p);
-      p.connect(actx.destination);
+      o.connect(g); g.connect(p); p.connect(actx.destination);
       p.pan.value = pan;
       o.start();
-      g.gain.linearRampToValueAtTime(0.045, actx.currentTime + 0.35);
-      g.gain.linearRampToValueAtTime(0, actx.currentTime + 2.1);
-      setTimeout(function () { o.stop(); }, 2300);
+      g.gain.linearRampToValueAtTime(0.04, actx.currentTime + 0.35);
+      g.gain.linearRampToValueAtTime(0, actx.currentTime + 2.0);
+      setTimeout(function () { o.stop(); }, 2200);
     } catch (e) {}
   }
-
   function scream(ms, vol) {
     if (!actx) return;
     try {
@@ -761,39 +627,34 @@ body.wide #dark{
       var buf = actx.createBuffer(1, len, actx.sampleRate);
       var data = buf.getChannelData(0);
       for (var i = 0; i < len; i++) {
-        data[i] = (Math.random() * 2 - 1) * 0.7 + Math.sin(i * 0.14) * 0.45;
+        data[i] = (Math.random() * 2 - 1) * 0.7 + Math.sin(i * 0.13) * 0.4;
         var t = i / len;
         data[i] *= Math.exp(-t * 5.5) * (t < 0.02 ? t / 0.02 : 1);
       }
       var src = actx.createBufferSource();
       src.buffer = buf;
       var g = actx.createGain();
-      g.gain.value = vol || 0.5;
+      g.gain.value = vol || 0.45;
       var f = actx.createBiquadFilter();
-      f.type = 'highpass';
-      f.frequency.value = 380;
-      src.connect(f);
-      f.connect(g);
-      g.connect(actx.destination);
+      f.type = 'highpass'; f.frequency.value = 360;
+      src.connect(f); f.connect(g); g.connect(actx.destination);
       src.start();
     } catch (e) {}
   }
-
   function thud() {
     if (!actx) return;
     try {
       var o = actx.createOscillator();
       var g = actx.createGain();
       o.type = 'sine';
-      o.frequency.setValueAtTime(110, actx.currentTime);
-      o.frequency.exponentialRampToValueAtTime(28, actx.currentTime + 0.5);
-      g.gain.setValueAtTime(0.45, actx.currentTime);
+      o.frequency.setValueAtTime(100, actx.currentTime);
+      o.frequency.exponentialRampToValueAtTime(26, actx.currentTime + 0.5);
+      g.gain.setValueAtTime(0.4, actx.currentTime);
       g.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.6);
       o.connect(g); g.connect(actx.destination);
       o.start(); o.stop(actx.currentTime + 0.65);
     } catch (e) {}
   }
-
   function vSay(text, pitch, rate) {
     if (!('speechSynthesis' in window)) return;
     try {
@@ -802,7 +663,6 @@ body.wide #dark{
       u.lang = 'zh-CN';
       u.rate = rate || 0.8;
       u.pitch = pitch || 0.5;
-      u.volume = 1;
       if (tag) {
         tag.textContent = '语音 · 说话中';
         tag.classList.add('on', 'live');
@@ -816,7 +676,7 @@ body.wide #dark{
     } catch (e) {}
   }
 
-  /* ---------- 光标 / 手电筒 ---------- */
+  /* ---------- 光标 ---------- */
   var mx = window.innerWidth / 2, my = window.innerHeight / 2;
   var dot = $('cursorDot');
   function onMove(x, y) {
@@ -831,328 +691,237 @@ body.wide #dark{
     if (e.touches[0]) onMove(e.touches[0].clientX, e.touches[0].clientY);
   }, { passive: true });
 
-  /* ---------- 物件定义 ---------- */
-  function buildRoom() {
-    room.innerHTML = [
-      '<div class="hot" id="hWindow" data-id="window">',
-      '  <div class="sil"></div><div class="figure"></div>',
-      '  <div class="curtain l"></div><div class="curtain r"></div>',
-      '  <div class="lbl">窗</div>',
-      '</div>',
-      '<div class="hot" id="hMirror" data-id="mirror">',
-      '  <div class="sil"></div><div class="ref"><div class="head"></div></div>',
-      '  <div class="lbl">镜子</div>',
-      '</div>',
-      '<div class="hot" id="hPhoto" data-id="photo">',
-      '  <div class="sil"><img src="resource/haunt/portrait.png" alt=""></div>',
-      '  <div class="stamp">1997</div>',
-      '  <div class="lbl">相框</div>',
-      '</div>',
-      '<div class="hot" id="hScreen" data-id="screen">',
-      '  <div class="sil"></div><div class="inner"><span class="msg">这一页</span></div>',
-      '  <div class="lbl">屏幕</div>',
-      '</div>',
-      '<div class="hot" id="hDoor" data-id="door">',
-      '  <div class="sil"></div><div class="knob"></div><div class="crack"></div><div class="under"></div>',
-      '  <div class="lbl">门</div>',
-      '</div>',
-      '<div class="hot" id="hChair" data-id="chair">',
-      '  <div class="shadow"></div><div class="sil"></div>',
-      '  <div class="lbl">椅子</div>',
-      '</div>',
-      '<div class="hot" id="hPhone" data-id="phone">',
-      '  <div class="glow"></div><div class="sil"></div>',
-      '  <div class="lbl">手机</div>',
-      '</div>',
-      '<div class="hot" id="hBed" data-id="bed">',
-      '  <div class="sil"></div><div class="pill"></div><div class="dip"></div>',
-      '  <div class="lbl">床</div>',
-      '</div>',
-      '<div class="hot" id="hCeil" data-id="ceil" style="display:none">',
-      '  <div class="sil"></div><div class="stain"></div>',
-      '  <div class="lbl">天花板</div>',
-      '</div>',
-      '<div class="hot" id="hUnder" data-id="under" style="display:none">',
-      '  <div class="sil"></div><div class="eyes"><i></i><i></i></div>',
-      '  <div class="lbl">桌下</div>',
-      '</div>'
-    ].join('');
+  /* ---------- 物件 ---------- */
+  var CORE = ['chair', 'cab', 'bed', 'floor', 'low', 'door'];
+  var LATE = ['ceil', 'under'];
 
-    /* 绑定 */
-    room.querySelectorAll('.hot').forEach(function (el) {
-      el.addEventListener('click', function (e) {
-        e.stopPropagation();
-        if (!S.started || S.ending) return;
-        onHot(el.getAttribute('data-id'));
-      });
+  function refreshPulse() {
+    if (S.ending) return;
+    var coreDone = CORE.filter(function (id) { return S.done[id]; }).length;
+    var target = null;
+    if (coreDone < CORE.length) {
+      for (var i = 0; i < CORE.length; i++) {
+        if (!S.done[CORE[i]]) { target = CORE[i]; break; }
+      }
+    } else if (!S.done.ceil) {
+      $('hCeil').style.display = '';
+      target = 'ceil';
+    } else if (!S.done.under) {
+      $('hUnder').style.display = '';
+      target = 'under';
+    } else {
+      startEnding();
+      return;
+    }
+    CORE.concat(LATE).forEach(function (id) {
+      pulseHot('h' + id.charAt(0).toUpperCase() + id.slice(1), false);
     });
+    if (target) {
+      pulseHot('h' + target.charAt(0).toUpperCase() + target.slice(1), true);
+    }
   }
 
-  /* ---------- 物件剧本 ---------- */
   var script = {};
 
-  script.window = function (n) {
-    var el = $('hWindow');
+  script.chair = function (n) {
     return (async function () {
       if (n === 1) {
-        await say('先看窗。', { speed: 65 });
-        el.classList.add('open');
-        await sleep(1200);
-        await say('外面是你家楼下。', { speed: 60 });
-        await sleep(800);
-        await say('灯是灭的。', { speed: 60, hold: 1400 });
-        await say('这个点，没人还醒着。', { dim: true, speed: 55, hold: 1200 });
+        await say('画面中央有把摇椅。', { speed: 62 });
+        await sleep(900);
+        await say('监控装上那天它就在。', { speed: 55 });
+        await say('没人记得搬进来过。', { speed: 50, hold: 1800 });
       } else if (n === 2) {
-        el.classList.add('figure');
-        flash(150);
-        await sleep(600);
-        await say('楼下有个人。', { speed: 55 });
-        await say('一直站着。', { speed: 55, hold: 1600 });
-        await say('面朝你这边。', { speed: 50, hold: 1800 });
+        staticBurst(250);
+        await sleep(500);
+        await say('椅子在晃。', { speed: 52 });
+        await sleep(1100);
+        await say('帧率没跟上。', { dim: true, speed: 48, hold: 1400 });
+        await say('还是它本来就在动。', { speed: 46, hold: 1800 });
+        whisperPan(0);
+      } else {
+        staticBurst(400);
+        invertPulse(2, 80);
+        faceJump('resource/haunt/chair.png', { full: true, ms: 1000, hold: 900, vol: 0.6, invert: true });
+        thud();
+        await say('有人坐下了。', { speed: 46, hold: 1600 });
+        await say('对着摄像头。', { speed: 44, hold: 2000 });
+      }
+    })();
+  };
+
+  script.cab = function (n) {
+    return (async function () {
+      if (n === 1) {
+        await say('左边那组柜子。', { speed: 60 });
+        await sleep(700);
+        await say('抽屉是开的。', { speed: 52 });
+        await say('你没动过它。', { speed: 48, hold: 1600 });
+      } else if (n === 2) {
+        staticBurst(200);
+        await say('抽屉又开了一格。', { speed: 50 });
+        await sleep(900);
+        await say('里面是空的。', { speed: 48 });
+        await say('但刚才有反光。', { speed: 46, hold: 1800 });
         whisperPan(-0.6);
       } else {
-        el.classList.remove('figure');
-        flash(250);
-        await sleep(400);
-        await say('他上楼了。', { speed: 50, hold: 2000 });
-        faceJump('resource/haunt/photo.png', { ms: 800, hold: 750, vol: 0.45, shake: false });
-        thud();
+        staticBurst(350);
+        flash(200);
+        faceJump('resource/haunt/photo.png', { ms: 850, hold: 800, vol: 0.5 });
+        await say('那张脸是从柜子里翻出来的。', { speed: 46, hold: 1800 });
       }
     })();
   };
 
   script.bed = function (n) {
-    var el = $('hBed');
     return (async function () {
       if (n === 1) {
-        await say('床还是热的。', { speed: 60 });
-        el.classList.add('slept');
-        await sleep(1000);
-        await say('你刚才躺过吗？', { speed: 55, hold: 1600 });
-      } else if (n === 2) {
-        el.classList.add('slept');
-        await say('枕头上有凹痕。', { speed: 55 });
-        await say('不是你的头型。', { speed: 50, hold: 1800 });
-        whisperPan(0.5);
-        presence(true);
-      } else {
-        flash(300);
-        await say('它在床上坐过。', { speed: 50, hold: 1600 });
-        await say('现在它站起来了。', { speed: 48, hold: 2000 });
-        swellDrone(0.1, 2);
-      }
-    })();
-  };
-
-  script.phone = function (n) {
-    var el = $('hPhone');
-    return (async function () {
-      if (n === 1) {
-        el.classList.add('lit');
-        await say('手机亮了一下。', { speed: 60 });
-        sysNote('夜间独处习惯调查', '有一条未读消息', 2400);
+        await say('右边是床。', { speed: 60 });
         await sleep(800);
-        await say('通知栏是空的。', { speed: 55, hold: 1400 });
+        await say('被子是隆起的。', { speed: 52 });
+        await say('形状维持了很久。', { speed: 48, hold: 1800 });
       } else if (n === 2) {
-        el.classList.add('lit');
-        await say('又有通知。', { speed: 55 });
-        sysNote('未知联系人', '你后面。', 2200);
-        if (navigator.vibrate) { try { navigator.vibrate([80, 60, 80]); } catch (e) {} }
-        await sleep(600);
-        await say('发送失败。', { dim: true, speed: 50, hold: 1200 });
-        await say('它没有手机号。', { speed: 48, hold: 1600 });
+        await say('被子下面在起伏。', { speed: 50 });
+        await sleep(1000);
+        await say('呼吸频率和你不一样。', { speed: 46, hold: 1800 });
+        presence(true);
+        whisperPan(0.7);
       } else {
-        /* 假来电在这里触发 */
-        await triggerCall();
+        staticBurst(500);
+        flash(300);
+        thud(); await sleep(300); thud();
+        await say('它坐起来了。', { speed: 46, hold: 1600 });
+        await say('面向你这边。', { speed: 44, hold: 2000 });
+        faceJump('resource/haunt/portrait.png', { ms: 900, hold: 850, vol: 0.55, invert: true });
       }
     })();
   };
 
-  script.mirror = function (n) {
-    var el = $('hMirror');
+  script.floor = function (n) {
     return (async function () {
       if (n === 1) {
-        await say('镜子。', { speed: 55 });
-        el.classList.add('showref');
-        await sleep(1400);
-        await say('里面只有房间。', { speed: 55, hold: 1200 });
-        await say('你还没走过去。', { dim: true, speed: 50, hold: 1400 });
+        await say('地上有东西。', { speed: 58 });
+        await sleep(900);
+        await say('不是你的。', { speed: 50 });
+        await say('一直在那个位置。', { speed: 48, hold: 1600 });
       } else if (n === 2) {
-        el.classList.add('showref', 'blink');
-        await say('镜子里有个人形。', { speed: 50 });
-        await sleep(1000);
-        await say('姿势和你不一样。', { speed: 48, hold: 1800 });
-        whisperPan(-0.8);
+        staticBurst(180);
+        await say('位置变了。', { speed: 50 });
+        await sleep(800);
+        await say('朝门口挪了半米。', { speed: 46, hold: 1800 });
         flash(120);
       } else {
-        el.classList.add('showref', 'blink');
-        bigWord('转过来', 650, true);
-        await sleep(500);
-        faceJump('resource/haunt/portrait.png', { full: true, ms: 1000, hold: 900, vol: 0.6, invert: true });
+        staticBurst(400);
+        bigWord('在动', 650, true);
+        await sleep(400);
         thud();
-        await say('它替你转了。', { speed: 48, hold: 1800 });
+        await say('它不是静物。', { speed: 44, hold: 1800 });
+        await say('它在爬。', { speed: 42, hold: 2200 });
       }
     })();
   };
 
-  script.photo = function (n) {
-    var el = $('hPhoto');
+  script.low = function (n) {
     return (async function () {
       if (n === 1) {
-        await say('相框。', { speed: 55 });
-        await sleep(800);
-        await say('照片里的人，眼珠在动。', { speed: 52, hold: 1600 });
-        el.classList.add('wrong');
-        flash(100);
+        await say('左下角那个黑影。', { speed: 56 });
+        await sleep(1000);
+        await say('监控拍不清。', { speed: 50 });
+        await say('红外也拍不清。', { speed: 48, hold: 1600 });
       } else if (n === 2) {
-        el.classList.add('wrong');
-        await say('你凑近了看。', { speed: 52 });
-        await sleep(600);
-        faceJump('resource/haunt/portrait.png', { ms: 700, hold: 650, vol: 0.4, shake: false });
-        await say('照片换了一张。', { speed: 50, hold: 1400 });
-        await say('背景是你房间。', { speed: 48, hold: 1800 });
+        staticBurst(300);
+        await say('你凑近了。', { speed: 50 });
+        await sleep(700);
+        faceJump('resource/haunt/photo.png', { ms: 700, hold: 650, vol: 0.45, shake: false });
+        await say('它也凑近了。', { speed: 46, hold: 1800 });
       } else {
-        el.classList.add('wrong');
-        flash(400);
-        invertPulse(2, 80);
-        await say('现在这张是刚拍的。', { speed: 48, hold: 1600 });
-        await say('快门声你听见了。', { speed: 46, hold: 2000 });
-      }
-    })();
-  };
-
-  script.screen = function (n) {
-    var el = $('hScreen');
-    return (async function () {
-      if (n === 1) {
-        await say('你在看的这一页。', { speed: 58 });
-        el.classList.add('watching');
-        await sleep(800);
-        await say('它也在看你。', { speed: 52, hold: 1600 });
-        el.querySelector('.msg').textContent = '它也在看你';
-      } else if (n === 2) {
-        /* 它知道关于你的事 */
-        el.classList.add('watching');
-        var f = S.facts.length ? S.facts.join(' · ') : '端口已锁定';
-        el.querySelector('.msg').textContent = f;
-        await say('屏幕记得你。', { speed: 52 });
-        await sleep(600);
-        await say('（' + f + '）', { dim: true, speed: 45, hold: 1800 });
-        if (S.visits >= 2) {
-          await say('第 ' + S.visits + ' 次了。', { speed: 48, hold: 1400 });
-        }
-        flash(150);
-      } else {
-        el.classList.add('watching');
-        el.querySelector('.msg').textContent = '别关我';
-        titleGlitch('别关它', '夜间独处习惯调查', 5);
-        await say('关掉这页，它会走吗？', { speed: 50, hold: 1600 });
-        await say('你试过。', { speed: 48 });
-        await say('它跟着去了下一个标签页。', { speed: 46, hold: 2000 });
+        staticBurst(500);
+        invertPulse(3, 70);
+        faceJump('resource/haunt/portrait.png', { full: true, ms: 1000, hold: 900, vol: 0.6 });
+        thud();
+        await say('现在看得清了。', { speed: 44, hold: 2000 });
       }
     })();
   };
 
   script.door = function (n) {
-    var el = $('hDoor');
     return (async function () {
       if (n === 1) {
-        await say('门。', { speed: 55 });
-        await sleep(600);
-        await say('你拧了一下。', { speed: 52 });
-        await say('锁着。', { speed: 50, hold: 1400 });
-        await say('可你进门时没锁。', { dim: true, speed: 48, hold: 1600 });
-      } else if (n === 2) {
-        el.classList.add('wrong', 'openish');
-        await say('门缝下面有东西。', { speed: 50 });
-        await sleep(1000);
-        await say('是头发。', { speed: 48, hold: 1800 });
-        whisperPan(0.7);
-        thud();
-      } else {
-        el.classList.add('wrong', 'openish');
-        flash(300);
-        await say('门外有人在敲。', { speed: 48 });
-        await sleep(900);
-        /* 三下敲击声（用 thud 模拟） */
-        thud(); await sleep(350); thud(); await sleep(350); thud();
-        await say('三下。', { speed: 48, hold: 1200 });
-        await say('节奏和你心跳一样。', { speed: 46, hold: 2000 });
-      }
-    })();
-  };
-
-  script.chair = function (n) {
-    var el = $('hChair');
-    return (async function () {
-      if (n === 1) {
-        await say('你身后的椅子。', { speed: 55 });
-        await say('你坐下时它在。', { speed: 52, hold: 1200 });
-        await say('现在多了一个轮廓。', { speed: 48, hold: 1800 });
-        el.classList.add('occupied');
-        presence(true);
-      } else if (n === 2) {
-        el.classList.add('occupied');
-        await say('轮廓更清楚了。', { speed: 50 });
+        await say('背景那个开口。', { speed: 58 });
         await sleep(800);
-        await say('它和你坐同一把椅子。', { speed: 48, hold: 1600 });
-        whisperPan(0);
-        swellDrone(0.09, 2);
-      } else {
-        el.classList.add('occupied');
-        flash(200);
-        faceJump('resource/haunt/chair.png', { full: true, ms: 1100, hold: 1000, vol: 0.65, invert: true });
+        await say('不是门。', { speed: 52 });
+        await say('比门更深。', { speed: 48, hold: 1800 });
+      } else if (n === 2) {
+        staticBurst(250);
+        await say('深处有东西在看。', { speed: 50 });
+        await sleep(1100);
+        await say('红外照不亮它。', { speed: 46, hold: 1600 });
+        whisperPan(-0.3);
         thud();
-        await say('它坐下了。', { speed: 46, hold: 1600 });
-        await say('和你。', { speed: 44, hold: 2200 });
+      } else {
+        staticBurst(450);
+        flash(350);
+        /* 三下敲击 */
+        thud(); await sleep(320); thud(); await sleep(320); thud();
+        await say('它在敲滤镜外面的玻璃。', { speed: 44, hold: 1600 });
+        await say('节奏和你心跳一样。', { speed: 42, hold: 2200 });
+        if (navigator.vibrate) { try { navigator.vibrate([120, 80, 120]); } catch (e) {} }
       }
     })();
   };
 
   script.ceil = function (n) {
-    var el = $('hCeil');
     return (async function () {
-      el.classList.add('wet');
-      if (n === 1) {
-        await say('天花板上有一块湿痕。', { speed: 52 });
-        await sleep(1000);
-        await say('不是漏水。', { speed: 48, hold: 1600 });
-        await say('形状像一个人。', { speed: 46, hold: 1800 });
-      } else {
+      staticBurst(300);
+      await say('上沿有一块污渍。', { speed: 52 });
+      await sleep(1000);
+      await say('不是漏水。', { speed: 48, hold: 1400 });
+      await say('形状像躺着的人。', { speed: 46, hold: 1800 });
+      if (n >= 2) {
         flash(200);
         bigWord('在上面', 700, true);
-        await sleep(500);
         thud();
-        await say('它不在你后面。', { speed: 46, hold: 1400 });
-        await say('在你上面。', { speed: 44, hold: 2200 });
+        await say('它不在房间里。', { speed: 44, hold: 1400 });
+        await say('在摄像头上面。', { speed: 42, hold: 2000 });
       }
     })();
   };
 
   script.under = function (n) {
-    var el = $('hUnder');
     return (async function () {
+      await say('床底。', { speed: 52 });
+      await say('别看。', { speed: 48, hold: 1000 });
+      await say('……你看了。', { speed: 46, hold: 800 });
+      staticBurst(200);
+      flash(150);
+      scream(450, 0.4);
+      await sleep(700);
       if (n === 1) {
-        await say('桌子底下。', { speed: 52 });
-        await say('别低头。', { speed: 48, hold: 1200 });
-        await say('……你低了。', { speed: 46, hold: 1000 });
-        el.classList.add('peek');
-        flash(120);
-        scream(400, 0.35);
-        await sleep(600);
-        await say('什么都没有。', { speed: 50, hold: 1400 });
-        await say('刚才那两下红光，', { dim: true, speed: 48 });
-        await say('你看见了吗。', { speed: 46, hold: 1800 });
+        await say('什么都没有。', { speed: 50, hold: 1200 });
+        await say('刚才那两下红点，', { dim: true, speed: 48 });
+        await say('是摄像头的补光。', { speed: 46, hold: 1600 });
       } else {
-        el.classList.add('peek');
-        flash(300);
         invertPulse(3, 70);
         faceJump('resource/haunt/photo.png', { ms: 900, hold: 850, vol: 0.55 });
         thud();
-        await say('它不喜欢被看。', { speed: 44, hold: 2000 });
+        await say('它不喜欢被拍到。', { speed: 44, hold: 2000 });
       }
     })();
   };
+
+  function onHot(id) {
+    var n = (S.done[id] || 0) + 1;
+    markVisited(id);
+    refreshPulse();
+    if (script[id]) {
+      script[id](n).then(function () {
+        if (n === 2) typeGhost(2000);
+        if (n >= 3) presence(true);
+        refreshPulse();
+      });
+    } else {
+      refreshPulse();
+    }
+  }
 
   /* ---------- 假来电 ---------- */
   function triggerCall() {
@@ -1160,12 +929,11 @@ body.wide #dark{
       S.callSeen = true;
       var el = $('call');
       var tail = ('0000' + (S.visits * 7919 % 10000)).slice(-4);
-      $('callName').textContent = '未知号码 ····' + tail;
+      $('callName').textContent = '未知 ····' + tail;
       el.classList.add('on');
       document.title = '来电';
       playRing();
       if (navigator.vibrate) { try { navigator.vibrate([300, 200, 300, 200, 300]); } catch (e) {} }
-
       $('callAns').onclick = function () {
         el.classList.remove('on');
         document.title = '通话中';
@@ -1178,7 +946,6 @@ body.wide #dark{
       };
     });
   }
-
   function playRing() {
     if (!actx) return;
     try {
@@ -1192,24 +959,22 @@ body.wide #dark{
         var t0 = t + k * 1.5;
         o.frequency.setValueAtTime(440, t0);
         o.frequency.setValueAtTime(480, t0 + 0.32);
-        g.gain.linearRampToValueAtTime(0.06, t0 + 0.04);
-        g.gain.setValueAtTime(0.06, t0 + 0.6);
+        g.gain.linearRampToValueAtTime(0.055, t0 + 0.04);
+        g.gain.setValueAtTime(0.055, t0 + 0.6);
         g.gain.linearRampToValueAtTime(0, t0 + 0.85);
       }
       o.start(t); o.stop(t + 4.5);
     } catch (e) {}
   }
-
   async function liveCall() {
-    /* 用 bigWord 屏 + 旁白演通话 */
     var lines = [
       [1.0, '……喂？'],
       [3.2, '别挂。'],
       [5.5, '我不是打错的。'],
-      [8.5, '你身后那把椅子——'],
-      [11.5, '我上一次也坐着它。'],
-      [15.0, '现在我在你后面。'],
-      [18.5, '通话结束前，别回头。'],
+      [8.5, '那把摇椅——'],
+      [11.5, '我上一次也看着它。'],
+      [15.0, '现在我在镜头外面。'],
+      [18.5, '通话结束前，别移开视线。'],
       [22.0, '……到了。']
     ];
     whisperPan(0);
@@ -1221,111 +986,67 @@ body.wide #dark{
     document.title = '夜间独处习惯调查';
     flash(400);
     presence(true);
-    $('hChair').classList.add('occupied');
-  }
-
-  /* ---------- 物件解锁 ---------- */
-  var CORE = ['window', 'bed', 'phone', 'mirror', 'photo', 'screen', 'door', 'chair'];
-  var LATE = ['ceil', 'under'];
-
-  function refreshPulse() {
-    if (S.ending) return;
-    var coreDone = CORE.filter(function (id) { return S.done[id]; }).length;
-    /* 永远有且只有一个脉冲引导 */
-    var target = null;
-    if (coreDone < 8) {
-      /* 下一个没点过的核心 */
-      for (var i = 0; i < CORE.length; i++) {
-        if (!S.done[CORE[i]]) { target = CORE[i]; break; }
-      }
-    } else if (!S.done.ceil) {
-      $('hCeil').style.display = '';
-      target = 'ceil';
-    } else if (!S.done.under) {
-      $('hUnder').style.display = '';
-      target = 'under';
-    } else {
-      /* 全点完 → 终局 */
-      startEnding();
-      return;
-    }
-    CORE.concat(LATE).forEach(function (id) { pulseHot('h' + id.charAt(0).toUpperCase() + id.slice(1), false); });
-    if (target) {
-      var id = 'h' + target.charAt(0).toUpperCase() + target.slice(1);
-      pulseHot(id, true);
-    }
-  }
-
-  async function onHot(id) {
-    var n = (S.done[id] || 0) + 1;
-    markVisited(id);
-    refreshPulse();
-    /* 先演剧本 */
-    if (script[id]) {
-      await script[id](n);
-    }
-    /* 二次访问：幽灵作答闪一下 */
-    if (n === 2) typeGhost(2000);
-    /* 三次访问后 presence 加强 */
-    if (n >= 3) presence(true);
-    refreshPulse();
   }
 
   /* ---------- 开场 ---------- */
   async function boot() {
-    buildRoom();
-    S.startedAt = Date.now();
+    /* 绑定热区 */
+    document.querySelectorAll('.hot').forEach(function (el) {
+      el.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (!S.started || S.ending) return;
+        onHot(el.getAttribute('data-id'));
+      });
+    });
 
-    /* 冷开场：假恢复 */
+    S.startedAt = Date.now();
     nline.innerHTML = '';
     var bootEl = document.createElement('span');
-    bootEl.style.cssText = 'font-size:11px;letter-spacing:.2em;color:#3a4050;display:block;margin-bottom:16px';
+    bootEl.style.cssText = 'font-size:11px;letter-spacing:.2em;color:rgba(140,180,120,.45);display:block;margin-bottom:14px;font-family:SF Mono,monospace';
     nline.appendChild(bootEl);
     var car0 = document.createElement('span');
     car0.className = 'caret';
     nline.appendChild(car0);
     var lines = [
-      '连接受试者终端……',
-      '读取环境光…… 低',
-      '检测独处状态…… 是',
-      '恢复房间 …… 71%'
+      'CAM_07 上线……',
+      '红外补光 …… 高',
+      '检测独处 …… 是',
+      '回放缓冲 …… 71%'
     ];
     for (var i = 0; i < lines.length; i++) {
       for (var c = 0; c <= lines[i].length; c++) {
         bootEl.textContent = lines[i].slice(0, c);
-        await sleep(22 + Math.random() * 35);
+        await sleep(20 + Math.random() * 32);
       }
-      await sleep(i === 3 ? 700 : 200);
+      await sleep(i === 3 ? 600 : 180);
     }
-    bootEl.textContent = '恢复房间 …… 100%';
-    flash(160);
+    bootEl.textContent = '回放缓冲 …… 100%';
+    staticBurst(280);
     await sleep(400);
 
     nline.innerHTML = '';
     var h = new Date().getHours();
     var late = (h >= 23 || h < 5);
-
-    await say(late ? '房间恢复了。' : '你打开了这个页面。', { speed: 75, hold: 900 });
-    await say('这是你现在的房间。', { speed: 65, hold: 800 });
-    await say('很暗。', { speed: 60, hold: 1200 });
-    await say('打开手电筒，看看周围。', { dim: true, speed: 55, hold: 600 });
+    await say(late ? '这是你房间的实时画面。' : '你调出了这个房间的监控。', { speed: 72, hold: 900 });
+    await say('CAM_07，红外模式。', { speed: 58, hold: 700 });
+    await say('画面里那把椅子，', { speed: 55 });
+    await say('不一直是空的。', { speed: 50, hold: 1600 });
+    await say('点虚线圈，靠近看。', { dim: true, speed: 48, hold: 600 });
 
     if (S.facts.length) {
-      await say('（' + S.facts[0] + ' · 识别完成）', { dim: true, speed: 40, hold: 1200 });
+      await say('（终端 ' + S.facts[0] + ' 已识别）', { dim: true, speed: 38, hold: 1200 });
     }
-
     if (S.visits >= 2) {
-      flash(200);
-      await say('第 ' + S.visits + ' 次进入这个房间。', { dim: true, speed: 55, hold: 1400 });
+      staticBurst(200);
+      await say('这是你第 ' + S.visits + ' 次调阅。', { dim: true, speed: 52, hold: 1400 });
     }
 
-    $('hint').textContent = '移动光标 · 点击发光的物件';
+    $('hint').textContent = '移动 · 点击虚线圈';
     setTimeout(function () { $('hint').style.opacity = '0'; }, 8000);
 
     initAudio();
     startDrone();
     S.started = true;
-    $('prog').textContent = '0 / 9';
     refreshPulse();
   }
 
@@ -1333,88 +1054,77 @@ body.wide #dark{
   async function startEnding() {
     if (S.ending) return;
     S.ending = true;
-    document.body.classList.add('wide', 'tilt');
+    document.body.classList.add('wide');
     swellDrone(0.14, 3);
     presence(true);
 
-    await say('你都看过了。', { speed: 70, hold: 1400 });
-    await say('房间还是这个房间。', { speed: 60, hold: 1000 });
-    await say('变的是你。', { speed: 55, hold: 1800 });
+    await say('你都看过了。', { speed: 68, hold: 1400 });
+    await say('房间还是这个房间。', { speed: 58, hold: 1000 });
+    await say('变的是录像里的人数。', { speed: 52, hold: 1800 });
 
+    staticBurst(400);
     flash(300);
     await sleep(500);
 
-    /* 全屋一起演 */
-    $('hWindow').classList.add('open', 'figure');
-    $('hChair').classList.add('occupied');
-    $('hDoor').classList.add('wrong', 'openish');
-    $('hMirror').classList.add('showref', 'blink');
-    $('hPhoto').classList.add('wrong');
-    $('hBed').classList.add('slept');
+    /* 全场景亮灯 */
     $('hCeil').style.display = '';
     $('hCeil').classList.add('wet');
     $('hUnder').style.display = '';
     $('hUnder').classList.add('peek');
+    document.querySelectorAll('.hot').forEach(function (el) { el.classList.add('visited'); });
 
-    await sleep(1200);
-    bigWord('它一直都在', 900, true);
+    await sleep(1000);
+    bigWord('画面里多了一个人', 900, true);
     thud();
     invertPulse(3, 100);
-    await sleep(800);
+    await sleep(700);
 
-    /* 跳脸连段（短、狠） */
-    faceJump('resource/haunt/chair.png', { full: true, ms: 800, hold: 700, vol: 0.6 });
-    await sleep(400);
-    faceJump('resource/haunt/portrait.png', { full: true, ms: 800, hold: 700, vol: 0.65, invert: true });
-    await sleep(400);
-    faceJump('resource/haunt/photo.png', { full: true, ms: 900, hold: 800, vol: 0.7 });
+    faceJump('resource/haunt/chair.png', { full: true, ms: 800, hold: 700, vol: 0.55 });
+    await sleep(350);
+    faceJump('resource/haunt/portrait.png', { full: true, ms: 800, hold: 700, vol: 0.6, invert: true });
+    await sleep(350);
+    faceJump('resource/haunt/photo.png', { full: true, ms: 900, hold: 800, vol: 0.65 });
     thud();
 
-    await sleep(600);
-    /* 安静一刀 */
+    await sleep(500);
     stopDrone();
-    await say('仪式完成了。', { speed: 85, hold: 2000 });
-    await say('你可以关掉页面了。', { speed: 80, hold: 2000 });
-    await say('它说，', { speed: 75, hold: 1200 });
+    await say('录制结束。', { speed: 80, hold: 1800 });
+    await say('你可以关掉播放器了。', { speed: 72, hold: 1800 });
+    await say('它说，', { speed: 68, hold: 1100 });
     vSay('它跟你一起走', 0.3, 0.55);
-    await say('它跟你一起走。', { speed: 50, hold: 2400 });
+    await say('它跟你一起走。', { speed: 48, hold: 2400 });
 
     flash(500);
-    await sleep(800);
+    await sleep(700);
 
-    /* 来电追出去 */
     await triggerCall();
 
-    /* 结尾屏 */
     var end = $('end');
     var et = $('endText');
     end.classList.add('on');
     et.textContent = '';
-    var msg = '房间已关闭。\n但缓存里留了一把钥匙。\n\n下次你打开任何一页，\n它都会先到。';
+    var msg = '录像已存档。\n但缓存里留了一段循环。\n\n下次你打开任何摄像头，\n它都会先入画。';
     for (var i = 0; i < msg.length; i++) {
       et.textContent += msg[i];
-      await sleep(70);
+      await sleep(68);
     }
-    $('endMeta').textContent = '受试者 #' + (5 + S.visits) + ' · 登记完成';
+    $('endMeta').textContent = 'SUBJECT #' + (5 + S.visits) + ' · LOGGED';
     titleGlitch('别关', '夜间独处习惯调查', 3);
 
-    /* 10 秒后极轻回马枪 */
     setTimeout(function () {
       faceJump('resource/haunt/photo.png', { ms: 400, hold: 350, vol: 0.25, shake: false });
     }, 10000);
   }
 
-  /* ---------- Esc 提示 ---------- */
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && S.started && !S.ending) {
-      say('Esc 出不去。', { dim: true, speed: 50, hold: 1400 });
+      say('Esc 退出不了播放。', { dim: true, speed: 48, hold: 1400 });
     }
   });
 
-  /* ---------- 启动 ---------- */
   boot();
-
 })();
 </script>
+
 </body>
 </html>
