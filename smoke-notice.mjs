@@ -50,6 +50,18 @@ ok('BAD_TITLES');
  '4 楼住户请勿应答'].forEach((k) => ok(k));
 if (!/withCard/.test(CODE)) fail('withCard card/visual split');
 
+/* 细思极恐强化层（监控元信息 / 二刷差异 / 4 楼按键 / 窗后人影） */
+['id="statNum"', 'id="elevDisp"', 'hallFig', 'figEyes', 'recmode',
+ '● REC', '· 本户', 'statsShow', '查无此户', '上一期播出结束后',
+ '请配合开门', '请勿关闭电视', '上次收看至 04:04', '这次，关了吗'].forEach((k) => ok(k));
+if (!/visits >= 2/.test(CODE)) fail('rewatch branches');
+
+/* 现实交互层 */
+['id="homeQ"', 'id="homeA"', '独自在家', '他们也会收到本期通知',
+ 'mouseleave', "'offline'", 'getBattery', 'fullscreenchange',
+ 'pointerdown', 'figPar', '--gx', '有人应声', '视线回来了就好'].forEach((k) => ok(k));
+if (!/addEventListener\('offline'/.test(CODE)) fail('offline listener');
+
 /* 开场在 script 前，且只有一个播放入口 */
 const bootIdx = CODE.indexOf('id="playBtn"');
 const scriptIdx = CODE.indexOf('<script>');
