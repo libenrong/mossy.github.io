@@ -1,0 +1,1811 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<title>幸福里社区温馨提示</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:#000;
+  color:#dfe4ec;
+  font-family:'Songti SC','SimSun','Noto Serif SC','Microsoft YaHei',serif;
+  -webkit-font-smoothing:antialiased;
+  overflow:hidden;
+  user-select:none;
+  -webkit-user-select:none;
+}
+button{font-family:inherit;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+
+/* ===== 开场 ===== */
+#boot{
+  position:fixed;inset:0;z-index:400;background:#000;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:32px;text-align:center;
+}
+#boot .tape{
+  border:1px solid #2a3242;background:#0a0e16;
+  padding:30px 36px 34px;max-width:440px;width:100%;
+}
+#boot .org{
+  font-size:10px;letter-spacing:.5em;color:#6d7891;
+  font-family:'SF Mono','Consolas',monospace;margin-bottom:16px;
+}
+#boot h1{
+  font-size:19px;letter-spacing:.3em;color:#e8eef6;
+  font-weight:600;line-height:1.9;
+}
+#boot .subline{font-size:11px;letter-spacing:.35em;color:#8792a8;margin-top:10px}
+#boot .visit{font-size:11px;letter-spacing:.2em;color:#c25b5b;margin-top:14px;display:none;font-family:'SF Mono',monospace}
+#boot .visit.on{display:block}
+#boot .warn{
+  font-size:11px;line-height:2;color:#7c8698;
+  margin-top:22px;max-width:340px;
+}
+#playBtn{
+  margin-top:26px;background:transparent;color:#dfe6f0;
+  border:1px solid #3a4459;padding:12px 46px;
+  font-size:14px;letter-spacing:.4em;text-indent:.4em;
+  transition:background .2s,color .2s,border-color .2s;
+}
+#playBtn:hover{background:#dfe6f0;color:#0a0e16;border-color:#dfe6f0}
+#boot .hint{
+  font-size:9px;letter-spacing:.3em;color:#4d5669;margin-top:20px;
+  font-family:'SF Mono',monospace;
+}
+.hidden{display:none !important}
+
+/* ===== 电视 ===== */
+#tv{
+  position:fixed;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  width:min(100vw, calc(100vh * 4 / 3));
+  height:min(100vh, calc(100vw * 3 / 4));
+  background:#000;overflow:hidden;z-index:10;
+}
+@media (max-width:640px){
+  #tv{width:100vw;height:100vh}
+}
+#picture{
+  position:absolute;inset:0;overflow:hidden;
+  background:#011542;
+  transition:background 1.2s;
+}
+#picture.shaking{animation:shake .07s linear infinite}
+@keyframes shake{
+  0%{transform:translate(0,0)}
+  25%{transform:translate(-5px,3px)}
+  50%{transform:translate(4px,-3px)}
+  75%{transform:translate(-3px,5px)}
+  100%{transform:translate(0,0)}
+}
+
+/* 台标 */
+#station{
+  position:absolute;top:16px;right:20px;z-index:32;
+  text-align:right;pointer-events:none;
+  transition:opacity .3s;
+}
+#station.off{opacity:0}
+#station .st1{
+  font-size:16px;font-weight:700;letter-spacing:.25em;color:#fff;
+  text-shadow:1px 0 rgba(255,40,40,.5),-1px 0 rgba(0,220,255,.5),0 2px 8px rgba(0,0,0,.8);
+}
+#station .st2{
+  font-size:8.5px;letter-spacing:.3em;color:rgba(255,255,255,.72);
+  margin-top:5px;font-family:'SF Mono',monospace;
+  text-shadow:0 1px 4px rgba(0,0,0,.9);
+}
+
+/* 通知卡（底部面板，上方留给场景画面） */
+#card{
+  position:absolute;left:0;right:0;bottom:0;height:46%;z-index:26;
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  background:rgba(3,17,52,.95);
+  border-top:1px solid rgba(255,255,255,.34);
+  padding:14px 8% 18px;
+}
+#card.on{display:flex}
+#card .frame{
+  padding:0;max-width:600px;width:100%;
+  text-align:center;
+}
+#card .ctitle{
+  color:#e8574f;font-size:clamp(15px,2.6vh,20px);
+  letter-spacing:.5em;text-indent:.5em;font-weight:700;
+  margin-bottom:4px;
+}
+#card .cno{
+  color:rgba(255,255,255,.85);font-size:clamp(10px,1.6vh,12px);
+  letter-spacing:.5em;text-indent:.5em;margin-bottom:12px;
+  font-family:'SF Mono',monospace;
+}
+#card .cbody{
+  color:#eff3f9;font-size:clamp(12.5px,2vh,16px);
+  line-height:2.1;letter-spacing:.1em;white-space:pre-wrap;
+}
+
+/* ===== 场景画面 ===== */
+#visual{
+  position:absolute;inset:0;z-index:12;pointer-events:none;
+}
+#visual .vs{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  padding-bottom:15%;
+  opacity:0;transition:opacity .7s;
+}
+#visual.withCard .vs{inset:0 0 46% 0;padding-bottom:0}
+#visual .vs.on{opacity:1}
+#visual .vs > svg{
+  width:min(76%,540px);height:auto;max-height:86%;
+}
+#visual .vs.fill{padding-bottom:0}
+#visual .vs.fill > svg{
+  position:absolute;inset:0;width:100%;height:100%;max-height:none;
+}
+#visual .vs.dim{opacity:.4}
+#visual .vs.dim.on{opacity:.45}
+
+.camtag{
+  position:absolute;top:66px;left:18px;
+  font-family:'SF Mono',Consolas,monospace;
+  font-size:10px;letter-spacing:.18em;
+  color:rgba(120,210,120,.6);
+  text-shadow:0 0 6px rgba(60,160,60,.4);
+}
+
+/* S1 图文卡 */
+.rcard{
+  position:absolute;inset:0;display:none;
+  flex-direction:column;align-items:center;justify-content:center;
+  gap:20px;text-align:center;padding:0 12%;
+}
+.rcard.on{display:flex}
+.rcard svg{width:74px;height:74px}
+.rcard .rt{
+  font-size:clamp(19px,4.4vh,30px);letter-spacing:.35em;text-indent:.35em;
+  color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.85),1px 0 rgba(255,0,60,.4),-1px 0 rgba(0,255,255,.4);
+  font-weight:700;
+}
+.rcard .rs{
+  font-size:clamp(11px,1.9vh,14px);letter-spacing:.2em;
+  color:rgba(230,236,246,.85);
+  border-top:1px solid rgba(255,255,255,.3);padding-top:14px;
+}
+
+/* S2 楼道门缝 */
+.doorSlit{
+  transform:scaleX(.06);transform-origin:left center;
+  transition:transform 26s linear;
+}
+#vCorridor.open .doorSlit{transform:scaleX(1)}
+.doorEyes{opacity:0;transition:opacity .5s}
+#vCorridor.eyes .doorEyes{opacity:1}
+
+/* S3 快递柜 4 号柜 */
+.gap4{opacity:0;transition:opacity .12s}
+#vLockers.show4 .gap4{opacity:1}
+
+/* S4 统计点阵 */
+.statWrap{display:flex;flex-direction:column;align-items:center;gap:18px}
+.statNum{
+  font-family:'SF Mono',Consolas,monospace;
+  font-size:clamp(26px,6.5vh,46px);letter-spacing:.22em;
+  color:#eef2f8;text-shadow:1px 0 rgba(255,0,60,.5),-1px 0 rgba(0,255,255,.5);
+}
+.statNum small{font-size:.42em;color:#e0574f;letter-spacing:.3em;margin-left:.6em}
+.statGrid{
+  display:grid;grid-template-columns:repeat(31,1fr);
+  gap:4px;width:min(74%,430px);
+}
+.statGrid .dot{
+  aspect-ratio:1;background:rgba(238,242,248,.85);
+  box-shadow:0 0 4px rgba(255,255,255,.25);
+}
+.statGrid .dot.last{
+  background:#e04040;
+  animation:lastBlink 1.1s step-end infinite;
+}
+@keyframes lastBlink{0%,100%{opacity:1}50%{opacity:.15}}
+
+/* S5 电梯按钮 */
+.ebg circle{
+  fill:#232932;stroke:#3a434f;stroke-width:2;
+  transition:fill .3s,filter .3s;
+}
+.ebg text{
+  fill:#aebdcc;font-family:'SF Mono',Consolas,monospace;
+  transition:fill .3s;
+}
+.ebg.lit circle{
+  fill:#ffd97a;filter:drop-shadow(0 0 6px rgba(255,210,110,.9));
+}
+.ebg.lit text{fill:#241a05}
+.elevSlot{fill:#000;stroke:#0d1116;stroke-width:2}
+#vElev.flick .elevSlot{opacity:.25}
+
+/* S5 走廊窗户 */
+.hallWin{opacity:0;transition:opacity 3.2s}
+#vHall.reveal .hallWin{opacity:1}
+.hallWinGlow{animation:winGlow 3.4s ease-in-out infinite}
+@keyframes winGlow{0%,100%{opacity:.75}50%{opacity:1}}
+
+/* S7 客厅灯 */
+#vRoom .roomImg{
+  position:absolute;inset:0;width:100%;height:100%;
+  object-fit:cover;opacity:.55;
+  filter:brightness(.95) saturate(.92);
+}
+#vRoom .lamp{
+  position:absolute;left:14%;top:46%;
+  width:170px;height:170px;
+  transform:translate(-50%,-50%);
+  background:radial-gradient(circle, rgba(255,212,140,.7) 0%, rgba(255,190,110,.28) 38%, transparent 70%);
+  opacity:.32;transition:opacity 2.4s;
+}
+#vRoom.lit .lamp{opacity:1;animation:lampPulse 2.6s ease-in-out infinite}
+@keyframes lampPulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.35)}}
+
+/* 跑马灯 */
+#ticker{
+  position:absolute;left:0;right:0;bottom:0;height:25px;z-index:29;
+  background:rgba(0,0,0,.82);overflow:hidden;
+  opacity:0;transition:opacity .6s;pointer-events:none;
+}
+#ticker.on{opacity:1}
+#tickerText{
+  position:absolute;top:4px;left:0;white-space:nowrap;
+  font-size:12px;letter-spacing:.18em;line-height:17px;
+  color:#dfe4ec;
+  text-shadow:1px 0 rgba(255,0,60,.35),-1px 0 rgba(0,255,255,.35);
+  animation:tickMove 30s linear infinite;
+}
+@keyframes tickMove{
+  from{transform:translateX(100vw)}
+  to{transform:translateX(-100%)}
+}
+
+/* 字幕 */
+#sub{
+  position:absolute;left:0;right:0;bottom:7%;z-index:30;
+  padding:0 6%;text-align:center;pointer-events:none;
+  min-height:3.4em;
+}
+#sub .line{
+  display:inline-block;
+  background:rgba(0,0,0,.74);
+  padding:7px 16px;
+  color:#f4f4ea;
+  font-size:clamp(14px,2.4vh,19px);
+  line-height:1.95;letter-spacing:.1em;
+  text-shadow:1px 0 rgba(255,0,60,.45),-1px 0 rgba(0,255,255,.45),0 1px 3px rgba(0,0,0,.9);
+}
+#sub .line.dim{
+  background:transparent;color:#98a2b4;
+  font-size:clamp(11px,1.8vh,13px);letter-spacing:.2em;
+}
+#sub .caret{
+  display:inline-block;width:1px;height:1em;background:#d8dccf;
+  vertical-align:text-bottom;margin-left:2px;
+  animation:blink 1s step-end infinite;
+}
+@keyframes blink{50%{opacity:0}}
+
+/* 播放机 OSD */
+#osdTL,#osdBL{
+  position:absolute;z-index:60;pointer-events:none;
+  font-family:'SF Mono','Consolas','Courier New',monospace;
+  font-size:12px;letter-spacing:.16em;
+  color:rgba(244,244,240,.94);
+  text-shadow:1px 0 rgba(255,0,50,.4),-1px 0 rgba(0,255,255,.4),0 1px 4px rgba(0,0,0,.9);
+}
+#osdTL{top:13px;left:17px}
+#osdBL{bottom:12px;left:17px}
+#osdTL .spd,#osdTL .date{display:block;font-size:11px;opacity:.85;margin-top:4px}
+
+/* 图层：扫描线 / 噪点 / 暗角 / 追踪带 */
+#scan{
+  position:absolute;inset:0;z-index:40;pointer-events:none;
+  background:repeating-linear-gradient(0deg,
+    transparent 0 2px, rgba(0,0,0,.17) 2px 3px);
+  animation:scanRoll 8s linear infinite;
+}
+@keyframes scanRoll{from{background-position:0 0}to{background-position:0 120px}}
+#noise{
+  position:absolute;inset:-40px;z-index:41;pointer-events:none;opacity:.09;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:256px;
+  animation:noiseShift .14s steps(2) infinite;
+}
+@keyframes noiseShift{
+  0%{background-position:0 0}
+  50%{background-position:128px 64px}
+  100%{background-position:64px 128px}
+}
+#vig{
+  position:absolute;inset:0;z-index:42;pointer-events:none;
+  background:radial-gradient(ellipse 88% 82% at 50% 48%, transparent 52%, rgba(0,0,0,.62) 100%);
+}
+#track{
+  position:absolute;left:-5%;right:-5%;height:64px;top:-80px;z-index:44;
+  pointer-events:none;opacity:0;
+  background:repeating-linear-gradient(0deg,
+    rgba(255,255,255,.13) 0 1px, transparent 1px 3px,
+    rgba(0,0,0,.4) 3px 4px, transparent 4px 7px);
+  filter:blur(.4px);
+}
+#track.on{animation:trackRoll .65s linear}
+@keyframes trackRoll{
+  0%{opacity:.9;top:-80px}
+  100%{opacity:.9;top:110%}
+}
+
+/* 彩条测试卡 */
+#bars{
+  position:absolute;inset:0;z-index:28;display:none;
+  background:linear-gradient(90deg,
+    #c0c0c0 0 14.28%, #c0c000 14.28% 28.57%,
+    #00c0c0 28.57% 42.85%, #00c000 42.85% 57.14%,
+    #c000c0 57.14% 71.42%, #c00000 71.42% 85.71%,
+    #0000c0 85.71% 100%);
+}
+#bars.on{display:block}
+
+/* 特效层 */
+#flash{
+  position:absolute;inset:0;background:#fff;z-index:70;
+  opacity:0;pointer-events:none;transition:opacity .07s;
+}
+#flash.on{opacity:1}
+#staticFx{
+  position:absolute;inset:0;z-index:69;opacity:0;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:256px;
+  mix-blend-mode:screen;
+  transition:opacity .08s;
+}
+#staticFx.on{opacity:.5;animation:staticShift .1s steps(2) infinite}
+@keyframes staticShift{
+  0%{background-position:0 0}
+  50%{background-position:128px 64px}
+  100%{background-position:64px 128px}
+}
+#invertFx{
+  position:absolute;inset:0;background:#d8e6ff;z-index:71;
+  opacity:0;pointer-events:none;mix-blend-mode:difference;
+}
+#bigWord{
+  position:absolute;inset:0;z-index:75;display:flex;
+  align-items:center;justify-content:center;
+  font-size:clamp(28px,7.5vw,60px);letter-spacing:.4em;text-indent:.4em;
+  color:#f0f0e6;opacity:0;pointer-events:none;
+  transition:opacity .07s;text-align:center;
+  text-shadow:0 0 30px rgba(0,0,0,.9),2px 0 rgba(255,0,60,.6),-2px 0 rgba(0,255,255,.6);
+}
+#bigWord.on{opacity:1}
+#bigWord.inv{color:#050810;background:#f0f0e6}
+#jump{
+  position:absolute;inset:0;z-index:80;display:none;
+  align-items:center;justify-content:center;background:#000;
+}
+#jump.on{display:flex}
+#jump img{width:100%;height:100%;object-fit:cover}
+#jump.inv{filter:invert(1) hue-rotate(90deg)}
+#blackout{
+  position:absolute;inset:0;background:#000;z-index:95;
+  opacity:0;pointer-events:none;transition:opacity .12s;
+}
+#blackout.on{opacity:1}
+</style>
+</head>
+<body>
+
+<div id="boot">
+  <div class="tape">
+    <div class="org">XINGFULI COMMUNITY · TAPE NO.02</div>
+    <h1>幸福里社区<br>温馨提示</h1>
+    <div class="subline">第 2 期 · 物业发放 · 请组织观看</div>
+    <div class="visit" id="bootVisit"></div>
+    <p class="warn">录像含画面闪烁、突发音效。<br>心脏不适、未成年人请勿观看。<br>惊吓片段可按 Esc 跳过。</p>
+    <button id="playBtn" type="button">▶ 播放</button>
+    <div class="hint">建议全屏 · 戴耳机 · 观看约 4 分钟</div>
+  </div>
+</div>
+
+<div id="tv">
+  <div id="picture">
+    <div id="bgfill" style="position:absolute;inset:0;background:transparent"></div>
+
+    <div id="station">
+      <div class="st1">幸福里社区</div>
+      <div class="st2">社区有线 · 第 2 频道</div>
+    </div>
+
+    <div id="visual">
+      <div class="vs" id="vRoutine">
+        <div class="rcard" data-r="0">
+          <svg viewBox="0 0 64 64" fill="none" stroke="#e8eef6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 18h36M24 18v-6h16v6M20 18l3 38h18l3-38"/>
+            <path d="M28 27v20M36 27v20" stroke="#7fb6ff"/>
+          </svg>
+          <div class="rt">垃圾分类 · 定时投放</div>
+          <div class="rs">每日 7:00–9:00 / 18:00–20:30</div>
+        </div>
+        <div class="rcard" data-r="1">
+          <svg viewBox="0 0 64 64" fill="none" stroke="#e8eef6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M32 6l22 8v16c0 14-9 24-22 28C19 54 10 44 10 30V14z"/>
+            <path d="M32 22v14M32 42v3" stroke="#ff6b6b"/>
+          </svg>
+          <div class="rt">防范电信诈骗</div>
+          <div class="rs">自称公检法要求转账的 · 都是诈骗</div>
+        </div>
+        <div class="rcard" data-r="2">
+          <svg viewBox="0 0 64 64" fill="none" stroke="#e8eef6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="18" cy="46" r="8"/>
+            <circle cx="46" cy="46" r="8"/>
+            <path d="M18 46l7-17h12l9 17M25 29h14M33 29l-3-7h-6"/>
+            <circle cx="32" cy="33" r="27" stroke="#ff5252" stroke-width="4"/>
+            <path d="M13 52L51 14" stroke="#ff5252" stroke-width="4"/>
+          </svg>
+          <div class="rt">禁止电动车进楼</div>
+          <div class="rs">一旦起火 · 责任追查到户</div>
+        </div>
+      </div>
+
+      <div class="vs fill" id="vCorridor">
+        <svg viewBox="0 0 800 450" preserveAspectRatio="xMidYMid slice">
+          <defs>
+            <linearGradient id="gFloor" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#1b2027"/>
+              <stop offset="1" stop-color="#0c0f13"/>
+            </linearGradient>
+            <radialGradient id="gLight" cx="0.5" cy="0.5" r="0.5">
+              <stop offset="0" stop-color="#ffe9b0" stop-opacity="0.5"/>
+              <stop offset="1" stop-color="#ffe9b0" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <rect width="800" height="450" fill="#0a0d11"/>
+          <polygon points="0,450 800,450 530,235 270,235" fill="url(#gFloor)"/>
+          <polygon points="0,0 800,0 530,150 270,150" fill="#07090c"/>
+          <polygon points="0,0 270,150 270,235 0,450" fill="#10141a"/>
+          <polygon points="800,0 530,150 530,235 800,450" fill="#0e1217"/>
+          <rect x="270" y="150" width="260" height="85" fill="#13171d"/>
+          <rect x="345" y="158" width="150" height="77" fill="#1d232c" stroke="#2a323d" stroke-width="2"/>
+          <rect x="345" y="158" width="73" height="77" fill="#20262f"/>
+          <rect x="422" y="158" width="73" height="77" fill="#1a1f27"/>
+          <rect class="doorSlit" x="418" y="160" width="30" height="73" fill="#000"/>
+          <g class="doorEyes">
+            <ellipse cx="430" cy="188" rx="3.5" ry="5" fill="#f4f4e6"/>
+            <ellipse cx="446" cy="188" rx="3.5" ry="5" fill="#f4f4e6"/>
+          </g>
+          <circle cx="486" cy="200" r="3" fill="#3a4450"/>
+          <ellipse cx="400" cy="120" rx="150" ry="90" fill="url(#gLight)"/>
+          <rect x="370" y="40" width="60" height="10" rx="4" fill="#2a2f36"/>
+        </svg>
+        <div class="camtag">CAM_12 单元门厅 · REC</div>
+      </div>
+
+      <div class="vs" id="vLockers">
+        <svg viewBox="0 0 660 180" preserveAspectRatio="xMidYMid meet">
+          <rect x="10" y="20" width="640" height="140" rx="6" fill="#141a22" stroke="#2a333e" stroke-width="2"/>
+          <g stroke="#333d49" stroke-width="2">
+            <rect x="24" y="36" width="116" height="108" fill="#1b222c"/>
+            <rect x="152" y="36" width="116" height="108" fill="#1b222c"/>
+            <rect x="280" y="36" width="116" height="108" fill="#1b222c"/>
+            <rect x="408" y="36" width="116" height="108" fill="#000" stroke="#0a0d11"/>
+            <rect x="536" y="36" width="100" height="108" fill="#1b222c"/>
+          </g>
+          <g font-family="Consolas,'SF Mono',monospace" font-size="46" fill="#9fb2c8" text-anchor="middle">
+            <text x="82" y="104">1</text>
+            <text x="210" y="104">2</text>
+            <text x="338" y="104">3</text>
+            <text x="586" y="104">5</text>
+          </g>
+          <g stroke="#4a5563" stroke-width="3" stroke-linecap="round">
+            <path d="M124 84v14M252 84v14M380 84v14M520 84v14"/>
+          </g>
+          <g class="gap4">
+            <rect x="408" y="36" width="116" height="108" fill="#101318" stroke="#c04040" stroke-width="2"/>
+            <text x="466" y="104" font-family="Consolas,'SF Mono',monospace" font-size="46" fill="#e0574f" text-anchor="middle">4</text>
+          </g>
+        </svg>
+      </div>
+
+      <div class="vs" id="vStats">
+        <div class="statWrap">
+          <div class="statNum">214 / 215<small>未确认 1 户</small></div>
+          <div class="statGrid" id="statGrid"></div>
+        </div>
+      </div>
+
+      <div class="vs" id="vElev">
+        <svg viewBox="0 0 240 400" preserveAspectRatio="xMidYMid meet">
+          <rect x="20" y="16" width="200" height="368" rx="14" fill="#171b21" stroke="#333b45" stroke-width="2"/>
+          <rect x="44" y="40" width="152" height="46" rx="4" fill="#0a0d10" stroke="#2a323c"/>
+          <text x="120" y="72" font-size="26" fill="#5fd08a" text-anchor="middle" font-family="Consolas,monospace">▲2</text>
+          <g class="ebg" data-b="5">
+            <circle cx="120" cy="130" r="23"/>
+            <text x="120" y="138" font-size="24" text-anchor="middle">5</text>
+          </g>
+          <circle class="elevSlot" cx="120" cy="182" r="20"/>
+          <g class="ebg" data-b="3">
+            <circle cx="120" cy="234" r="23"/>
+            <text x="120" y="242" font-size="24" text-anchor="middle">3</text>
+          </g>
+          <g class="ebg" data-b="2">
+            <circle cx="120" cy="286" r="23"/>
+            <text x="120" y="294" font-size="24" text-anchor="middle">2</text>
+          </g>
+          <g class="ebg" data-b="1">
+            <circle cx="120" cy="338" r="23"/>
+            <text x="120" y="346" font-size="24" text-anchor="middle">1</text>
+          </g>
+        </svg>
+        <div class="camtag">电梯 · 2 号梯</div>
+      </div>
+
+      <div class="vs fill" id="vHall">
+        <svg viewBox="0 0 800 450" preserveAspectRatio="xMidYMid slice">
+          <rect width="800" height="450" fill="#0a0d11"/>
+          <polygon points="0,450 800,450 640,210 160,210" fill="#141920"/>
+          <polygon points="0,0 800,0 640,140 160,140" fill="#07090c"/>
+          <polygon points="0,0 160,140 160,210 0,450" fill="#0f1318"/>
+          <polygon points="800,0 640,140 640,210 800,450" fill="#11151b"/>
+          <rect x="160" y="140" width="480" height="70" fill="#12161c"/>
+          <g class="hallWin">
+            <polygon points="40,100 145,134 145,205 40,238" fill="#2a2416" stroke="#3a4450" stroke-width="3"/>
+            <polygon class="hallWinGlow" points="46,106 140,137 140,200 46,231" fill="#ffdf9e" opacity="0.75"/>
+            <path d="M93 120 L93 220 M43 170 L143 170" stroke="#3a4450" stroke-width="3"/>
+            <ellipse cx="150" cy="300" rx="90" ry="46" fill="#ffd98a" opacity="0.14"/>
+          </g>
+        </svg>
+      </div>
+
+      <div class="vs fill" id="vRoom">
+        <img class="roomImg" src="resource/haunt/chair.png" alt="">
+        <div class="lamp"></div>
+      </div>
+    </div>
+
+    <div id="ticker"><div id="tickerText"></div></div>
+
+    <div id="card">
+      <div class="frame">
+        <div class="ctitle" id="cardTitle">通 知</div>
+        <div class="cno" id="cardNo"></div>
+        <div class="cbody" id="cardBody"></div>
+      </div>
+    </div>
+
+    <div id="bars"></div>
+
+    <div id="sub"><span class="line hidden" id="subLine"></span></div>
+
+    <div id="scan"></div>
+    <div id="noise"></div>
+    <div id="vig"></div>
+    <div id="track"></div>
+
+    <div id="flash"></div>
+    <div id="staticFx"></div>
+    <div id="invertFx"></div>
+    <div id="bigWord"></div>
+    <div id="jump"><img id="jumpImg" alt=""></div>
+  </div>
+
+  <div id="osdTL"><span id="osdMode">▶ PLAY</span><span class="spd" id="osdSpd">SP</span><span class="date" id="osdDate"></span></div>
+  <div id="osdBL"><span id="osdCount">0:00:00</span></div>
+  <div id="blackout"></div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  var TITLE = '幸福里社区温馨提示';
+  var BAD_TITLES = ['关门', '214/215', '别看', '它在看', '请关灯', '没有4楼'];
+
+  var S = {
+    visits: 0,
+    started: false,
+    playing: false,
+    phase: 0,
+    inClimax: false,
+    skip: false,
+    replays: 0,
+    awayMs: 0,
+    startedAt: 0,
+    hiddenAt: 0,
+    escHintAt: 0,
+    ambientTimer: 0,
+    titleTimer: 0,
+    afterDone: false,
+    voicePitch: 1.15,
+    voiceRate: 0.95
+  };
+
+  try {
+    S.visits = parseInt(localStorage.getItem('notice_v') || '0', 10) + 1;
+    localStorage.setItem('notice_v', String(S.visits));
+  } catch (e) { S.visits = 1; }
+
+  if (S.visits >= 2) {
+    $('bootVisit').textContent = '检测到播放记录 · 第 ' + S.visits + ' 次';
+    $('bootVisit').classList.add('on');
+  }
+
+  var d = new Date();
+  var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+  $('osdDate').textContent = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+  function skipped() { return S.skip; }
+
+  /* ---------- 字幕 / TTS ---------- */
+  var subToken = 0;
+  var subRef = null;
+
+  function sub(text, opts) {
+    opts = opts || {};
+    var token = ++subToken;
+    var el = $('subLine');
+    el.classList.remove('hidden');
+    el.classList.toggle('dim', !!opts.dim);
+    el.innerHTML = '';
+    var span = document.createElement('span');
+    var caret = document.createElement('span');
+    caret.className = 'caret';
+    el.appendChild(span);
+    el.appendChild(caret);
+    subRef = { el: el, span: span, text: text };
+
+    if (opts.voice !== false) {
+      speak(text, opts.pitch, opts.rate);
+    }
+
+    if (opts.instant) {
+      span.textContent = text;
+      return sleep(opts.hold || 1200);
+    }
+
+    var speed = opts.speed || 62;
+    return new Promise(function (resolve) {
+      var i = 0;
+      function step() {
+        if (token !== subToken) { resolve(); return; }
+        if (i >= text.length) {
+          setTimeout(resolve, opts.hold || 1100);
+          return;
+        }
+        span.textContent += text[i++];
+        var dl = speed;
+        if (Math.random() < 0.06) dl += 120 + Math.random() * 240;
+        if ('。？！'.indexOf(text[i - 1]) >= 0) dl += 300;
+        setTimeout(step, dl);
+      }
+      step();
+    });
+  }
+
+  function clearSub() {
+    subToken++;
+    subRef = null;
+    var el = $('subLine');
+    el.classList.add('hidden');
+    el.innerHTML = '';
+  }
+
+  function speak(text, pitch, rate) {
+    if (!('speechSynthesis' in window)) return;
+    try {
+      speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      u.lang = 'zh-CN';
+      u.pitch = pitch !== undefined ? pitch : S.voicePitch;
+      u.rate = rate !== undefined ? rate : S.voiceRate;
+      u.volume = 0.95;
+      speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+
+  function stopSpeak() {
+    if ('speechSynthesis' in window) {
+      try { speechSynthesis.cancel(); } catch (e) {}
+    }
+  }
+
+  /* ---------- 通知卡 ---------- */
+  var cardToken = 0;
+  function card(no, body, opts) {
+    opts = opts || {};
+    var token = ++cardToken;
+    $('cardTitle').textContent = '通 知';
+    $('cardNo').textContent = no || '';
+    $('cardBody').textContent = '';
+    $('card').classList.add('on');
+    return new Promise(function (resolve) {
+      var i = 0;
+      var speed = opts.speed || 46;
+      function step() {
+        if (token !== cardToken) { resolve(); return; }
+        if (i >= body.length) {
+          setTimeout(resolve, opts.hold || 2000);
+          return;
+        }
+        $('cardBody').textContent += body[i++];
+        setTimeout(step, '。——'.indexOf(body[i - 1]) >= 0 ? speed + 260 : speed);
+      }
+      step();
+    });
+  }
+
+  function clearCard() {
+    cardToken++;
+    $('card').classList.remove('on');
+    $('cardBody').textContent = '';
+  }
+
+  /* ---------- 特效 ---------- */
+  function flash(ms) {
+    var f = $('flash');
+    f.classList.add('on');
+    setTimeout(function () { f.classList.remove('on'); }, ms || 160);
+  }
+
+  function staticBurst(ms) {
+    var el = $('staticFx');
+    el.classList.add('on');
+    setTimeout(function () { el.classList.remove('on'); }, ms || 320);
+  }
+
+  function trackingRoll(ms) {
+    var t = $('track');
+    t.classList.remove('on');
+    void t.offsetWidth;
+    t.classList.add('on');
+    setTimeout(function () { t.classList.remove('on'); }, ms || 700);
+  }
+
+  function invertPulse(n, gap) {
+    var el = $('invertFx');
+    var i = 0;
+    var id = setInterval(function () {
+      el.style.opacity = (i % 2 === 0) ? '1' : '0';
+      i++;
+      if (i >= (n || 4) * 2) {
+        clearInterval(id);
+        el.style.opacity = '0';
+      }
+    }, gap || 90);
+  }
+
+  function bigWord(word, ms, invert) {
+    var b = $('bigWord');
+    b.textContent = word;
+    b.classList.toggle('inv', !!invert);
+    b.classList.add('on');
+    setTimeout(function () { b.classList.remove('on', 'inv'); }, ms || 700);
+  }
+
+  function shakeOn(on) {
+    $('picture').classList.toggle('shaking', !!on);
+  }
+
+  function blackout(on) {
+    $('blackout').classList.toggle('on', !!on);
+  }
+
+  function faceJump(src, opts) {
+    opts = opts || {};
+    var j = $('jump');
+    var img = $('jumpImg');
+    img.src = src;
+    j.classList.add('on');
+    if (opts.invert) {
+      j.classList.add('inv');
+      setTimeout(function () { j.classList.remove('inv'); }, 110);
+      setTimeout(function () { j.classList.add('inv'); }, 260);
+      setTimeout(function () { j.classList.remove('inv'); }, 370);
+    }
+    if (opts.shake) shakeOn(true);
+    scream(opts.ms || 700, opts.vol || 0.5);
+    if (opts.vibrate && navigator.vibrate) {
+      try { navigator.vibrate([150, 60, 150, 60, 200]); } catch (e) {}
+    }
+    setTimeout(function () {
+      j.classList.remove('on', 'inv');
+      if (opts.shake) shakeOn(false);
+    }, opts.hold || 800);
+  }
+
+  function flashFrame(src, ms) {
+    var j = $('jump');
+    var img = $('jumpImg');
+    img.src = src;
+    j.classList.add('on');
+    setTimeout(function () { j.classList.remove('on'); }, ms || 90);
+  }
+
+  function barsOn(on) {
+    $('bars').classList.toggle('on', !!on);
+  }
+
+  function stationOff(on) {
+    $('station').classList.toggle('off', !!on);
+  }
+
+  function setBg(color) {
+    $('picture').style.background = color;
+  }
+
+  /* ---------- 场景画面控制 ---------- */
+  var CARD_VISUALS = { vLockers: 1, vElev: 1, vHall: 1 };
+
+  function visual(id) {
+    var wrap = $('visual');
+    var list = wrap.querySelectorAll('.vs');
+    for (var i = 0; i < list.length; i++) list[i].classList.remove('on', 'dim');
+    if (!id) { wrap.classList.remove('withCard'); return; }
+    var el = $(id);
+    if (el) el.classList.add('on');
+    wrap.classList.toggle('withCard', !!CARD_VISUALS[id]);
+  }
+
+  function visualDim(on) {
+    var cur = $('visual').querySelector('.vs.on');
+    if (cur) cur.classList.toggle('dim', !!on);
+  }
+
+  function routineCard(i) {
+    var cards = $('vRoutine').querySelectorAll('.rcard');
+    for (var k = 0; k < cards.length; k++) cards[k].classList.toggle('on', k === i);
+  }
+
+  function doorOpen() { $('vCorridor').classList.add('open'); }
+
+  function eyesShow(ms) {
+    var v = $('vCorridor');
+    v.classList.add('eyes');
+    setTimeout(function () { v.classList.remove('eyes'); }, ms || 1400);
+  }
+
+  function gap4Show(ms) {
+    var v = $('vLockers');
+    v.classList.add('show4');
+    setTimeout(function () { v.classList.remove('show4'); }, ms || 420);
+  }
+
+  var statsBuilt = false;
+  function buildStats() {
+    if (statsBuilt) return;
+    statsBuilt = true;
+    var g = $('statGrid');
+    for (var i = 0; i < 215; i++) {
+      var s = document.createElement('span');
+      s.className = (i === 214) ? 'dot last' : 'dot';
+      g.appendChild(s);
+    }
+  }
+
+  function elevLights() {
+    var order = ['5', '3', '2', '1'];
+    order.forEach(function (b, k) {
+      setTimeout(function () {
+        var g = $('vElev').querySelector('[data-b="' + b + '"]');
+        if (g) g.classList.add('lit');
+      }, 500 + k * 750);
+    });
+    setTimeout(function () {
+      var v = $('vElev');
+      v.classList.add('flick');
+      setTimeout(function () { v.classList.remove('flick'); }, 130);
+      setTimeout(function () { v.classList.add('flick'); }, 320);
+      setTimeout(function () { v.classList.remove('flick'); }, 450);
+    }, 1300);
+  }
+
+  function windowReveal() { $('vHall').classList.add('reveal'); }
+  function lampLit() { $('vRoom').classList.add('lit'); }
+
+  function tickerOn(text) {
+    var t = $('tickerText');
+    t.textContent = text;
+    t.style.animation = 'none';
+    void t.offsetWidth;
+    t.style.animation = '';
+    $('ticker').classList.add('on');
+  }
+
+  function tickerOff() { $('ticker').classList.remove('on'); }
+
+  function glitchSubChar() {
+    if (!subRef || !subRef.text) return;
+    var t = subRef.text;
+    var idx = -1;
+    for (var i = 0; i < t.length; i++) {
+      if (t[i] !== ' ' && Math.random() < 0.34) { idx = i; break; }
+    }
+    if (idx < 0) return;
+    var span = subRef.span;
+    var orig = span.textContent;
+    span.textContent = t.slice(0, idx) + '■' + t.slice(idx + 1);
+    setTimeout(function () { span.textContent = orig; }, 110);
+    setTimeout(function () { span.textContent = t.slice(0, idx) + '■' + t.slice(idx + 1); }, 240);
+    setTimeout(function () { span.textContent = orig; }, 330);
+  }
+
+  /* ---------- 音频 ---------- */
+  var ctx = null;
+  var hissGain = null, humGain = null, droneGain = null, droneOsc = null, droneLfo = null;
+
+  var M = {
+    on: false, gain: null, filter: null,
+    rate: 1, pitch: 1, step: 0, nextT: 0, timer: 0,
+    pattern: [
+      523.25, 659.25, 783.99, 659.25,
+      587.33, 783.99, 880.00, 783.99,
+      659.25, 587.33, 523.25, 587.33,
+      659.25, 0, 523.25, 0
+    ]
+  };
+
+  function initAudio() {
+    if (ctx) return;
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      ctx = new AC();
+      if (ctx.state === 'suspended') ctx.resume();
+    } catch (e) { return; }
+
+    try {
+      var hissBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+      var data = hissBuf.getChannelData(0);
+      for (var i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+      var hissSrc = ctx.createBufferSource();
+      hissSrc.buffer = hissBuf;
+      hissSrc.loop = true;
+      var hissF = ctx.createBiquadFilter();
+      hissF.type = 'lowpass';
+      hissF.frequency.value = 5200;
+      hissGain = ctx.createGain();
+      hissGain.gain.value = 0.014;
+      hissSrc.connect(hissF);
+      hissF.connect(hissGain);
+      hissGain.connect(ctx.destination);
+      hissSrc.start();
+
+      humGain = ctx.createGain();
+      humGain.gain.value = 0.010;
+      var h1 = ctx.createOscillator();
+      h1.type = 'sine';
+      h1.frequency.value = 50;
+      var h2 = ctx.createOscillator();
+      h2.type = 'sine';
+      h2.frequency.value = 100;
+      var h2g = ctx.createGain();
+      h2g.gain.value = 0.35;
+      h1.connect(humGain);
+      h2.connect(h2g);
+      h2g.connect(humGain);
+      humGain.connect(ctx.destination);
+      h1.start();
+      h2.start();
+
+      M.gain = ctx.createGain();
+      M.gain.gain.value = 0;
+      M.filter = ctx.createBiquadFilter();
+      M.filter.type = 'lowpass';
+      M.filter.frequency.value = 2400;
+      M.filter.connect(M.gain);
+      M.gain.connect(ctx.destination);
+    } catch (e) {}
+  }
+
+  function resumeAudio() {
+    if (ctx && ctx.state === 'suspended') {
+      try { ctx.resume(); } catch (e) {}
+    }
+  }
+
+  function musicStart() {
+    if (!ctx || !M.gain || M.on) return;
+    M.on = true;
+    M.step = 0;
+    M.nextT = ctx.currentTime + 0.1;
+    M.gain.gain.cancelScheduledValues(ctx.currentTime);
+    M.gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    M.gain.gain.linearRampToValueAtTime(0.10, ctx.currentTime + 1.5);
+    M.timer = setInterval(mSchedule, 50);
+  }
+
+  function mSchedule() {
+    if (!M.on || !ctx) return;
+    while (M.nextT < ctx.currentTime + 0.2) {
+      var f = M.pattern[M.step % M.pattern.length];
+      if (f > 0) musicNote(f * M.pitch, M.nextT);
+      if (M.step % 8 === 0) musicBass(M.nextT);
+      M.nextT += 0.21 / M.rate;
+      M.step++;
+    }
+  }
+
+  function musicNote(f, t) {
+    var o = ctx.createOscillator();
+    var g = ctx.createGain();
+    o.type = 'triangle';
+    o.frequency.value = f;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(0.35, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+    o.connect(g);
+    g.connect(M.filter);
+    o.start(t);
+    o.stop(t + 0.55);
+  }
+
+  function musicBass(t) {
+    var o = ctx.createOscillator();
+    var g = ctx.createGain();
+    o.type = 'sine';
+    o.frequency.value = 130.81 * M.pitch;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(0.22, t + 0.03);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.85);
+    o.connect(g);
+    g.connect(M.filter);
+    o.start(t);
+    o.stop(t + 0.9);
+  }
+
+  function musicSet(rate, pitch, vol) {
+    if (!ctx || !M.gain) return;
+    M.rate = rate;
+    M.pitch = pitch;
+    if (vol !== undefined && M.gain) {
+      M.gain.gain.cancelScheduledValues(ctx.currentTime);
+      M.gain.gain.linearRampToValueAtTime(vol, ctx.currentTime + 1.5);
+    }
+  }
+
+  function musicStop() {
+    if (!ctx || !M.on) return;
+    M.on = false;
+    clearInterval(M.timer);
+    try {
+      M.gain.gain.cancelScheduledValues(ctx.currentTime);
+      M.gain.gain.linearRampToValueAtTime(0.0001, ctx.currentTime + 0.6);
+    } catch (e) {}
+  }
+
+  function musicStutter() {
+    if (!ctx || !M.on) return;
+    M.nextT = ctx.currentTime + 0.03;
+    M.step = Math.max(0, M.step - 5);
+    trackingRoll(650);
+    staticBurst(420);
+  }
+
+  function chime(detuned) {
+    if (!ctx) return;
+    var t = ctx.currentTime + 0.02;
+    var freqs = detuned ? [432, 505, 612] : [659.25, 783.99, 1046.5];
+    for (var i = 0; i < 3; i++) {
+      var o = ctx.createOscillator();
+      var g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.value = freqs[i];
+      var t0 = t + i * 0.22;
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.linearRampToValueAtTime(0.14, t0 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.5);
+      o.connect(g);
+      g.connect(ctx.destination);
+      o.start(t0);
+      o.stop(t0 + 0.55);
+    }
+  }
+
+  function startDrone() {
+    if (!ctx || droneOsc) return;
+    try {
+      droneGain = ctx.createGain();
+      droneGain.gain.value = 0;
+      droneGain.connect(ctx.destination);
+      droneOsc = ctx.createOscillator();
+      droneOsc.type = 'sine';
+      droneOsc.frequency.value = 46;
+      droneLfo = ctx.createOscillator();
+      droneLfo.frequency.value = 0.09;
+      var lg = ctx.createGain();
+      lg.gain.value = 2.5;
+      droneLfo.connect(lg);
+      lg.connect(droneOsc.frequency);
+      droneOsc.connect(droneGain);
+      droneOsc.start();
+      droneLfo.start();
+    } catch (e) {}
+  }
+
+  function swellDrone(to, sec) {
+    if (!ctx || !droneGain) return;
+    try {
+      droneGain.gain.linearRampToValueAtTime(to, ctx.currentTime + (sec || 2));
+    } catch (e) {}
+  }
+
+  function scream(ms, vol) {
+    if (!ctx) return;
+    try {
+      var len = Math.floor(ctx.sampleRate * (ms / 1000));
+      var buf = ctx.createBuffer(1, len, ctx.sampleRate);
+      var data = buf.getChannelData(0);
+      for (var i = 0; i < len; i++) {
+        data[i] = (Math.random() * 2 - 1) * 0.7 + Math.sin(i * 0.13) * 0.4;
+        var t = i / len;
+        data[i] *= Math.exp(-t * 5.0) * (t < 0.02 ? t / 0.02 : 1);
+      }
+      var src = ctx.createBufferSource();
+      src.buffer = buf;
+      var g = ctx.createGain();
+      g.gain.value = vol || 0.45;
+      var f = ctx.createBiquadFilter();
+      f.type = 'highpass';
+      f.frequency.value = 340;
+      src.connect(f);
+      f.connect(g);
+      g.connect(ctx.destination);
+      src.start();
+    } catch (e) {}
+  }
+
+  function thud() {
+    if (!ctx) return;
+    try {
+      var o = ctx.createOscillator();
+      var g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(110, ctx.currentTime);
+      o.frequency.exponentialRampToValueAtTime(24, ctx.currentTime + 0.5);
+      g.gain.setValueAtTime(0.45, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+      o.connect(g);
+      g.connect(ctx.destination);
+      o.start();
+      o.stop(ctx.currentTime + 0.65);
+    } catch (e) {}
+  }
+
+  function tone1k(ms) {
+    if (!ctx) return;
+    try {
+      var t = ctx.currentTime;
+      var o = ctx.createOscillator();
+      var g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.value = 1000;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(0.07, t + 0.02);
+      g.gain.setValueAtTime(0.07, t + (ms / 1000) - 0.03);
+      g.gain.linearRampToValueAtTime(0.0001, t + ms / 1000);
+      o.connect(g);
+      g.connect(ctx.destination);
+      o.start(t);
+      o.stop(t + ms / 1000 + 0.05);
+    } catch (e) {}
+  }
+
+  function whisperPan(pan) {
+    if (!ctx) return;
+    try {
+      var p = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+      if (!p) return;
+      var o = ctx.createOscillator();
+      var g = ctx.createGain();
+      o.type = 'triangle';
+      o.frequency.value = 150 + Math.random() * 90;
+      g.gain.value = 0;
+      o.connect(g);
+      g.connect(p);
+      p.connect(ctx.destination);
+      p.pan.value = pan;
+      o.start();
+      g.gain.linearRampToValueAtTime(0.045, ctx.currentTime + 0.35);
+      g.gain.linearRampToValueAtTime(0, ctx.currentTime + 2.0);
+      setTimeout(function () { o.stop(); }, 2200);
+    } catch (e) {}
+  }
+
+  function setHiss(v) {
+    if (!ctx || !hissGain) return;
+    try {
+      hissGain.gain.cancelScheduledValues(ctx.currentTime);
+      hissGain.gain.linearRampToValueAtTime(v, ctx.currentTime + 1.5);
+    } catch (e) {}
+  }
+
+  /* ---------- OSD 时钟 ---------- */
+  var elapsedOffset = 0;
+  function elapsedSec() {
+    return Math.max(0, Math.floor((Date.now() - S.startedAt - elapsedOffset) / 1000));
+  }
+  function fmtSec(s) {
+    var h = Math.floor(s / 3600);
+    var m = Math.floor(s / 60) % 60;
+    var sec = s % 60;
+    return h + ':' + pad(m) + ':' + pad(sec);
+  }
+  setInterval(function () {
+    if (!S.playing) return;
+    $('osdCount').textContent = fmtSec(elapsedSec());
+  }, 500);
+
+  function setOsd(mode, spd) {
+    $('osdMode').textContent = mode;
+    if (spd) $('osdSpd').textContent = spd;
+  }
+
+  function rewindAnim(ms) {
+    setOsd('◀ ◀', 'REW');
+    var end = Date.now() + ms;
+    var id = setInterval(function () {
+      trackingRoll(300);
+      var remain = Math.max(0, (end - Date.now()) / 1000);
+      $('osdCount').textContent = fmtSec(Math.floor(elapsedSec() - (ms / 1000 - remain) * 3));
+      if (Date.now() >= end) {
+        clearInterval(id);
+        setOsd('■ STOP', 'SP');
+      }
+    }, 620);
+  }
+
+  /* ---------- 标题 / 环境随机 ---------- */
+  function titleGlitchOnce() {
+    var bad = BAD_TITLES[Math.floor(Math.random() * BAD_TITLES.length)];
+    document.title = bad;
+    setTimeout(function () {
+      if (document.title === bad) document.title = TITLE;
+    }, 700);
+  }
+
+  function ambientTick() {
+    if (!S.playing || S.inClimax || S.phase < 1) return;
+    var roll = Math.random();
+    if (roll < 0.34) trackingRoll(500);
+    else if (roll < 0.52) glitchSubChar();
+    else if (roll < 0.66) whisperPan((Math.random() * 2 - 1) * 0.8);
+    else if (roll < 0.76 && S.phase >= 3) flashFrame('resource/ghost2.jpg', 90);
+    else if (roll < 0.84) { if (M.on) musicStutter(); }
+    if (Math.random() < 0.4) titleGlitchOnce();
+    scheduleAmbient();
+  }
+
+  function scheduleAmbient() {
+    if (S.ambientTimer) clearTimeout(S.ambientTimer);
+    S.ambientTimer = setTimeout(ambientTick, 16000 + Math.random() * 20000);
+  }
+
+  function startTitleTimer() {
+    if (S.titleTimer) clearInterval(S.titleTimer);
+    S.titleTimer = setInterval(function () {
+      if (!S.playing) return;
+      if (Math.random() < 0.3) titleGlitchOnce();
+    }, 7000);
+  }
+
+  /* ---------- 分场 ---------- */
+  async function sceneIdent() {
+    S.phase = 1;
+    setBg('#000');
+    stationOff(true);
+    staticBurst(600);
+    await sleep(1400);
+    barsOn(true);
+    tone1k(300);
+    await sleep(1500);
+    barsOn(false);
+    setBg('#011542');
+    stationOff(false);
+    chime(false);
+    await sub('幸福里社区 · 温馨提示 第 2 期', { speed: 70, hold: 1400 });
+    await sub('本节目由幸福里社区居民委员会播出', { speed: 58, hold: 1600 });
+    clearSub();
+  }
+
+  async function sceneRoutine() {
+    S.phase = 2;
+    S.voicePitch = 1.15;
+    S.voiceRate = 0.95;
+    setBg('#011542');
+    visual('vRoutine');
+    routineCard(0);
+    tickerOn('幸福里社区提醒：垃圾分类定时投放 · 防范电信诈骗 · 禁止电动车进楼充电 · 共建文明和谐社区');
+
+    chime(false);
+    await sub('为推进垃圾分类，自本月起，投放时间调整为每日 7:00-9:00、18:00-20:30。', { speed: 48, hold: 2400 });
+    clearSub();
+
+    routineCard(1);
+    chime(false);
+    await sub('近期电信诈骗多发。凡自称公检法要求转账的，都是诈骗。', { speed: 48, hold: 2400 });
+    clearSub();
+
+    routineCard(2);
+    chime(false);
+    await sub('请勿将电动车推入楼道充电。一旦起火，责任追查到户。', { speed: 48, hold: 2600 });
+    clearSub();
+
+    trackingRoll(420);
+    await sleep(600);
+  }
+
+  async function sceneKnock() {
+    S.phase = 3;
+    S.voicePitch = 0.85;
+    S.voiceRate = 0.92;
+    musicSet(0.97, 0.94, 0.07);
+    visual('vCorridor');
+    doorOpen();
+    tickerOn('夜间请关好门窗 · 确认来访者身份后再开门 · 如遇异常请联系物业值班室');
+
+    chime(false);
+    await sub('近日，物业接到多位居民反映——', { speed: 56, hold: 1000 });
+    await sub('夜间，有敲门声。', { speed: 74, hold: 2200 });
+    musicSet(0.94, 0.88, 0.055);
+
+    await sub('请在开门前，确认门外是您的家人。', { speed: 52, hold: 2000 });
+    await sub('确认方式：请对方先说出，您的名字。', { speed: 52, hold: 2400 });
+    await sub('若门外的人先叫出了您的名字——', { speed: 46, hold: 1800, pitch: 0.7, rate: 0.85 });
+    eyesShow(3200);
+    await sub('请不要开门。', { speed: 82, hold: 2600, pitch: 0.6, rate: 0.8 });
+    clearSub();
+  }
+
+  async function sceneRulesA() {
+    S.phase = 4;
+    S.voicePitch = 0.68;
+    S.voiceRate = 0.88;
+    setBg('#041c46');
+    musicSet(0.9, 0.85, 0.05);
+    visual('vLockers');
+    tickerOn('本小区快递柜编号 1 2 3 5 · 从来没有 4 号柜 · 如遇异常请联系物业');
+
+    chime(true);
+    await card('第 一 条', '本小区智能快递柜编号为 1、2、3、5。\n不存在 4 号柜。\n若取件码指向 4 号柜，\n请勿扫码，切勿在夜间前往。', { speed: 34, hold: 3000 });
+    staticBurst(200);
+    flashFrame('resource/ghost2.jpg', 90);
+    await sleep(250);
+    gap4Show(520);
+    await sleep(450);
+    clearCard();
+
+    chime(true);
+    await card('第 二 条', '居委会工作人员不会在 22:00 后上门。\n若有人自称居委会要求开门，\n请立即拨打物业电话：', { speed: 34, hold: 900 });
+    var phoneLine = '物业电话：8888 - 0404';
+    $('cardBody').textContent = '';
+    for (var i = 0; i < phoneLine.length; i++) {
+      $('cardBody').textContent += phoneLine[i];
+      await sleep(60);
+    }
+    await sleep(700);
+    $('cardBody').textContent = '物业电话：■■■■ - ■■■■';
+    await sleep(500);
+    $('cardBody').textContent = '物业电话：8888 - 0404';
+    await sleep(900);
+    $('cardBody').textContent = '物业电话：■■■■ - ■■■■';
+    await sleep(1600);
+    clearCard();
+    setBg('#011542');
+  }
+
+  async function sceneStats() {
+    S.phase = 5;
+    S.voicePitch = 0.5;
+    S.voiceRate = 0.85;
+    setBg('#010b22');
+    visual('vStats');
+    buildStats();
+    tickerOn('上一期通知的收看情况已统计 · 未收看的住户请尽快补看');
+    musicStutter();
+    await sleep(900);
+
+    await sub('……您正在收看的，是第 2 期。', { speed: 55, hold: 2000 });
+    await sub('上一期，收看人数 214 人。', { speed: 60, hold: 1400, voice: false });
+    speak('上一期，收看人数 214 人。', 0.45, 0.8);
+    await sleep(2400);
+    await sub('本栋，共 215 户。', { speed: 84, hold: 2600, voice: false });
+    speak('本栋，共 215 户。', 0.4, 0.72);
+    await sleep(3000);
+    clearSub();
+  }
+
+  async function sceneRulesB() {
+    S.phase = 6;
+    S.voicePitch = 0.42;
+    S.voiceRate = 0.8;
+    setBg('#030f30');
+    musicSet(0.78, 0.7, 0.045);
+    startDrone();
+    swellDrone(0.06, 4);
+    visual('vElev');
+    elevLights();
+    tickerOn('4 楼住户请勿应答 · 请勿开门 · 请勿在楼道停留 · 请勿看向窗外');
+
+    chime(true);
+    await card('第 三 条', '本楼楼层编号为 1、2、3、5。\n不存在 4 楼。\n居住在 4 楼的住户，请忽略本条通知。\n您不需要下楼。', { speed: 34, hold: 3400 });
+    clearCard();
+
+    chime(true);
+    visual('vHall');
+    windowReveal();
+    await card('第 四 条', '楼道内不会出现您家的窗户。\n若在楼道看见自家窗户，\n请立即回到家中，关掉客厅的灯。', { speed: 34, hold: 3200 });
+    staticBurst(300);
+    flashFrame('resource/ghost1.jpeg', 100);
+    invertPulse(2, 90);
+    await sleep(400);
+    clearCard();
+
+    visualDim(true);
+    setBg('#02050f');
+    musicSet(0.7, 0.62, 0.03);
+    swellDrone(0.11, 3);
+
+    await sub('它们不喜欢被照亮。', { speed: 92, hold: 3000, pitch: 0.32, rate: 0.7 });
+    clearSub();
+  }
+
+  async function sceneJump1() {
+    S.phase = 7;
+    S.inClimax = true;
+    S.skip = false;
+    musicStop();
+    visual(null);
+
+    staticBurst(500);
+    await sleep(500);
+    if (skipped()) return endClimax();
+
+    var quiet = sleep(350);
+    await quiet;
+    if (skipped()) return endClimax();
+
+    faceJump('resource/ghost3.jpg', { ms: 750, hold: 520, vol: 0.6, invert: true, shake: true, vibrate: true });
+    await sleep(950);
+    if (skipped()) return endClimax();
+
+    staticBurst(600);
+    await sleep(700);
+    if (skipped()) return endClimax();
+
+    S.voicePitch = 0.7;
+    S.voiceRate = 0.85;
+    await sub('……画面信号异常。', { speed: 62, hold: 1800 });
+    await sub('请勿离开屏幕。', { speed: 70, hold: 2000, pitch: 0.6, rate: 0.82 });
+    clearSub();
+    endClimax();
+  }
+
+  function endClimax() {
+    S.inClimax = false;
+    S.skip = false;
+    shakeOn(false);
+    $('jump').classList.remove('on', 'inv');
+    staticBurst(250);
+  }
+
+  async function scenePersonal() {
+    S.phase = 8;
+    S.voicePitch = 0.95;
+    S.voiceRate = 0.78;
+    setBg('#01030a');
+    setHiss(0.03);
+    swellDrone(0.14, 3);
+    visual('vRoom');
+    tickerOn('请关灯 · 请关灯 · 请关灯 · 请关灯 · 请关灯 · 请关灯');
+
+    await sleep(1200);
+    chime(false);
+    await sub('温馨提示。', { speed: 95, hold: 2400, voice: false });
+    speak('温馨提示。', 0.95, 0.75);
+    await sleep(1200);
+
+    await sub('正在收看本通知的这位居民——', { speed: 78, hold: 2600, voice: false });
+    speak('正在收看本通知的这位居民。', 0.95, 0.72);
+    await sleep(1400);
+
+    lampLit();
+    await sub('您家客厅的灯，还亮着。', { speed: 100, hold: 3400, voice: false });
+    speak('您家客厅的灯，还亮着。', 0.9, 0.68);
+    await sleep(2200);
+
+    var now = new Date();
+    var hhmm = pad(now.getHours()) + ':' + pad(now.getMinutes());
+    var late = now.getHours() >= 23 || now.getHours() < 5;
+    await sub('现在是 ' + hhmm + '。' + (late ? '您本该睡了。' : '您看起来很困。'), {
+      speed: 88, hold: 3000, voice: false
+    });
+    speak('现在是 ' + hhmm + '。' + (late ? '您本该睡了。' : '您看起来很困。'), 0.88, 0.66);
+    await sleep(2000);
+
+    await sub('请现在，把它关掉。', { speed: 110, hold: 2600, voice: false });
+    speak('请现在，把它关掉。', 0.85, 0.6);
+    await sleep(1400);
+
+    clearSub();
+    stopSpeak();
+    if (ctx) { try { ctx.suspend(); } catch (e) {} }
+    blackout(true);
+    await sleep(1500);
+    blackout(false);
+    if (ctx) { try { ctx.resume(); } catch (e) {} }
+    setHiss(0.014);
+  }
+
+  async function scenePeak() {
+    S.phase = 9;
+    S.inClimax = true;
+    S.skip = false;
+    visual(null);
+    tickerOff();
+
+    await sleep(1000);
+    if (skipped()) { endClimax(); return; }
+
+    bigWord('现在关', 450, true);
+    invertPulse(4, 70);
+    faceJump('resource/ghost1.jpeg', { ms: 650, hold: 500, vol: 0.7, shake: true, vibrate: true });
+    thud();
+    await sleep(350);
+    if (skipped()) { endClimax(); return; }
+
+    thud();
+    faceJump('resource/ghost3.jpg', { ms: 600, hold: 420, vol: 0.65, invert: true });
+    await sleep(750);
+    if (skipped()) { endClimax(); return; }
+
+    staticBurst(700);
+    shakeOn(true);
+    await sleep(600);
+    shakeOn(false);
+    endClimax();
+
+    S.voicePitch = 0.3;
+    S.voiceRate = 0.5;
+    await sub('——收看确认中。', { speed: 90, hold: 2200, pitch: 0.3, rate: 0.5 });
+    clearSub();
+  }
+
+  async function sceneEndcard() {
+    S.phase = 10;
+    S.voicePitch = 0.9;
+    S.voiceRate = 0.85;
+    setBg('#000');
+    stopSpeak();
+    clearCard();
+    $('cardNo').textContent = '';
+    stationOff(true);
+    visual(null);
+    tickerOff();
+
+    var lines = [
+      '本通知已下发至全部住户',
+      '收看确认  214 / 215',
+      '未确认  1 户'
+    ];
+    var el = $('subLine');
+    el.classList.remove('hidden');
+    el.classList.remove('dim');
+    stopSpeak();
+
+    for (var i = 0; i < lines.length; i++) {
+      el.innerHTML = '';
+      var span = document.createElement('span');
+      var caret = document.createElement('span');
+      caret.className = 'caret';
+      el.appendChild(span);
+      el.appendChild(caret);
+      for (var c = 0; c <= lines[i].length; c++) {
+        span.textContent = lines[i].slice(0, c);
+        await sleep(46);
+      }
+      await sleep(i === 2 ? 2600 : 1300);
+    }
+
+    if (S.visits >= 2) {
+      var vline = '本户已确认收看 ' + S.visits + ' 次';
+      el.innerHTML = '';
+      var span2 = document.createElement('span');
+      el.appendChild(span2);
+      for (var c2 = 0; c2 <= vline.length; c2++) {
+        span2.textContent = vline.slice(0, c2);
+        await sleep(52);
+      }
+      await sleep(2400);
+    }
+
+    el.innerHTML = '';
+    var wait = document.createElement('span');
+    wait.textContent = '待确认住户，请重新观看本通知。';
+    el.appendChild(wait);
+    speak('待确认住户。请重新观看本通知。', 0.9, 0.8);
+    await sleep(3200);
+    clearSub();
+
+    barsOn(true);
+    tone1k(320);
+    await sleep(1400);
+    barsOn(false);
+    stationOff(false);
+    setBg('#01030a');
+
+    await sub('明天同一时间，我们将再次播出。', { speed: 62, hold: 2400, pitch: 0.9, rate: 0.85 });
+    await sub('届时，请确保您已读完全部条款。', { speed: 58, hold: 2400, pitch: 0.9, rate: 0.85 });
+    await sub('——幸福里社区居民委员会', { speed: 70, hold: 3000, voice: false });
+    speak('幸福里社区居民委员会。', 0.9, 0.85);
+    await sleep(2600);
+    clearSub();
+  }
+
+  async function sceneAfter() {
+    S.phase = 11;
+    if (S.afterDone) return;
+    S.afterDone = true;
+
+    setBg('#000');
+    stationOff(true);
+    setHiss(0.022);
+
+    await sleep(7000);
+
+    var el = $('subLine');
+    el.classList.remove('hidden');
+    el.classList.add('dim');
+    el.innerHTML = '';
+    var span = document.createElement('span');
+    el.appendChild(span);
+    var text = '——灯关了吗？';
+    for (var i = 0; i <= text.length; i++) {
+      span.textContent = text.slice(0, i);
+      await sleep(140);
+    }
+    whisperPan(0);
+    await sleep(3600);
+    clearSub();
+
+    document.title = '请关灯';
+    if (S.titleTimer) clearInterval(S.titleTimer);
+
+    await sleep(4200);
+    flashFrame('resource/ghost2.jpg', 320);
+    scream(300, 0.2);
+    await sleep(2600);
+
+    el.classList.remove('dim');
+    await sub('本录像将自动倒带，供下一位居民观看。', { speed: 72, hold: 2600, voice: false, dim: true });
+    clearSub();
+
+    rewindAnim(2600);
+    setHiss(0.014);
+    S.playing = false;
+  }
+
+  async function play() {
+    initAudio();
+    resumeAudio();
+    musicStart();
+    visual(null);
+    tickerOff();
+    S.playing = true;
+    S.startedAt = Date.now();
+    S.replays = 0;
+    scheduleAmbient();
+    startTitleTimer();
+
+    try {
+      await sceneIdent();
+      await sceneRoutine();
+      await sceneKnock();
+      await sceneRulesA();
+      await sceneStats();
+      await sceneRulesB();
+      await sceneJump1();
+      await scenePersonal();
+      await scenePeak();
+      await sceneEndcard();
+      await sceneAfter();
+    } catch (e) {}
+  }
+
+  /* ---------- 事件 ---------- */
+  document.addEventListener('keydown', function (e) {
+    if (!S.started) {
+      if (e.key === 'Enter' || e.key === ' ') start();
+      return;
+    }
+    if (e.key !== 'Escape') return;
+    if (S.inClimax && !S.skip) {
+      S.skip = true;
+      stopSpeak();
+      staticBurst(200);
+      return;
+    }
+    var now = Date.now();
+    if (S.playing && now - S.escHintAt > 6000) {
+      S.escHintAt = now;
+      sub('Esc 无法关闭本通知。', { dim: true, instant: true, hold: 1600, voice: false, speed: 40 });
+      setTimeout(function () {
+        if (Date.now() - S.escHintAt >= 1500) clearSub();
+      }, 1700);
+    }
+  });
+
+  document.addEventListener('visibilitychange', function () {
+    if (!S.playing) return;
+    if (document.visibilityState === 'hidden') {
+      S.hiddenAt = Date.now();
+      if (M.on && M.gain && ctx) {
+        try { M.gain.gain.setValueAtTime(0.0001, ctx.currentTime); } catch (e) {}
+      }
+      stopSpeak();
+      return;
+    }
+    if (!S.hiddenAt) return;
+    var away = Date.now() - S.hiddenAt;
+    S.hiddenAt = 0;
+    elapsedOffset += away;
+    S.replays++;
+    resumeAudio();
+    if (M.on && M.gain && ctx) {
+      try { M.gain.gain.linearRampToValueAtTime(0.05, ctx.currentTime + 1); } catch (e) {}
+    }
+    if (S.inClimax || S.phase < 2 || S.phase >= 11) return;
+
+    staticBurst(450);
+    trackingRoll(500);
+    var secs = Math.floor(away / 1000);
+    sub('您离开了 ' + secs + ' 秒。本通知已重播 ' + S.replays + ' 遍。', {
+      speed: 60, hold: 2600, voice: false, dim: true
+    });
+    setTimeout(function () { clearSub(); }, 2800);
+    if (Math.random() < 0.4) {
+      setTimeout(function () {
+        if (S.playing && !S.inClimax) {
+          flashFrame('resource/ghost2.jpg', 240);
+          scream(400, 0.3);
+        }
+      }, 900);
+    }
+  });
+
+  window.addEventListener('beforeunload', function () {
+    stopSpeak();
+  });
+
+  /* ---------- 启动 ---------- */
+  function start() {
+    if (S.started) return;
+    S.started = true;
+    $('boot').classList.add('hidden');
+    try {
+      var el = document.documentElement;
+      var fs = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+      if (fs) {
+        var p = fs.call(el);
+        if (p && p.catch) p.catch(function () {});
+      }
+    } catch (e) {}
+    play();
+  }
+
+  $('playBtn').addEventListener('click', start);
+})();
+</script>
+
+</body>
+</html>

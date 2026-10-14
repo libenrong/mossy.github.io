@@ -1,0 +1,71 @@
+/* notice.html 冒烟：VHS 社区通告版（静态） */
+import fs from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const root = dirname(fileURLToPath(import.meta.url));
+const CODE = fs.readFileSync(join(root, 'notice.html'), 'utf8');
+
+const fail = (m) => { console.log('SMOKE_FAIL', m); process.exitCode = 1; };
+const ok = (m) => { if (!CODE.includes(m)) fail('missing ' + m); };
+
+/* 结构：11 段场景 */
+['sceneIdent', 'sceneRoutine', 'sceneKnock', 'sceneRulesA', 'sceneStats',
+ 'sceneRulesB', 'sceneJump1', 'scenePersonal', 'scenePeak', 'sceneEndcard',
+ 'sceneAfter'].forEach((f) => ok(f));
+if (!/async function play\s*\(/.test(CODE)) fail('play()');
+ok('boot');
+
+/* VHS 载体 */
+['▶ PLAY', 'SP', 'osdDate', 'osdCount', 'trackRoll', 'noiseShift', 'scanRoll', 'barsOn', 'rewindAnim']
+  .forEach((k) => ok(k));
+
+/* 细思极恐核心文案 */
+['不存在 4 号柜', '不存在 4 楼', '您不需要下楼', '它们不喜欢被照亮',
+ '请不要开门', '214 / 215', '共 215 户', '还亮着',
+ '正在收看本通知的这位居民', '灯关了吗', '本录像将自动倒带',
+ '8888 - 0404'].forEach((t) => ok(t));
+
+/* 恐怖源 */
+['speechSynthesis', 'faceJump', 'flashFrame', 'scream', 'thud', 'chime',
+ 'resource/ghost1.jpeg', 'resource/ghost2.jpg', 'resource/ghost3.jpg',
+ 'visibilitychange', 'localStorage', 'notice_v', 'vibrate']
+  .forEach((k) => ok(k));
+
+/* ESC 跳吓机制 */
+ok('S.inClimax');
+ok('S.skip');
+if (!/Escape/.test(CODE)) fail('Escape');
+
+/* 尾招 */
+ok('请关灯');
+ok('BAD_TITLES');
+
+/* 场景画面（视觉升级） */
+['id="vRoutine"', 'id="vCorridor"', 'id="vLockers"', 'id="vStats"',
+ 'id="vElev"', 'id="vHall"', 'id="vRoom"', 'id="ticker"', 'id="statGrid"']
+  .forEach((k) => ok(k));
+['function visual(', 'tickerOn', 'buildStats', 'elevLights', 'windowReveal',
+ 'lampLit', 'doorSlit', 'gap4', 'hallWin', 'resource/haunt/chair.png',
+ '4 楼住户请勿应答'].forEach((k) => ok(k));
+if (!/withCard/.test(CODE)) fail('withCard card/visual split');
+
+/* 开场在 script 前，且只有一个播放入口 */
+const bootIdx = CODE.indexOf('id="playBtn"');
+const scriptIdx = CODE.indexOf('<script>');
+if (bootIdx < 0) fail('playBtn');
+if (scriptIdx < 0) fail('script tag');
+if (bootIdx > scriptIdx) fail('playBtn after script');
+if ((CODE.match(/addEventListener\('click', start\)/g) || []).length !== 1) fail('start bind count');
+
+/* HTML id 唯一性 */
+const ids = [...CODE.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]);
+const dup = ids.filter((v, i) => ids.indexOf(v) !== i);
+if (dup.length) fail('duplicate ids: ' + [...new Set(dup)].join(','));
+
+const bytes = Buffer.byteLength(CODE, 'utf8');
+if (process.exitCode) {
+  console.log('bytes', bytes);
+} else {
+  console.log('SMOKE_OK vhs-notice scenes=11 bytes=' + bytes);
+}
