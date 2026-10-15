@@ -86,7 +86,6 @@ vc.on('error', (...a) => errors.push('console.error: ' + a.join(' ')));
 
 let html = fs.readFileSync('project.html', 'utf8');
 html = html.replace(/<link rel="stylesheet" href="project\.css">/, () => '<style>' + fs.readFileSync('project.css', 'utf8') + '</style>');
-html = html.replace(/<link rel="stylesheet" href="ui\.css">/, () => '<style>' + fs.readFileSync('ui.css', 'utf8') + '</style>');
 html = html.replace(/<script src="js\/([\w.-]+)"><\/script>/g, (_, name) => '<script>' + fs.readFileSync('js/' + name, 'utf8') + '</script>');
 if (/<link rel="stylesheet"|<script src=/.test(html)) throw new Error('内联 css/js 失败，请检查 project.html 中的引用');
 const dom = new JSDOM(html, {
