@@ -9,12 +9,22 @@ const CODE = fs.readFileSync(join(root, 'notice.html'), 'utf8');
 const fail = (m) => { console.log('SMOKE_FAIL', m); process.exitCode = 1; };
 const ok = (m) => { if (!CODE.includes(m)) fail('missing ' + m); };
 
-/* 结构：11 段场景 */
+/* 结构：11 段场景 + 引导互动 */
 ['sceneIdent', 'sceneRoutine', 'sceneKnock', 'sceneRulesA', 'sceneStats',
  'sceneRulesB', 'sceneJump1', 'scenePersonal', 'scenePeak', 'sceneEndcard',
  'sceneAfter'].forEach((f) => ok(f));
 if (!/async function play\s*\(/.test(CODE)) fail('play()');
 ok('boot');
+
+/* 引导型恐怖（互动指令层） */
+['sceneGuideA', 'sceneGuideLight', 'guideStep', 'guideLog', 'guideObey',
+ 'askTarget', 'askStill', 'askQ', 'askLight',
+ 'id="guideBar"', 'id="gTarget"', 'id="gStill"', 'id="gQ"',
+ 'guide.violations', 'guide.obeyed', '未检测到配合', '连同颤抖，已记录',
+ '超时。系统已按「是」为您记录', '此刻，门外有人吗', '请勿移动',
+ '请关闭，您身后的灯', '光照，没有任何变化', '您没有关。已记录',
+ '引导 · 步骤', '未遵从 · 已记录', '引导结束。请留原地',
+ '请全程按照屏幕指示操作', '开始引导'].forEach((k) => ok(k));
 
 /* VHS 载体 */
 ['▶ PLAY', 'SP', 'osdDate', 'osdCount', 'trackRoll', 'noiseShift', 'scanRoll', 'barsOn', 'rewindAnim']
@@ -79,5 +89,5 @@ const bytes = Buffer.byteLength(CODE, 'utf8');
 if (process.exitCode) {
   console.log('bytes', bytes);
 } else {
-  console.log('SMOKE_OK vhs-notice scenes=11 bytes=' + bytes);
+  console.log('SMOKE_OK vhs-notice scenes=11 guided=4 bytes=' + bytes);
 }

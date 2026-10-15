@@ -439,6 +439,92 @@ html{--gx:0;--gy:0}
   opacity:0;pointer-events:none;transition:opacity .12s;
 }
 #blackout.on{opacity:1}
+
+/* ===== 引导层（互动指令） ===== */
+#guideBar{
+  position:absolute;top:16px;left:20px;z-index:36;display:none;
+  font-family:'SF Mono','Consolas',monospace;pointer-events:none;
+  text-shadow:0 1px 4px rgba(0,0,0,.9);
+}
+#guideBar.on{display:block}
+#guideBar .ghead{
+  font-size:10.5px;letter-spacing:.28em;color:#e8b04b;
+}
+#guideBar .glabel{
+  font-size:13px;letter-spacing:.14em;color:#e8eef6;margin-top:6px;
+  font-family:'Songti SC','SimSun',serif;
+}
+#guideBar .glog{
+  font-size:10px;letter-spacing:.2em;color:#c25b5b;margin-top:6px;
+  opacity:0;transition:opacity .5s;
+}
+#guideBar .glog.on{opacity:1}
+#gTarget{
+  position:absolute;z-index:37;width:132px;height:86px;
+  left:50%;top:40%;transform:translate(-50%,-50%);
+  border:1.5px dashed #e8b04b;
+  background:rgba(232,176,75,.06);
+  display:none;align-items:center;justify-content:center;
+  pointer-events:auto;
+}
+#gTarget.on{display:flex;animation:gTgtPulse 1s ease-in-out infinite alternate}
+#gTarget .gt{
+  font-size:10px;letter-spacing:.2em;color:#e8b04b;
+  font-family:'SF Mono',monospace;text-align:center;line-height:1.9;
+  text-shadow:0 1px 3px rgba(0,0,0,.9);
+}
+#gTarget.pass{border-color:#5fd08a;background:rgba(95,208,138,.08);animation:none}
+#gTarget.pass .gt{color:#5fd08a}
+#gTarget.fail{border-color:#e0574f;background:rgba(224,87,79,.1);animation:none}
+#gTarget.fail .gt{color:#e0574f}
+@keyframes gTgtPulse{
+  from{opacity:.55}
+  to{opacity:1}
+}
+#gStill{
+  position:absolute;inset:10px;z-index:35;pointer-events:none;
+  border:1px solid rgba(232,176,75,.45);display:none;
+}
+#gStill.on{display:block}
+#gStill .gs{
+  position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  font-size:10px;letter-spacing:.35em;color:#e8b04b;
+  font-family:'SF Mono',monospace;text-shadow:0 1px 3px rgba(0,0,0,.9);
+}
+#gStill.moved{border-color:#e0574f;animation:gStillBlink .28s steps(2) 4}
+#gStill.moved .gs{color:#e0574f}
+@keyframes gStillBlink{
+  0%{opacity:1}
+  50%{opacity:.25}
+  100%{opacity:1}
+}
+#gQ{
+  position:absolute;left:50%;top:34%;transform:translateX(-50%);
+  z-index:38;display:none;min-width:270px;max-width:78%;
+  background:rgba(5,8,14,.94);border:1px solid #3a4459;
+  padding:18px 26px 20px;text-align:center;
+  box-shadow:0 18px 40px -18px rgba(0,0,0,.9);
+}
+#gQ.on{display:block}
+#gQ .gqNo{
+  font-size:9.5px;letter-spacing:.3em;color:#6d7891;
+  font-family:'SF Mono',monospace;
+}
+#gQ .gqText{
+  font-size:15px;letter-spacing:.12em;color:#e8eef6;margin-top:10px;
+  line-height:1.8;
+}
+#gQ .gqBtns{display:flex;gap:12px;justify-content:center;margin-top:16px}
+#gQ .gqBtns button{
+  background:transparent;color:#aeb8c9;border:1px solid #3a4459;
+  padding:7px 24px;font-size:13px;letter-spacing:.3em;
+  font-family:inherit;transition:background .18s,color .18s;
+}
+#gQ .gqBtns button:hover{background:#dfe6f0;color:#0a0e16}
+#gQ .gqWait{
+  font-size:10px;letter-spacing:.2em;color:#c25b5b;margin-top:12px;
+  font-family:'SF Mono',monospace;min-height:13px;
+}
 </style>
 </head>
 <body>
@@ -446,8 +532,8 @@ html{--gx:0;--gy:0}
 <div id="boot">
   <div class="tape">
     <div class="org">XINGFULI COMMUNITY · TAPE NO.02</div>
-    <h1>幸福里社区<br>温馨提示</h1>
-    <div class="subline">第 2 期 · 物业发放 · 请组织观看</div>
+    <h1>幸福里社区<br>收看引导</h1>
+    <div class="subline">第 2 期 · 互动引导程序 · 请按屏幕指示操作</div>
     <div class="visit" id="bootVisit"></div>
     <div class="homeq" id="homeQ">
       <span>您现在独自在家吗？</span>
@@ -455,9 +541,9 @@ html{--gx:0;--gy:0}
       <button type="button" data-a="n">否</button>
     </div>
     <div class="homea" id="homeA"></div>
-    <p class="warn">录像含画面闪烁、突发音效。<br>心脏不适、未成年人请勿观看。<br>惊吓片段可按 Esc 跳过。</p>
-    <button id="playBtn" type="button">▶ 播放</button>
-    <div class="hint">建议全屏 · 戴耳机 · 观看约 4 分钟</div>
+    <p class="warn">录像含画面闪烁、突发音效与互动环节。<br>引导期间需配合移动光标、保持静止并应答。<br>心脏不适、未成年人请勿观看。惊吓片段可按 Esc 跳过。</p>
+    <button id="playBtn" type="button">▶ 开始引导</button>
+    <div class="hint">建议全屏 · 戴耳机 · 全程约 5 分钟</div>
   </div>
 </div>
 
@@ -631,6 +717,23 @@ html{--gx:0;--gy:0}
 
     <div id="ticker"><div id="tickerText"></div></div>
 
+    <div id="guideBar">
+      <div class="ghead" id="gStep">引导 · 步骤 0 / 4</div>
+      <div class="glabel" id="gLabel">准备中</div>
+      <div class="glog" id="gLog"></div>
+    </div>
+    <div id="gTarget"><div class="gt">请将光标<br>移至此处</div></div>
+    <div id="gStill"><div class="gs">请勿移动</div></div>
+    <div id="gQ">
+      <div class="gqNo" id="gQNo">应答记录 · 本户</div>
+      <div class="gqText" id="gQText"></div>
+      <div class="gqBtns">
+        <button type="button" id="gQy">是</button>
+        <button type="button" id="gQn">否</button>
+      </div>
+      <div class="gqWait" id="gQWait"></div>
+    </div>
+
     <div id="card">
       <div class="frame">
         <div class="ctitle" id="cardTitle">通 知</div>
@@ -694,6 +797,31 @@ html{--gx:0;--gy:0}
     voicePitch: 1.15,
     voiceRate: 0.95
   };
+
+  /* 引导记录（配合 / 未遵从） */
+  var guide = { step: 0, total: 4, violations: [], obeyed: [], lightAct: false, qAns: null };
+
+  function guideShow() {
+    $('guideBar').classList.add('on');
+  }
+  function guideBarOff() {
+    $('guideBar').classList.remove('on');
+  }
+  function guideStep(n, label) {
+    guide.step = n;
+    $('gStep').textContent = '引导 · 步骤 ' + n + ' / ' + guide.total;
+    $('gLabel').textContent = label;
+    guideShow();
+  }
+  function guideLog(txt) {
+    guide.violations.push(txt);
+    var el = $('gLog');
+    el.textContent = '未遵从 · 已记录 ' + guide.violations.length + ' 项';
+    el.classList.add('on');
+  }
+  function guideObey(txt) {
+    guide.obeyed.push(txt);
+  }
 
   try {
     S.visits = parseInt(localStorage.getItem('notice_v') || '0', 10) + 1;
@@ -1021,6 +1149,108 @@ html{--gx:0;--gy:0}
     setTimeout(function () { span.textContent = orig; }, 110);
     setTimeout(function () { span.textContent = t.slice(0, idx) + '■' + t.slice(idx + 1); }, 240);
     setTimeout(function () { span.textContent = orig; }, 330);
+  }
+
+  /* ---------- 引导互动 ---------- */
+  var gpx = -999, gpy = -999;
+
+  function askTarget(ms) {
+    return new Promise(function (resolve) {
+      var t = $('gTarget');
+      t.classList.remove('pass', 'fail');
+      t.style.left = (16 + Math.random() * 62).toFixed(1) + '%';
+      t.style.top = (22 + Math.random() * 52).toFixed(1) + '%';
+      t.querySelector('.gt').innerHTML = '请将光标<br>移至此处';
+      t.classList.add('on');
+      var done = false;
+      function fin(ok) {
+        if (done) return;
+        done = true;
+        clearTimeout(id);
+        t.removeEventListener('pointerenter', hit);
+        t.removeEventListener('pointerdown', hit);
+        t.classList.add(ok ? 'pass' : 'fail');
+        t.querySelector('.gt').innerHTML = ok ? '已确认' : '未检测到';
+        setTimeout(function () { t.classList.remove('on', 'pass', 'fail'); }, ok ? 550 : 900);
+        setTimeout(function () { resolve(ok); }, ok ? 620 : 980);
+      }
+      function hit() { fin(true); }
+      t.addEventListener('pointerenter', hit);
+      t.addEventListener('pointerdown', hit);
+      var id = setTimeout(function () { fin(false); }, ms || 6500);
+    });
+  }
+
+  function askStill(ms) {
+    return new Promise(function (resolve) {
+      var box = $('gStill');
+      box.classList.remove('moved');
+      box.classList.add('on');
+      var sx = gpx, sy = gpy, moved = 0, flag = false;
+      function mv(e) {
+        var dx = e.clientX - sx, dy = e.clientY - sy;
+        if (sx < -100) { sx = e.clientX; sy = e.clientY; return; }
+        if (dx * dx + dy * dy > 144) {
+          sx = e.clientX; sy = e.clientY;
+          moved++;
+          if (!flag) {
+            flag = true;
+            box.classList.add('moved');
+          }
+        }
+      }
+      document.addEventListener('mousemove', mv, { passive: true });
+      setTimeout(function () {
+        document.removeEventListener('mousemove', mv);
+        box.classList.remove('on', 'moved');
+        resolve(moved);
+      }, ms || 3000);
+    });
+  }
+
+  function askQ(text, ms) {
+    return new Promise(function (resolve) {
+      var box = $('gQ');
+      $('gQText').textContent = text;
+      $('gQWait').textContent = '';
+      var sel = null, done = false;
+      function fin(a) {
+        if (done) return;
+        done = true;
+        clearTimeout(id);
+        $('gQy').onclick = null;
+        $('gQn').onclick = null;
+        box.classList.remove('on');
+        setTimeout(function () { resolve(a); }, 380);
+      }
+      $('gQy').onclick = function () { sel = 'y'; fin('y'); };
+      $('gQn').onclick = function () { sel = 'n'; fin('n'); };
+      box.classList.add('on');
+      var left = Math.ceil((ms || 8000) / 1000);
+      var tick = setInterval(function () {
+        left--;
+        if (done) { clearInterval(tick); return; }
+        $('gQWait').textContent = left <= 0 ? '' : '等待应答 · ' + left + 's';
+      }, 1000);
+      var id = setTimeout(function () {
+        clearInterval(tick);
+        if (!sel) $('gQWait').textContent = '';
+        fin('timeout');
+      }, ms || 8000);
+    });
+  }
+
+  function askLight(ms) {
+    return new Promise(function (resolve) {
+      var acted = false;
+      function mark() { acted = true; }
+      var evs = ['pointerdown', 'keydown', 'wheel', 'touchstart'];
+      evs.forEach(function (e) { document.addEventListener(e, mark, { passive: true }); });
+      setTimeout(function () {
+        evs.forEach(function (e) { document.removeEventListener(e, mark); });
+        resolve(acted);
+      }, ms || 7000);
+    });
   }
 
   /* ---------- 音频 ---------- */
@@ -1396,14 +1626,60 @@ html{--gx:0;--gy:0}
     setBg('#011542');
     stationOff(false);
     chime(false);
-    await sub('幸福里社区 · 温馨提示 第 2 期', { speed: 70, hold: 1400 });
-    await sub('本节目由幸福里社区居民委员会播出', { speed: 58, hold: 1600 });
+    await sub('幸福里社区 · 收看引导 第 2 期', { speed: 70, hold: 1400 });
+    await sub('本次播出为互动引导程序。', { speed: 58, hold: 1500 });
+    await sub('请全程按照屏幕指示操作。', { speed: 58, hold: 1600 });
     clearSub();
+  }
+
+  async function sceneGuideA() {
+    S.phase = 2;
+    S.voicePitch = 1.0;
+    S.voiceRate = 0.9;
+    setBg('#02102e');
+    musicSet(0.96, 0.92, 0.06);
+
+    guideStep(1, '配合检查 · 请操作光标');
+    await sub('引导开始。第 1 步：请将光标移入画面中的方框。', { speed: 50, hold: 1200 });
+    chime(false);
+
+    var ok1 = await askTarget(6500);
+    if (ok1) {
+      guideObey('配合检查');
+      chime(false);
+      await sub('很好。记录：配合。', { speed: 62, hold: 1500 });
+    } else {
+      guideLog('配合检查');
+      staticBurst(300);
+      flashFrame('resource/ghost2.jpg', 80);
+      await sub('未检测到配合。已记录。', { speed: 66, hold: 1800, pitch: 0.7, rate: 0.84 });
+      if (S.visits >= 2) {
+        await sub('这已经是第 ' + S.visits + ' 次了。您还是不配合。', { speed: 58, hold: 2000, pitch: 0.6, rate: 0.8 });
+      }
+    }
+    clearSub();
+    await sleep(500);
+
+    guideStep(2, '静止检查 · 请勿移动');
+    await sub('第 2 步：请保持静止，不要移动。', { speed: 54, hold: 1100 });
+    chime(false);
+    var mv = await askStill(3000);
+    if (mv > 0) {
+      guideLog('静止检查 · 移动 ' + mv + ' 次');
+      trackingRoll(400);
+      await sub('检测到移动。连同颤抖，已记录。', { speed: 62, hold: 1900, pitch: 0.7, rate: 0.84 });
+    } else {
+      guideObey('静止检查');
+      await sub('很好。连呼吸，都看见了。', { speed: 70, hold: 1800, pitch: 0.75, rate: 0.85 });
+    }
+    clearSub();
+    await sleep(600);
+    guideStep(3, '阅读须知');
   }
 
   async function sceneRoutine() {
     S.phase = 2;
-    S.voicePitch = 1.15;
+    S.voicePitch = 1.05;
     S.voiceRate = 0.95;
     setBg('#011542');
     visual('vRoutine');
@@ -1411,21 +1687,25 @@ html{--gx:0;--gy:0}
     tickerOn('幸福里社区提醒：垃圾分类定时投放 · 防范电信诈骗 · 禁止电动车进楼充电 · 共建文明和谐社区');
 
     chime(false);
-    await sub('为推进垃圾分类，自本月起，投放时间调整为每日 7:00-9:00、18:00-20:30。', { speed: 48, hold: 2400 });
+    await sub('第 3 步：请阅读以下须知。引导期间请勿移开视线。', { speed: 50, hold: 1600 });
+    clearSub();
+
+    await sub('为推进垃圾分类，自本月起，投放时间调整为每日 7:00-9:00、18:00-20:30。', { speed: 48, hold: 2200 });
     clearSub();
 
     routineCard(1);
     chime(false);
-    await sub('近期电信诈骗多发。凡自称公检法要求转账的，都是诈骗。', { speed: 48, hold: 2400 });
+    await sub('近期电信诈骗多发。凡自称公检法要求转账的，都是诈骗。', { speed: 48, hold: 2200 });
     clearSub();
 
     routineCard(2);
     chime(false);
-    await sub('请勿将电动车推入楼道充电。一旦起火，责任追查到户。', { speed: 48, hold: 2600 });
+    await sub('请勿将电动车推入楼道充电。一旦起火，责任追查到户。', { speed: 48, hold: 2400 });
     clearSub();
 
     trackingRoll(420);
     await sleep(600);
+    guideObey('阅读须知');
   }
 
   async function sceneKnock() {
@@ -1444,8 +1724,28 @@ html{--gx:0;--gy:0}
     await sub('夜间，有敲门声。', { speed: 74, hold: 2200 });
     musicSet(0.94, 0.88, 0.055);
 
-    await sub('请在开门前，确认门外是您的家人。', { speed: 52, hold: 2000 });
-    await sub('确认方式：请对方先说出，您的名字。', { speed: 52, hold: 2400 });
+    await sub('请在开门前，确认门外是您的家人。', { speed: 52, hold: 1800 });
+
+    guideStep(3, '应答检查 · 请如实回答');
+    await sub('现在，请回答本台的问题。', { speed: 56, hold: 1200 });
+    var ans = await askQ('此刻，门外有人吗？', 8000);
+    guide.qAns = ans;
+    if (ans === 'timeout') {
+      guideLog('应答检查 · 超时');
+      staticBurst(320);
+      await sub('超时。系统已按「是」为您记录。', { speed: 62, hold: 2000, pitch: 0.7, rate: 0.84 });
+    } else {
+      guideObey('应答检查');
+      var said = (ans === 'y') ? '是' : '否';
+      await sub('记录：' + said + '。', { speed: 66, hold: 1400, pitch: 0.8, rate: 0.86 });
+      if (ans === 'n') {
+        await sub('本台的记录是：是。', { speed: 70, hold: 2000, pitch: 0.6, rate: 0.78 });
+      }
+    }
+    clearSub();
+    await sleep(500);
+
+    await sub('确认方式：请对方先说出，您的名字。', { speed: 52, hold: 2200 });
     await sub('若门外的人先叫出了您的名字——', { speed: 46, hold: 1800, pitch: 0.7, rate: 0.85 });
     eyesShow(3200);
     await sub('请不要开门。', { speed: 82, hold: 2600, pitch: 0.6, rate: 0.8 });
@@ -1453,6 +1753,7 @@ html{--gx:0;--gy:0}
     await sleep(900);
     eyesShow(5200);
     await sleep(1900);
+    guideStep(4, '收尾确认');
   }
 
   async function sceneRulesA() {
@@ -1661,6 +1962,49 @@ html{--gx:0;--gy:0}
     setHiss(0.014);
   }
 
+  async function sceneGuideLight() {
+    S.phase = 9;
+    S.voicePitch = 0.8;
+    S.voiceRate = 0.75;
+    setBg('#01030a');
+    musicSet(0.72, 0.64, 0.035);
+    swellDrone(0.13, 3);
+    visual('vRoom');
+    lampLit();
+    tickerOn('第 4 步 · 请照做 · 本步骤将被记录');
+
+    guideStep(4, '灯光检查 · 请照做');
+    await sub('最后一步。第 4 步：', { speed: 66, hold: 1400, pitch: 0.8, rate: 0.78 });
+    await sub('请关闭，您身后的灯。', { speed: 96, hold: 2600, pitch: 0.78, rate: 0.72 });
+    chime(true);
+    await sleep(600);
+
+    var acted = await askLight(7000);
+    guide.lightAct = acted;
+
+    if (acted) {
+      guideObey('灯光检查');
+      $('vRoom').classList.remove('lit');
+      await sub('检测到光照变化。记录：已关闭。', { speed: 60, hold: 1800, pitch: 0.75, rate: 0.8 });
+      await sub('很好。请保持，不要开灯。', { speed: 68, hold: 2000, pitch: 0.7, rate: 0.76 });
+    } else {
+      guideLog('灯光检查 · 未执行');
+      staticBurst(360);
+      invertPulse(2, 90);
+      flashFrame('resource/ghost1.jpeg', 90);
+      await sub('……光照，没有任何变化。', { speed: 78, hold: 2200, pitch: 0.6, rate: 0.72 });
+      await sub('您没有关。已记录。', { speed: 74, hold: 2200, pitch: 0.55, rate: 0.68 });
+      if (S.visits >= 2) {
+        await sub('上一期，您也没有关。', { speed: 72, hold: 2000, pitch: 0.5, rate: 0.66 });
+      }
+    }
+    clearSub();
+    await sleep(700);
+    guideBarOff();
+    await sub('引导结束。请留原地，核对中。', { speed: 66, hold: 2400, pitch: 0.6, rate: 0.72 });
+    clearSub();
+  }
+
   async function scenePeak() {
     S.phase = 9;
     S.inClimax = true;
@@ -1708,10 +2052,15 @@ html{--gx:0;--gy:0}
     tickerOff();
 
     var lines = [
-      '本通知已下发至全部住户',
-      '收看确认  214 / 215',
-      '未确认  1 户'
+      '本户引导程序已执行',
+      '引导 · 步骤 ' + guide.obeyed.length + ' / ' + guide.total +
+        ' 配合 · 未遵从 ' + guide.violations.length + ' 项',
+      '配合项：' + (guide.obeyed.length ? guide.obeyed.join(' · ') : '无'),
+      '未遵从：' + (guide.violations.length ? guide.violations.join(' · ') : '无')
     ];
+    if (guide.qAns === 'timeout') lines.push('应答超时 · 已代填「是」');
+    lines.push('收看确认  214 / 215');
+    lines.push('未确认  1 户');
     var el = $('subLine');
     el.classList.remove('hidden');
     el.classList.remove('dim');
@@ -1724,11 +2073,12 @@ html{--gx:0;--gy:0}
       caret.className = 'caret';
       el.appendChild(span);
       el.appendChild(caret);
+      var longLine = i >= 2 && i <= 4;
       for (var c = 0; c <= lines[i].length; c++) {
         span.textContent = lines[i].slice(0, c);
-        await sleep(46);
+        await sleep(longLine ? 34 : 46);
       }
-      await sleep(i === 2 ? 2600 : 1300);
+      await sleep((i === lines.length - 1) ? 2600 : (longLine ? 1500 : 1300));
     }
 
     if (S.visits >= 2) {
@@ -1826,6 +2176,7 @@ html{--gx:0;--gy:0}
 
     try {
       await sceneIdent();
+      await sceneGuideA();
       await sceneRoutine();
       await sceneKnock();
       await sceneRulesA();
@@ -1833,6 +2184,7 @@ html{--gx:0;--gy:0}
       await sceneRulesB();
       await sceneJump1();
       await scenePersonal();
+      await sceneGuideLight();
       await scenePeak();
       await sceneEndcard();
       await sceneAfter();
@@ -1929,6 +2281,8 @@ html{--gx:0;--gy:0}
   var gqx = 0, gqy = 0, gqPend = 0;
   var rafFn = window.requestAnimationFrame || function (f) { setTimeout(f, 16); };
   document.addEventListener('mousemove', function (e) {
+    gpx = e.clientX;
+    gpy = e.clientY;
     gqx = (e.clientX / (window.innerWidth || 1) - 0.5) * 2;
     gqy = (e.clientY / (window.innerHeight || 1) - 0.5) * 2;
     if (gqPend) return;
