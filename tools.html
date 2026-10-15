@@ -3,24 +3,28 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>功能列表</title>
+<title>功能合集 · 苔石 MOSSYMC</title>
+<link rel="stylesheet" href="ui.css">
 <style>
   *{ box-sizing:border-box; }
   body{
     margin:0;
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
-    background:#0d1017;
-    color:#e8eaee;
+    font-family:var(--sans);
+    background:var(--bg);
+    color:var(--text);
     min-height:100vh;
     -webkit-font-smoothing:antialiased;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size:48px 48px, 48px 48px;
+    background-position:-1px -1px, -1px -1px;
   }
   body::before{
     content:"";
     position:fixed;
     inset:0;
-    background:
-      radial-gradient(600px 400px at 15% 10%, rgba(184,148,95,.14), transparent 70%),
-      radial-gradient(700px 500px at 85% 90%, rgba(90,120,200,.10), transparent 70%);
+    background:radial-gradient(ellipse at 50% 0%, transparent 30%, var(--bg) 85%);
     pointer-events:none;
     z-index:0;
   }
@@ -29,29 +33,35 @@
     z-index:1;
     max-width:860px;
     margin:0 auto;
-    padding:56px 24px 80px;
+    padding:48px 24px 80px;
+  }
+  .eyebrow{
+    font-family:var(--mono);
+    font-size:12px;
+    letter-spacing:.14em;
+    color:var(--moss);
+    margin:0 0 10px;
   }
   h1{
     margin:0 0 6px;
-    font-size:24px;
-    font-weight:700;
-    letter-spacing:.06em;
-    background:linear-gradient(90deg,#e9d3a4,#b8945f);
-    -webkit-background-clip:text;
-    background-clip:text;
-    color:transparent;
+    font-size:26px;
+    font-weight:800;
+    letter-spacing:.02em;
+    color:var(--text);
   }
+  h1 .hl{ color:var(--moss); text-shadow:0 0 16px var(--glow); }
   .sub{
-    margin:0 0 40px;
+    margin:0 0 36px;
     font-size:13px;
-    color:#7f8798;
+    color:var(--text-dim);
     letter-spacing:.04em;
   }
   .cat{
+    font-family:var(--mono);
     font-size:12px;
     letter-spacing:.12em;
-    color:#9aa2b2;
-    margin:32px 0 14px;
+    color:var(--text-dim);
+    margin:34px 0 14px;
     display:flex;
     align-items:center;
     gap:12px;
@@ -59,8 +69,13 @@
   .cat::after{
     content:"";
     flex:1;
-    height:1px;
-    background:rgba(255,255,255,.08);
+    height:2px;
+    background:var(--line);
+  }
+  .cat .warn{
+    color:var(--coral);
+    font-size:11px;
+    letter-spacing:.05em;
   }
   .grid{
     display:grid;
@@ -70,65 +85,79 @@
   a.card{
     display:block;
     padding:18px 20px;
-    border-radius:14px;
-    background:rgba(255,255,255,.045);
-    border:1px solid rgba(255,255,255,.09);
+    background:var(--panel);
+    border:2px solid var(--line-strong);
+    box-shadow:var(--hard);
     text-decoration:none;
     color:inherit;
-    transition:.2s ease;
+    transition:transform .12s, box-shadow .12s, border-color .15s;
   }
   a.card:hover{
-    border-color:var(--gold,#b8945f);
-    background:rgba(184,148,95,.10);
-    transform:translateY(-1px);
+    border-color:var(--moss);
+    transform:translate(2px, 2px);
+    box-shadow:2px 2px 0 rgba(0,0,0,.45);
   }
   a.card .name{
+    font-family:var(--mono);
     font-size:15px;
     font-weight:700;
     letter-spacing:.04em;
     margin-bottom:6px;
+    color:var(--text);
   }
+  a.card:hover .name{ color:var(--moss); }
   a.card .desc{
     font-size:12px;
     line-height:1.6;
-    color:#8e96a8;
+    color:var(--text-dim);
   }
   a.card .tag{
     display:inline-block;
     margin-top:10px;
+    font-family:var(--mono);
     font-size:10px;
     letter-spacing:.1em;
     padding:3px 8px;
-    border-radius:99px;
-    border:1px solid rgba(184,148,95,.4);
-    color:#d9bd85;
+    border:1px solid var(--line-strong);
+    color:var(--text-dim);
   }
+  a.card.horror .tag{ border-color:rgba(224,108,92,.5); color:var(--coral); }
 </style>
 </head>
 <body>
 
-<div class="wrap">
-  <h1>功能合集</h1>
-  <p class="sub">站内小工具与玩法</p>
+<nav class="tnav"><div class="tnav-inner">
+  <a class="tbrand" href="index.html"><span class="tbrand-block"></span><span>苔石<span class="tsep">//</span>MOSSYMC</span></a>
+  <ul class="tnav-links">
+    <li><a href="index.html">[ 主页 ]</a></li>
+    <li><a class="on" href="tools.html">[ 工具 ]</a></li>
+    <li><a href="/guide/getting-started">[ 文档 ]</a></li>
+  </ul>
+</div></nav>
 
-  <div class="cat">评测与测试 <span style="color:#e0554f;font-size:11px;letter-spacing:.05em;">含恐怖内容警告</span></div>
+<div class="wrap">
+  <p class="eyebrow">// TOOLS</p>
+  <h1>功能<span class="hl">合集</span></h1>
+  <p class="sub">站内小工具与玩法 · 点击卡片进入</p>
+
+  <div class="cat">评测与测试 <span class="warn">含恐怖内容警告</span></div>
   <div class="grid">
-    <a class="card" href="test.html">
+    <a class="card horror" href="test.html">
       <div class="name">人格解析</div>
       <div class="desc">多维度人格测试，交互式答题流程。</div>
       <span class="tag">评测</span>
     </a>
-    <a class="card" href="psych.html">
+    <a class="card horror" href="psych.html">
       <div class="name">心理健康自评</div>
       <div class="desc">心理健康状态自评量表。</div>
       <span class="tag">评测</span>
     </a>
-    <a class="card" href="haunt.html">
+    <a class="card horror" href="haunt.html">
       <div class="name">夜间习惯调查</div>
       <div class="desc">关于夜间独处的互动问卷，约 8 分钟。</div>
       <span class="tag">问卷</span>
     </a>
-    <a class="card" href="notice.html">
+    <a class="card horror" href="notice.html">
       <div class="name">社区夜间通知</div>
       <div class="desc">有线电视频道播出的社区温馨提示，约 4 分钟。</div>
       <span class="tag">录像</span>

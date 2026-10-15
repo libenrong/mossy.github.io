@@ -14,8 +14,8 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
     min-height: 100vh;
     display: flex; justify-content: center; align-items: center;
-    background: #f4f1ed;
-    color: #2a2520;
+    background: #0d1110;
+    color: #d7ded8;
     padding: 20px;
     transition: background 3s ease, color 3s ease;
 }
@@ -57,7 +57,7 @@ body {
     max-width: 560px; width: 100%;
     padding: 48px 56px;
     border-radius: 2px;
-    border: 1px solid rgba(0,0,0,0.07);
+    border: 1px solid rgba(123,201,111,0.14);
     position: relative; z-index: 10;
     background: transparent;
     transition: border-color 3s;
@@ -127,12 +127,12 @@ body {
 }
 
 /* 头部 */
-.hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(0,0,0,0.05); }
-.brand { font-size: 9px; letter-spacing: 5px; text-transform: uppercase; opacity: 0.22; font-weight: 300; }
+.hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(123,201,111,0.12); }
+.brand { font-size: 9px; letter-spacing: 5px; text-transform: uppercase; opacity: 0.35; font-weight: 300; color: #7bc96f; }
 .prog-t { font-size: 9px; opacity: 0.22; letter-spacing: 1px; }
 .prog-t em { font-style: normal; opacity: 1; }
-.prog-wrap { height: 1px; background: rgba(0,0,0,0.04); border-radius: 1px; margin-bottom: 32px; overflow: hidden; }
-.prog-bar { height: 100%; width: 0; background: rgba(0,0,0,0.1); border-radius: 1px; transition: width 0.6s ease, background 1s; }
+.prog-wrap { height: 1px; background: rgba(123,201,111,0.10); border-radius: 1px; margin-bottom: 32px; overflow: hidden; }
+.prog-bar { height: 100%; width: 0; background: rgba(123,201,111,0.35); border-radius: 1px; transition: width 0.6s ease, background 1s; }
 
 /* 边缘阴影闪烁 */
 #vignette {
@@ -196,7 +196,7 @@ body {
 
 /* 设备信息 */
 #device-line {
-  font-size: 10px; color: #4a4038; letter-spacing: 1px;
+  font-size: 10px; color: #5c6660; letter-spacing: 1px;
   text-align: center; margin-top: 8px; opacity: 0;
   transition: opacity 1.5s ease; font-family: monospace;
 }
@@ -211,7 +211,7 @@ body {
 #welcome p { font-size: 11px; opacity: 0.38; line-height: 2.4; margin-bottom: 12px; }
 #welcome .sub { font-size: 9px; opacity: 0.2; letter-spacing: 3px; margin-bottom: 28px; }
 #start {
-    background: transparent; border: 1px solid rgba(0,0,0,0.1); color: inherit;
+    background: transparent; border: 1px solid rgba(123,201,111,0.18); color: inherit;
     font-size: 10px; letter-spacing: 4px; padding: 11px 36px; cursor: pointer;
     font-family: inherit; text-transform: uppercase; font-weight: 300;
     opacity: 0.4; transition: opacity 0.3s;
@@ -234,19 +234,19 @@ body {
 .q-text { font-size: 15px; font-weight: 300; line-height: 2.1; margin-bottom: 24px; min-height: 44px; letter-spacing: 0.3px; transition: filter 0.5s, opacity 0.5s; }
 .q-opts { display: flex; flex-direction: column; gap: 5px; }
 .opt-btn {
-    background: transparent; border: 1px solid rgba(0,0,0,0.05); border-radius: 1px;
+    background: transparent; border: 1px solid rgba(123,201,111,0.10); border-radius: 1px;
     padding: 12px 14px; font-size: 13px; color: inherit; cursor: pointer;
     font-family: inherit; text-align: left; transition: all 0.18s;
     display: flex; align-items: center; gap: 10px;
     font-weight: 300; letter-spacing: 0.2px; opacity: 0.55;
 }
-.opt-btn:hover { background: rgba(0,0,0,0.02); border-color: rgba(0,0,0,0.12); transform: translateX(2px); opacity: 0.75; }
-.opt-btn .l { width: 15px; height: 15px; border: 1px solid rgba(0,0,0,0.07); border-radius: 50%; font-size: 7.5px; display: flex; align-items: center; justify-content: center; opacity: 0.28; flex-shrink: 0; }
+.opt-btn:hover { background: rgba(123,201,111,0.05); border-color: rgba(123,201,111,0.22); transform: translateX(2px); opacity: 0.75; }
+.opt-btn .l { width: 15px; height: 15px; border: 1px solid rgba(123,201,111,0.14); border-radius: 50%; font-size: 7.5px; display: flex; align-items: center; justify-content: center; opacity: 0.28; flex-shrink: 0; }
 
 /* 特殊题 */
 #sp-area { display: none; text-align: center; margin-top: 8px; }
 #sp-area.on { display: block; }
-.sp-q { font-size: 14px; font-weight: 300; color: #2a2520; line-height: 2.5; margin-bottom: 22px; letter-spacing: 0.4px; }
+.sp-q { font-size: 14px; font-weight: 300; color: #d7ded8; line-height: 2.5; margin-bottom: 22px; letter-spacing: 0.4px; }
 .sp-btn { display: none; }
 
 /* 暗示文字 */
@@ -259,7 +259,7 @@ body {
 .r-type { font-size: 9px; color: inherit; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 12px; opacity: 0.45; }
 .r-sub { font-size: 17px; font-weight: 200; color: inherit; margin-bottom: 10px; letter-spacing: 3px; }
 .r-desc { font-size: 11px; opacity: 0.3; line-height: 2; margin-bottom: 10px; }
-.r-detail { border-top: 1px solid rgba(0,0,0,0.04); padding-top: 12px; font-size: 11px; opacity: 0.22; line-height: 2; }
+.r-detail { border-top: 1px solid rgba(123,201,111,0.08); padding-top: 12px; font-size: 11px; opacity: 0.22; line-height: 2; }
 
 /* 响应式 */
 @media (max-width: 600px) {
@@ -270,8 +270,22 @@ body {
     #eye-wrap img { width: 120px !important; height: 120px !important; }
 }
 </style>
+<link rel="stylesheet" href="ui.css">
+<style>
+/* body 是 flex 居中，必须在 ui.css 之后覆写顶栏定位 */
+.tnav { position: fixed; top: 0; left: 0; right: 0; }
+</style>
 </head>
 <body>
+
+<nav class="tnav"><div class="tnav-inner">
+  <a class="tbrand" href="index.html"><span class="tbrand-block"></span><span>苔石<span class="tsep">//</span>MOSSYMC</span></a>
+  <ul class="tnav-links">
+    <li><a href="index.html">[ 主页 ]</a></li>
+    <li><a class="on" href="tools.html">[ 工具 ]</a></li>
+    <li><a href="/guide/getting-started">[ 文档 ]</a></li>
+  </ul>
+</div></nav>
 
 <div id="vignette"></div>
 <div id="eye-wrap">

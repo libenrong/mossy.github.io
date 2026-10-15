@@ -60,8 +60,9 @@ for (const file of ['index.html', 'script.js', 'styles.css']) {
 cpSync(join(root, 'resource'), join(siteDir, 'resource'), { recursive: true })
 console.log('[build-static] resource/ -> site/resource/')
 
-// 4) 共享工具页放到站根，与 tools.html 里的链接保持一致
-for (const file of ['psych.html', 'haunt.html', 'notice.html', 'cert.html', 'tools.html']) {
+// 4) 共享工具页放到站根，与 tools.html 里的链接保持一致；
+//    ui.css 是工具区共享壳（设计 token + 顶栏），各工具页相对引用它。
+for (const file of ['psych.html', 'haunt.html', 'notice.html', 'cert.html', 'tools.html', 'ui.css']) {
   copy(file, join(dist, file))
 }
 
@@ -74,10 +75,8 @@ rmSync(join(dist, 'js'), { recursive: true, force: true })
 cpSync(join(root, 'js'), join(dist, 'js'), { recursive: true })
 console.log('[build-static] js/ -> js/')
 
-// 6) 人格解析页部署 docs/public/test.html（其中资源引用写成 ../../resource/，
-//    浏览器会把根之上的 .. 钳制掉，因此 /test.html 与 /test/ 两种访问方式都能命中）。
-//    根目录那份 test.html 与它逐字节等价，仅少了 ../../ 前缀，作为源文件保留；
-//    这里显式复制，既补齐 tools.html 的链接，也让它不再依赖 VitePress 的 public 目录约定。
-copy(join('docs', 'public', 'test.html'), join(dist, 'test.html'))
+// 6) 人格解析页直接取根目录 test.html（工具区统一换肤后它是唯一来源；
+//    docs/public/test.html 是换肤前的旧副本，仅作历史保留，不再参与部署）。
+copy('test.html', join(dist, 'test.html'))
 
 console.log(`[build-static] 完成：静态站位于 /site/，工具页位于站根。`)
