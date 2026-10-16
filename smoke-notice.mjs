@@ -72,6 +72,13 @@ if (!/visits >= 2/.test(CODE)) fail('rewatch branches');
  'pointerdown', 'figPar', '--gx', '有人应声', '视线回来了就好'].forEach((k) => ok(k));
 if (!/addEventListener\('offline'/.test(CODE)) fail('offline listener');
 
+/* 引导型恐怖强化（配合度评估 → 上门引导链路） */
+['配合度', '优先面导', '请勿锁门', '引导员已在路上',
+ '您几乎是在等着这一步', '请再靠近一些', '眨眼 21 次',
+ '正在补引导', '开门吧。是物业', '引导开始后，您的每一次配合与偏离',
+ '我们这边的光线', 'doorKnocks', 'id="hs"', 'hsJit', 'audioDrop',
+ 'guidePct', 'guideRefresh'].forEach((k) => ok(k));
+
 /* 开场在 script 前，且只有一个播放入口 */
 const bootIdx = CODE.indexOf('id="playBtn"');
 const scriptIdx = CODE.indexOf('<script>');

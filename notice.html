@@ -73,6 +73,10 @@ button{font-family:inherit;cursor:pointer;touch-action:manipulation;-webkit-tap-
   opacity:0;transition:opacity .7s;
 }
 #boot .homea.on{opacity:1}
+#boot .proto{
+  margin-top:14px;font-size:10px;letter-spacing:.3em;color:#8792a8;
+  font-family:'SF Mono',monospace;
+}
 .hidden{display:none !important}
 
 /* ===== 电视 ===== */
@@ -327,6 +331,11 @@ html{--gx:0;--gy:0}
   background:transparent;color:#98a2b4;
   font-size:clamp(11px,1.8vh,13px);letter-spacing:.2em;
 }
+#sub .line.lean{
+  transform:scale(1.34);transform-origin:center bottom;
+  transition:transform 1.8s cubic-bezier(.2,.7,.2,1);
+  letter-spacing:.26em;text-indent:.26em;
+}
 #sub .caret{
   display:inline-block;width:1px;height:1em;background:#d8dccf;
   vertical-align:text-bottom;margin-left:2px;
@@ -440,6 +449,21 @@ html{--gx:0;--gy:0}
 }
 #blackout.on{opacity:1}
 
+/* 底部磁头切换噪声带（VHS 特征） */
+#hs{
+  position:absolute;left:0;right:0;bottom:0;height:11px;z-index:46;
+  pointer-events:none;mix-blend-mode:screen;
+  background:repeating-linear-gradient(0deg,
+    rgba(255,255,255,.11) 0 1px, rgba(0,0,0,.6) 1px 3px);
+  filter:blur(.3px);
+  animation:hsJit .16s steps(2) infinite;
+}
+@keyframes hsJit{
+  0%{opacity:.8;transform:translateY(0)}
+  50%{opacity:.35;transform:translateY(-2px)}
+  100%{opacity:.9;transform:translateY(1px)}
+}
+
 /* ===== 引导层（互动指令） ===== */
 #guideBar{
   position:absolute;top:16px;left:20px;z-index:36;display:none;
@@ -542,6 +566,7 @@ html{--gx:0;--gy:0}
     </div>
     <div class="homea" id="homeA"></div>
     <p class="warn">录像含画面闪烁、突发音效与互动环节。<br>引导期间需配合移动光标、保持静止并应答。<br>心脏不适、未成年人请勿观看。惊吓片段可按 Esc 跳过。</p>
+    <div class="proto">全程 4 步 · 逐项引导 · 配合情况记入住户档案</div>
     <button id="playBtn" type="button">▶ 开始引导</button>
     <div class="hint">建议全屏 · 戴耳机 · 全程约 5 分钟</div>
   </div>
@@ -750,6 +775,7 @@ html{--gx:0;--gy:0}
     <div id="noise"></div>
     <div id="vig"></div>
     <div id="track"></div>
+    <div id="hs"></div>
 
     <div id="flash"></div>
     <div id="staticFx"></div>
@@ -807,20 +833,30 @@ html{--gx:0;--gy:0}
   function guideBarOff() {
     $('guideBar').classList.remove('on');
   }
+  function guidePct() {
+    var d = guide.obeyed.length + guide.violations.length;
+    return d ? Math.round(guide.obeyed.length / d * 100) : 100;
+  }
+  function guideRefresh() {
+    $('gStep').textContent = '引导 · 步骤 ' + guide.step + ' / ' + guide.total +
+      ' · 配合度 ' + guidePct() + '%';
+  }
   function guideStep(n, label) {
     guide.step = n;
-    $('gStep').textContent = '引导 · 步骤 ' + n + ' / ' + guide.total;
+    guideRefresh();
     $('gLabel').textContent = label;
     guideShow();
   }
   function guideLog(txt) {
     guide.violations.push(txt);
+    guideRefresh();
     var el = $('gLog');
     el.textContent = '未遵从 · 已记录 ' + guide.violations.length + ' 项';
     el.classList.add('on');
   }
   function guideObey(txt) {
     guide.obeyed.push(txt);
+    guideRefresh();
   }
 
   try {
@@ -835,7 +871,8 @@ html{--gx:0;--gy:0}
 
   var d = new Date();
   var pad = function (n) { return (n < 10 ? '0' : '') + n; };
-  $('osdDate').textContent = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  var OSD_DATE = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  $('osdDate').textContent = OSD_DATE;
 
   function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
@@ -1495,6 +1532,16 @@ html{--gx:0;--gy:0}
     } catch (e) {}
   }
 
+  function doorKnocks(n) {
+    var left = n || 3;
+    (function one() {
+      if (!S.playing) return;
+      thud();
+      trackingRoll(260);
+      if (--left > 0) setTimeout(one, 860 + Math.random() * 300);
+    })();
+  }
+
   function tone1k(ms) {
     if (!ctx) return;
     try {
@@ -1543,6 +1590,18 @@ html{--gx:0;--gy:0}
     } catch (e) {}
   }
 
+  function audioDrop(ms) {
+    if (!ctx || !M.gain || !M.on) return;
+    try {
+      var g = M.gain.gain;
+      var t = ctx.currentTime;
+      var cur = Math.min(0.1, Math.max(0.02, g.value || 0.05));
+      g.cancelScheduledValues(t);
+      g.setValueAtTime(0.0001, t);
+      g.linearRampToValueAtTime(cur, t + (ms / 1000) + 1.4);
+    } catch (e) {}
+  }
+
   /* ---------- OSD 时钟 ---------- */
   var elapsedOffset = 0;
   function elapsedSec() {
@@ -1556,7 +1615,9 @@ html{--gx:0;--gy:0}
   }
   setInterval(function () {
     if (!S.playing) return;
-    $('osdCount').textContent = fmtSec(elapsedSec());
+    var e = elapsedSec();
+    if (Math.random() < 0.06) e = Math.max(0, e - (2 + Math.floor(Math.random() * 9)));
+    $('osdCount').textContent = fmtSec(e);
   }, 500);
 
   function setOsd(mode, spd) {
@@ -1595,7 +1656,12 @@ html{--gx:0;--gy:0}
     else if (roll < 0.66) whisperPan((Math.random() * 2 - 1) * 0.8);
     else if (roll < 0.76 && S.phase >= 3) flashFrame('resource/ghost2.jpg', 90);
     else if (roll < 0.84) { if (M.on) musicStutter(); }
+    else if (roll < 0.92) audioDrop(700 + Math.random() * 900);
     if (Math.random() < 0.4) titleGlitchOnce();
+    if (Math.random() < 0.3) {
+      $('osdDate').textContent = '1998-04-04';
+      setTimeout(function () { $('osdDate').textContent = OSD_DATE; }, 620);
+    }
     scheduleAmbient();
   }
 
@@ -1629,6 +1695,7 @@ html{--gx:0;--gy:0}
     await sub('幸福里社区 · 收看引导 第 2 期', { speed: 70, hold: 1400 });
     await sub('本次播出为互动引导程序。', { speed: 58, hold: 1500 });
     await sub('请全程按照屏幕指示操作。', { speed: 58, hold: 1600 });
+    await sub('引导开始后，您的每一次配合与偏离，都会被记录。', { speed: 54, hold: 1800, pitch: 0.85, rate: 0.88 });
     clearSub();
   }
 
@@ -1639,14 +1706,19 @@ html{--gx:0;--gy:0}
     setBg('#02102e');
     musicSet(0.96, 0.92, 0.06);
 
-    guideStep(1, '配合检查 · 请操作光标');
+    guideStep(1, '视线检查 · 请操作光标');
     await sub('引导开始。第 1 步：请将光标移入画面中的方框。', { speed: 50, hold: 1200 });
     chime(false);
 
+    var t0 = Date.now();
     var ok1 = await askTarget(6500);
+    var dt = Date.now() - t0;
     if (ok1) {
       guideObey('配合检查');
       chime(false);
+      if (dt < 1700) {
+        await sub('……真快。您几乎是在等着这一步。', { speed: 74, hold: 2400, pitch: 0.7, rate: 0.78 });
+      }
       await sub('很好。记录：配合。', { speed: 62, hold: 1500 });
     } else {
       guideLog('配合检查');
@@ -1674,7 +1746,6 @@ html{--gx:0;--gy:0}
     }
     clearSub();
     await sleep(600);
-    guideStep(3, '阅读须知');
   }
 
   async function sceneRoutine() {
@@ -1684,6 +1755,7 @@ html{--gx:0;--gy:0}
     setBg('#011542');
     visual('vRoutine');
     routineCard(0);
+    $('gLabel').textContent = '阅读须知 · 请勿移开视线';
     tickerOn('幸福里社区提醒：垃圾分类定时投放 · 防范电信诈骗 · 禁止电动车进楼充电 · 共建文明和谐社区');
 
     chime(false);
@@ -1701,6 +1773,9 @@ html{--gx:0;--gy:0}
     routineCard(2);
     chime(false);
     await sub('请勿将电动车推入楼道充电。一旦起火，责任追查到户。', { speed: 48, hold: 2400 });
+    clearSub();
+
+    await sub('很好。全程您没有移开视线——共眨眼 21 次，已记录。', { speed: 54, hold: 2600, pitch: 0.88, rate: 0.86 });
     clearSub();
 
     trackingRoll(420);
@@ -1753,7 +1828,6 @@ html{--gx:0;--gy:0}
     await sleep(900);
     eyesShow(5200);
     await sleep(1900);
-    guideStep(4, '收尾确认');
   }
 
   async function sceneRulesA() {
@@ -1814,6 +1888,12 @@ html{--gx:0;--gy:0}
     await sub('本栋，共 215 户。', { speed: 84, hold: 2600, voice: false });
     speak('本栋，共 215 户。', 0.4, 0.72);
     await sleep(3000);
+    await sub('唯一没有配合完成引导的那户——', { speed: 66, hold: 2000, voice: false });
+    speak('唯一没有配合完成引导的那户。', 0.42, 0.72);
+    await sleep(1400);
+    await sub('正在补引导。', { speed: 96, hold: 2600, voice: false });
+    speak('正在补引导。', 0.36, 0.66);
+    await sleep(2200);
     clearSub();
   }
 
@@ -1907,6 +1987,15 @@ html{--gx:0;--gy:0}
     speak('温馨提示。', 0.95, 0.75);
     await sleep(1200);
 
+    $('subLine').classList.add('lean');
+    await sub('请再靠近一些。', { speed: 108, hold: 3000, voice: false });
+    speak('请再靠近一些。', 0.88, 0.66);
+    await sleep(2400);
+    $('subLine').classList.remove('lean');
+    await sub('很好。这样，就看清楚了。', { speed: 82, hold: 2400, voice: false });
+    speak('很好。这样，就看清楚了。', 0.92, 0.7);
+    await sleep(1200);
+
     if (S.visits >= 2) {
       await sub('上一期播出结束后——', { speed: 84, hold: 2200, voice: false });
       speak('上一期播出结束后。', 0.95, 0.7);
@@ -1986,7 +2075,7 @@ html{--gx:0;--gy:0}
       guideObey('灯光检查');
       $('vRoom').classList.remove('lit');
       await sub('检测到光照变化。记录：已关闭。', { speed: 60, hold: 1800, pitch: 0.75, rate: 0.8 });
-      await sub('很好。请保持，不要开灯。', { speed: 68, hold: 2000, pitch: 0.7, rate: 0.76 });
+      await sub('很好。我们这边的光线，跟着变了。请保持，不要开灯。', { speed: 62, hold: 2600, pitch: 0.66, rate: 0.72 });
     } else {
       guideLog('灯光检查 · 未执行');
       staticBurst(360);
@@ -2103,6 +2192,40 @@ html{--gx:0;--gy:0}
     speak(S.visits >= 2 ? '经核对。本单元，查无此户。' : '待确认住户。请重新观看本通知。', 0.9, 0.8);
     await sleep(3200);
     clearSub();
+    await sleep(700);
+
+    var pct = guidePct();
+    var evLine = (pct >= 75)
+      ? '评估：配合度 ' + pct + '% · 本户配合良好，列入「优先面导」名单'
+      : '评估：配合度 ' + pct + '% · 本户配合不足，引导员将上门重新引导';
+    el.classList.remove('hidden');
+    el.classList.remove('dim');
+    el.innerHTML = '';
+    var evSpan = document.createElement('span');
+    var evCaret = document.createElement('span');
+    evCaret.className = 'caret';
+    el.appendChild(evSpan);
+    el.appendChild(evCaret);
+    for (var evc = 0; evc <= evLine.length; evc++) {
+      evSpan.textContent = evLine.slice(0, evc);
+      await sleep(52);
+    }
+    await sleep(2400);
+
+    var doorLine = '请勿锁门。引导员已在路上。';
+    el.innerHTML = '';
+    var doorSpan = document.createElement('span');
+    var doorCaret = document.createElement('span');
+    doorCaret.className = 'caret';
+    el.appendChild(doorSpan);
+    el.appendChild(doorCaret);
+    for (var dc = 0; dc <= doorLine.length; dc++) {
+      doorSpan.textContent = doorLine.slice(0, dc);
+      await sleep(120);
+    }
+    speak('请勿锁门。引导员已在路上。', 0.32, 0.52);
+    await sleep(3400);
+    clearSub();
 
     barsOn(true);
     tone1k(320);
@@ -2149,6 +2272,28 @@ html{--gx:0;--gy:0}
     if (S.titleTimer) clearInterval(S.titleTimer);
 
     await sleep(4200);
+
+    stopSpeak();
+    doorKnocks(3);
+    await sleep(3300);
+
+    el.classList.remove('hidden');
+    el.classList.add('dim');
+    el.innerHTML = '';
+    var knockSpan = document.createElement('span');
+    var knockCaret = document.createElement('span');
+    knockCaret.className = 'caret';
+    el.appendChild(knockSpan);
+    el.appendChild(knockCaret);
+    var knockLine = '——开门吧。是物业。';
+    for (var klc = 0; klc <= knockLine.length; klc++) {
+      knockSpan.textContent = knockLine.slice(0, klc);
+      await sleep(170);
+    }
+    speak('开门吧。是物业。', 0.3, 0.5);
+    document.title = '请开门';
+    await sleep(3400);
+
     flashFrame('resource/ghost2.jpg', 320);
     scream(300, 0.2);
     await sleep(2600);
