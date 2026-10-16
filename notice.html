@@ -40,6 +40,8 @@ button{font-family:inherit;cursor:pointer;touch-action:manipulation;-webkit-tap-
 #boot .subline{font-size:11px;letter-spacing:.35em;color:#8792a8;margin-top:10px}
 #boot .visit{font-size:11px;letter-spacing:.2em;color:#c25b5b;margin-top:14px;display:none;font-family:'SF Mono',monospace}
 #boot .visit.on{display:block}
+#boot .routeMemo{font-size:11px;letter-spacing:.2em;color:#7fb6ff;margin-top:10px;display:none;font-family:'SF Mono',monospace}
+#boot .routeMemo.on{display:block}
 #boot .warn{
   font-size:11px;line-height:2;color:#7c8698;
   margin-top:22px;max-width:340px;
@@ -556,18 +558,19 @@ html{--gx:0;--gy:0}
 <div id="boot">
   <div class="tape">
     <div class="org">XINGFULI COMMUNITY · TAPE NO.02</div>
-    <h1>幸福里社区<br>收看引导</h1>
-    <div class="subline">第 2 期 · 互动引导程序 · 请按屏幕指示操作</div>
+    <h1>幸福里社区<br>住户分类程序</h1>
+    <div class="subline">第 2 期 · 互动分类 · 请按屏幕指示操作</div>
     <div class="visit" id="bootVisit"></div>
+    <div class="routeMemo" id="bootRoute"></div>
     <div class="homeq" id="homeQ">
       <span>您现在独自在家吗？</span>
       <button type="button" data-a="y">是</button>
       <button type="button" data-a="n">否</button>
     </div>
     <div class="homea" id="homeA"></div>
-    <p class="warn">录像含画面闪烁、突发音效与互动环节。<br>引导期间需配合移动光标、保持静止并应答。<br>心脏不适、未成年人请勿观看。惊吓片段可按 Esc 跳过。</p>
-    <div class="proto">全程 4 步 · 逐项引导 · 配合情况记入住户档案</div>
-    <button id="playBtn" type="button">▶ 开始引导</button>
+    <p class="warn">录像含画面闪烁、突发音效与互动环节。<br>引导期间需配合移动光标、保持静止并应答。<br>本次将根据您的配合情况，分配住户类型。<br>心脏不适、未成年人请勿观看。惊吓片段可按 Esc 跳过。</p>
+    <div class="proto">全程 4 步 · 逐项评估 · 结果记入住户档案</div>
+    <button id="playBtn" type="button">▶ 开始分类</button>
     <div class="hint">建议全屏 · 戴耳机 · 全程约 5 分钟</div>
   </div>
 </div>
@@ -827,6 +830,15 @@ html{--gx:0;--gy:0}
   /* 引导记录（配合 / 未遵从） */
   var guide = { step: 0, total: 4, violations: [], obeyed: [], lightAct: false, qAns: null };
 
+  /* 分类路线（住户分类程序核心） */
+  var ROUTES = {
+    A: { key: 'A', name: '模范户', badge: 'A 类 · 模范户' },
+    B: { key: 'B', name: '待核查', badge: 'B 类 · 待核查' },
+    C: { key: 'C', name: '空置房', badge: 'C 类 · 空置房' }
+  };
+  var route = null;       // 当前锁定路线 'A'|'B'|'C'
+  var lastRoute = null;   // 上次路线（localStorage）
+
   function guideShow() {
     $('guideBar').classList.add('on');
   }
@@ -838,8 +850,10 @@ html{--gx:0;--gy:0}
     return d ? Math.round(guide.obeyed.length / d * 100) : 100;
   }
   function guideRefresh() {
-    $('gStep').textContent = '引导 · 步骤 ' + guide.step + ' / ' + guide.total +
-      ' · 配合度 ' + guidePct() + '%';
+    var head = route
+      ? '分类 · ' + ROUTES[route].badge
+      : '引导 · 步骤 ' + guide.step + ' / ' + guide.total + ' · 配合度 ' + guidePct() + '%';
+    $('gStep').textContent = head;
   }
   function guideStep(n, label) {
     guide.step = n;
@@ -858,15 +872,28 @@ html{--gx:0;--gy:0}
     guide.obeyed.push(txt);
     guideRefresh();
   }
+  function routeBadge(key) {
+    route = key;
+    guideRefresh();
+    $('gLabel').textContent = ROUTES[key].badge + ' · 引导继续';
+    guideShow();
+  }
 
   try {
     S.visits = parseInt(localStorage.getItem('notice_v') || '0', 10) + 1;
     localStorage.setItem('notice_v', String(S.visits));
   } catch (e) { S.visits = 1; }
+  try {
+    lastRoute = localStorage.getItem('notice_route') || null;
+  } catch (e) { lastRoute = null; }
 
   if (S.visits >= 2) {
     $('bootVisit').textContent = '检测到播放记录 · 第 ' + S.visits + ' 次 · 上次收看至 04:04';
     $('bootVisit').classList.add('on');
+  }
+  if (lastRoute && ROUTES[lastRoute]) {
+    $('bootRoute').textContent = '上次分类：' + ROUTES[lastRoute].badge + ' · 本次将重新评估';
+    $('bootRoute').classList.add('on');
   }
 
   var d = new Date();
@@ -1542,6 +1569,63 @@ html{--gx:0;--gy:0}
     })();
   }
 
+  function footstep() {
+    if (!ctx) return;
+    try {
+      var t = ctx.currentTime;
+      var o = ctx.createOscillator();
+      var g = ctx.createGain();
+      var f = ctx.createBiquadFilter();
+      f.type = 'lowpass';
+      f.frequency.value = 400;
+      o.type = 'triangle';
+      o.frequency.setValueAtTime(120, t);
+      o.frequency.linearRampToValueAtTime(60, t + 0.12);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(0.06, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+      o.connect(f);
+      f.connect(g);
+      g.connect(ctx.destination);
+      o.start(t);
+      o.stop(t + 0.22);
+    } catch (e) {}
+  }
+
+  function lockpick() {
+    if (!ctx) return;
+    try {
+      var t = ctx.currentTime;
+      for (var i = 0; i < 3; i++) {
+        var tt = t + i * 0.12 + Math.random() * 0.05;
+        var o = ctx.createOscillator();
+        var g = ctx.createGain();
+        o.type = 'square';
+        o.frequency.setValueAtTime(2200 + Math.random() * 1800, tt);
+        g.gain.setValueAtTime(0.0001, tt);
+        g.gain.linearRampToValueAtTime(0.025, tt + 0.005);
+        g.gain.exponentialRampToValueAtTime(0.0001, tt + 0.06);
+        o.connect(g);
+        g.connect(ctx.destination);
+        o.start(tt);
+        o.stop(tt + 0.08);
+      }
+      // 低频闷响（锁舌）
+      var t2 = t + 0.38;
+      var o2 = ctx.createOscillator();
+      var g2 = ctx.createGain();
+      o2.type = 'sine';
+      o2.frequency.setValueAtTime(90, t2);
+      g2.gain.setValueAtTime(0.0001, t2);
+      g2.gain.linearRampToValueAtTime(0.07, t2 + 0.01);
+      g2.gain.exponentialRampToValueAtTime(0.0001, t2 + 0.15);
+      o2.connect(g2);
+      g2.connect(ctx.destination);
+      o2.start(t2);
+      o2.stop(t2 + 0.18);
+    } catch (e) {}
+  }
+
   function tone1k(ms) {
     if (!ctx) return;
     try {
@@ -1676,6 +1760,629 @@ html{--gx:0;--gy:0}
       if (!S.playing) return;
       if (Math.random() < 0.3) titleGlitchOnce();
     }, 7000);
+  }
+
+  /* ---------- 分类与分岔 ---------- */
+  function classifyRoute() {
+    var obed = guide.obeyed.length;
+    var viol = guide.violations.length;
+    var door = guide.qAns;
+
+    // 答「否」= 质疑系统 → 一律 B 类待核查
+    if (door === 'n') return 'B';
+    // 应答超时 = 可能无人 → C 类空置倾向
+    if (door === 'timeout') {
+      if (obed >= 3) return 'A'; // 有人在配合但没应答，可能是被动型模范
+      return 'C';
+    }
+    // 答「是」或未记录：按配合度分
+    if (obed >= 3 && viol <= 1) return 'A';
+    if (obed <= 1) return 'C';
+    return 'B';
+  }
+
+  function forceDifferentRoute(key) {
+    // 二刷换线：确保与上次不同
+    if (!lastRoute) return key;
+    if (key !== lastRoute) return key;
+    var order = ['A', 'B', 'C'];
+    var i = order.indexOf(key);
+    return order[(i + 1) % 3];
+  }
+
+  async function sceneFork() {
+    S.phase = 4;
+    S.voicePitch = 0.9;
+    S.voiceRate = 0.9;
+    setBg('#010a20');
+    musicSet(0.88, 0.82, 0.055);
+    visual(null);
+    tickerOff();
+    guideBarOff();
+
+    chime(true);
+    await sub('感谢您的配合。引导评估已结束。', { speed: 58, hold: 1400 });
+    await sub('正在根据您的配合情况，分配住户类型……', { speed: 52, hold: 1800 });
+    clearSub();
+
+    // 分类动画：A/B/C 百分比跳动
+    var el = $('subLine');
+    el.classList.remove('hidden');
+    el.classList.remove('dim');
+    var decided = classifyRoute();
+    if (S.visits >= 2) decided = forceDifferentRoute(decided);
+
+    var pctA = 30 + Math.random() * 20;
+    var pctB = 20 + Math.random() * 20;
+    var pctC = 20 + Math.random() * 20;
+    var total = pctA + pctB + pctC;
+    pctA = Math.round(pctA / total * 100);
+    pctB = Math.round(pctB / total * 100);
+    pctC = 100 - pctA - pctB;
+
+    for (var t = 0; t < 8; t++) {
+      pctA = Math.max(5, Math.min(80, pctA + (Math.random() * 16 - 8) | 0));
+      pctB = Math.max(5, Math.min(80, pctB + (Math.random() * 16 - 8) | 0));
+      pctC = Math.max(5, Math.min(80, 100 - pctA - pctB));
+      el.textContent = 'A 类 ' + pctA + '%  ·  B 类 ' + pctB + '%  ·  C 类 ' + pctC + '%';
+      trackingRoll(120);
+      await sleep(220);
+      if (t === 3) invertPulse(1, 80);
+    }
+
+    // 锁定
+    var finalPct = { A: 0, B: 0, C: 0 };
+    finalPct[decided] = 92 + Math.floor(Math.random() * 7);
+    var others = ['A', 'B', 'C'].filter(function (k) { return k !== decided; });
+    var remain = 100 - finalPct[decided];
+    finalPct[others[0]] = Math.floor(remain * 0.6);
+    finalPct[others[1]] = remain - finalPct[others[0]];
+
+    el.textContent = 'A 类 ' + finalPct.A + '%  ·  B 类 ' + finalPct.B + '%  ·  C 类 ' + finalPct.C + '%';
+    await sleep(900);
+    staticBurst(400);
+    await sleep(300);
+
+    // 二刷提示
+    if (S.visits >= 2 && lastRoute) {
+      el.innerHTML = '';
+      var rerun = '上次分类：' + ROUTES[lastRoute].badge + '。本次重新分类。';
+      var rspan = document.createElement('span');
+      el.appendChild(rspan);
+      for (var rc = 0; rc <= rerun.length; rc++) {
+        rspan.textContent = rerun.slice(0, rc);
+        await sleep(48);
+      }
+      await sleep(1600);
+    }
+
+    el.innerHTML = '';
+    var lockSpan = document.createElement('span');
+    var lockCaret = document.createElement('span');
+    lockCaret.className = 'caret';
+    el.appendChild(lockSpan);
+    el.appendChild(lockCaret);
+    var lockLine = '分类完成。本户：' + ROUTES[decided].badge;
+    for (var lc = 0; lc <= lockLine.length; lc++) {
+      lockSpan.textContent = lockLine.slice(0, lc);
+      await sleep(56);
+    }
+    chime(true);
+    await sleep(1600);
+    clearSub();
+
+    // 持久化路线
+    try { localStorage.setItem('notice_route', decided); } catch (e) {}
+    lastRoute = decided;
+    routeBadge(decided);
+
+    await sleep(700);
+    return decided;
+  }
+
+  /* ---------- 路线 A · 模范户 ---------- */
+  async function sceneRouteA1() {
+    S.phase = 5;
+    S.voicePitch = 1.0;
+    S.voiceRate = 0.9;
+    setBg('#021530');
+    musicSet(0.95, 0.9, 0.05);
+    visual('vRoutine');
+    tickerOn('模范住户表彰计划 · 感谢您的长期配合 · 档案已同步至居委会');
+
+    chime(false);
+    await sub('本户已列入模范住户名单。', { speed: 62, hold: 1600 });
+    await sub('正在调取住户档案……', { speed: 56, hold: 1400 });
+    clearSub();
+
+    // 伪个人档案卡
+    var lines = [
+      '住户档案 · 第 0404 号',
+      '单元：3 栋 2 单元',
+      '房号：502',
+      '建档日期：1998-04-04',
+      '历史配合率：100%',
+      '备注：该户从未拒绝任何引导。'
+    ];
+    var el = $('subLine');
+    el.classList.remove('hidden', 'dim');
+    for (var i = 0; i < lines.length; i++) {
+      el.innerHTML = '';
+      var span = document.createElement('span');
+      el.appendChild(span);
+      for (var c = 0; c <= lines[i].length; c++) {
+        span.textContent = lines[i].slice(0, c);
+        await sleep(44);
+      }
+      if (i === 3) {
+        staticBurst(200);
+        invertPulse(1, 70);
+        flashFrame('resource/ghost2.jpg', 70);
+      }
+      await sleep(i === lines.length - 1 ? 2400 : 1200);
+    }
+    clearSub();
+
+    await sub('档案建立于 1998 年。', { speed: 60, hold: 2000, pitch: 0.8, rate: 0.85 });
+    await sub('您入住的时间，晚于建档时间。', { speed: 56, hold: 2400, pitch: 0.7, rate: 0.8 });
+    await sub('但档案一直在这里。等着您。', { speed: 68, hold: 2600, pitch: 0.62, rate: 0.76 });
+    clearSub();
+    await sleep(600);
+  }
+
+  async function sceneRouteA2() {
+    S.phase = 6;
+    S.voicePitch = 0.85;
+    S.voiceRate = 0.88;
+    setBg('#01102a');
+    musicSet(0.92, 0.86, 0.045);
+    visual('vStats');
+    buildStats();
+    statsShow();
+    tickerOn('上期模范户已顺利完成面导 · 请保持配合 · 下次上门时间另行通知');
+
+    await sub('上一期，本栋评选出模范住户 1 户。', { speed: 58, hold: 2200 });
+    clearSub();
+
+    // 模范户表彰卡
+    await card('模 范 户', '上期模范户已完成面导。\n感谢您的配合。\n请继续保持。', { speed: 32, hold: 2600 });
+    staticBurst(180);
+    flashFrame('resource/ghost1.jpeg', 90);
+    await sleep(400);
+    clearCard();
+
+    await sub('该户照片已归档。', { speed: 56, hold: 1400 });
+    await sub('您想看看吗？', { speed: 72, hold: 2200, pitch: 0.75, rate: 0.8 });
+    await sleep(1200);
+    faceJump('resource/ghost3.jpg', { ms: 400, hold: 200, vol: 0.3, invert: false, shake: false, vibrate: false });
+    await sub('——就是您。', { speed: 88, hold: 2400, pitch: 0.6, rate: 0.75 });
+    clearSub();
+    await sleep(700);
+  }
+
+  async function sceneRouteA3() {
+    S.phase = 7;
+    S.voicePitch = 0.75;
+    S.voiceRate = 0.85;
+    setBg('#01081c');
+    musicSet(0.85, 0.78, 0.04);
+    startDrone();
+    swellDrone(0.08, 4);
+    visual('vRoom');
+    lampLit();
+    tickerOn('模范户引导 · 步骤 5 · 请保持配合');
+
+    guideStep(5, '步骤 5 · 请继续保持');
+    await sub('最后一步。第 5 步：', { speed: 60, hold: 1400, pitch: 0.75, rate: 0.8 });
+    await sub('请保持现在的姿势，不要动。', { speed: 70, hold: 2000, pitch: 0.7, rate: 0.76 });
+    await sub('永远。', { speed: 96, hold: 2600, pitch: 0.55, rate: 0.68 });
+    chime(true);
+    clearSub();
+    await sleep(800);
+
+    // 永不结束的静止检查（10s 后自动"通过"，但步骤号变 5/4）
+    var mv = await askStill(10000);
+    guide.step = 5;
+    guideRefresh();
+    if (mv > 0) {
+      guideLog('步骤 5 · 移动 ' + mv + ' 次');
+      trackingRoll(400);
+      await sub('检测到移动。模范户不应移动。', { speed: 64, hold: 2000, pitch: 0.65, rate: 0.78 });
+    } else {
+      guideObey('步骤 5');
+      await sub('很好。请继续保持。', { speed: 66, hold: 1800, pitch: 0.7, rate: 0.8 });
+      await sub('我们将继续观察。', { speed: 72, hold: 2000, pitch: 0.62, rate: 0.75 });
+    }
+    clearSub();
+    guideBarOff();
+    await sleep(500);
+  }
+
+  async function endRouteA() {
+    S.phase = 10;
+    setBg('#000');
+    stopSpeak();
+    stationOff(true);
+    visual(null);
+    tickerOff();
+
+    var lines = [
+      '分类结果：A 类 · 模范户',
+      '档案编号：0404',
+      '历史配合率：100%',
+      '本户确认为模范住户。'
+    ];
+    var el = $('subLine');
+    el.classList.remove('hidden', 'dim');
+    for (var i = 0; i < lines.length; i++) {
+      el.innerHTML = '';
+      var span = document.createElement('span');
+      var caret = document.createElement('span');
+      caret.className = 'caret';
+      el.appendChild(span);
+      el.appendChild(caret);
+      for (var c = 0; c <= lines[i].length; c++) {
+        span.textContent = lines[i].slice(0, c);
+        await sleep(46);
+      }
+      await sleep(i === lines.length - 1 ? 2600 : 1300);
+    }
+
+    if (S.visits >= 2) {
+      el.innerHTML = '';
+      var v2 = document.createElement('span');
+      el.appendChild(v2);
+      var v2line = '本户已确认分类 ' + S.visits + ' 次 · 档案持续更新';
+      for (var v2c = 0; v2c <= v2line.length; v2c++) {
+        v2.textContent = v2line.slice(0, v2c);
+        await sleep(50);
+      }
+      await sleep(2200);
+    }
+
+    el.innerHTML = '';
+    var lastSpan = document.createElement('span');
+    var lastCaret = document.createElement('span');
+    lastCaret.className = 'caret';
+    el.appendChild(lastSpan);
+    el.appendChild(lastCaret);
+    var lastLine = '引导员将定期上门，核对您的配合情况。';
+    for (var lc = 0; lc <= lastLine.length; lc++) {
+      lastSpan.textContent = lastLine.slice(0, lc);
+      await sleep(58);
+    }
+    speak('引导员将定期上门。核对您的配合情况。', 0.5, 0.7);
+    await sleep(2800);
+
+    el.innerHTML = '';
+    var doorSpan = document.createElement('span');
+    var doorCaret = document.createElement('span');
+    doorCaret.className = 'caret';
+    el.appendChild(doorSpan);
+    el.appendChild(doorCaret);
+    var doorLine = '请勿锁门。引导员已在楼道内。';
+    for (var dc = 0; dc <= doorLine.length; dc++) {
+      doorSpan.textContent = doorLine.slice(0, dc);
+      await sleep(120);
+    }
+    speak('请勿锁门。引导员已在楼道内。', 0.32, 0.5);
+    document.title = '已登记';
+    await sleep(3400);
+    clearSub();
+
+    barsOn(true);
+    tone1k(300);
+    await sleep(400);
+    barsOn(false);
+    await sub('感谢您的配合。明天同一时间，我们将再次上门。', { speed: 60, hold: 2600, voice: false, dim: true });
+    clearSub();
+  }
+
+  /* ---------- 路线 B · 待核查 ---------- */
+  async function sceneRouteB1() {
+    S.phase = 5;
+    S.voicePitch = 0.9;
+    S.voiceRate = 0.9;
+    setBg('#02102e');
+    musicSet(0.9, 0.84, 0.05);
+    visual(null);
+    tickerOn('核查程序启动 · 请配合重做未通过步骤 · 本次加倍严格');
+
+    chime(true);
+    await sub('本户未通过本次分类评估。', { speed: 58, hold: 1600, pitch: 0.8, rate: 0.85 });
+    await sub('启动核查程序。', { speed: 66, hold: 1600, pitch: 0.72, rate: 0.82 });
+    clearSub();
+
+    // 重做静止检查，加倍
+    guideStep(2, '核查 · 静止检查（重试）');
+    await sub('第 2 步未通过。请重做。', { speed: 56, hold: 1400, pitch: 0.78, rate: 0.84 });
+    await sub('本次标准加倍：保持静止 5 秒。', { speed: 52, hold: 1800, pitch: 0.75, rate: 0.82 });
+    chime(true);
+    var mv = await askStill(5000);
+    if (mv > 0) {
+      guideLog('核查静止 · 移动 ' + mv + ' 次');
+      trackingRoll(500);
+      staticBurst(300);
+      await sub('再次检测到移动。核查失败。', { speed: 62, hold: 2000, pitch: 0.65, rate: 0.78 });
+      await sub('您的紧张，已被记录。', { speed: 68, hold: 2200, pitch: 0.6, rate: 0.75 });
+    } else {
+      guideObey('核查静止');
+      await sub('通过。但核查尚未结束。', { speed: 62, hold: 1800, pitch: 0.72, rate: 0.8 });
+    }
+    clearSub();
+    await sleep(500);
+  }
+
+  async function sceneRouteB2() {
+    S.phase = 6;
+    S.voicePitch = 0.7;
+    S.voiceRate = 0.85;
+    setBg('#041c46');
+    musicSet(0.88, 0.82, 0.045);
+    visual('vCorridor');
+    doorOpen();
+    tickerOn('核查中 · 请勿离开屏幕 · 核查员已到单元门厅');
+
+    chime(true);
+    await card('核 查 · 第 一 条', '本户历史记录显示：\n您曾多次未完成引导。\n本次将逐项复核。', { speed: 32, hold: 2400 });
+    clearCard();
+
+    await sub('核查记录调取完毕。', { speed: 56, hold: 1600, pitch: 0.65, rate: 0.82 });
+    await sub('核查员已进入单元门。', { speed: 58, hold: 1800, pitch: 0.6, rate: 0.8 });
+    clearSub();
+
+    // 脚步声逼近
+    startDrone();
+    swellDrone(0.1, 5);
+    await sub('……请听。', { speed: 80, hold: 1600, pitch: 0.6, rate: 0.75 });
+    footstep();
+    await sleep(900);
+    footstep();
+    await sleep(1000);
+    footstep();
+    await sleep(800);
+    eyesShow(2400);
+    await sub('核查员，已经上楼了。', { speed: 72, hold: 2400, pitch: 0.5, rate: 0.7 });
+    clearSub();
+    await sleep(600);
+  }
+
+  async function endRouteB() {
+    S.phase = 10;
+    setBg('#000');
+    stopSpeak();
+    stationOff(true);
+    visual(null);
+    tickerOff();
+
+    var lines = [
+      '分类结果：B 类 · 待核查',
+      '核查结论：未通过',
+      '原因：配合度不足 / 应答异常',
+      '核查员将上门重新核对。'
+    ];
+    var el = $('subLine');
+    el.classList.remove('hidden', 'dim');
+    for (var i = 0; i < lines.length; i++) {
+      el.innerHTML = '';
+      var span = document.createElement('span');
+      var caret = document.createElement('span');
+      caret.className = 'caret';
+      el.appendChild(span);
+      el.appendChild(caret);
+      for (var c = 0; c <= lines[i].length; c++) {
+        span.textContent = lines[i].slice(0, c);
+        await sleep(48);
+      }
+      await sleep(i === lines.length - 1 ? 2600 : 1400);
+    }
+
+    if (S.visits >= 2) {
+      el.innerHTML = '';
+      var v2 = document.createElement('span');
+      el.appendChild(v2);
+      var v2line = '本户已连续 ' + S.visits + ' 次核查未通过';
+      for (var v2c = 0; v2c <= v2line.length; v2c++) {
+        v2.textContent = v2line.slice(0, v2c);
+        await sleep(52);
+      }
+      await sleep(2200);
+    }
+
+    el.innerHTML = '';
+    var doorSpan = document.createElement('span');
+    var doorCaret = document.createElement('span');
+    doorCaret.className = 'caret';
+    el.appendChild(doorSpan);
+    el.appendChild(doorCaret);
+    var doorLine = '请勿锁门。核查员已在敲门。';
+    for (var dc = 0; dc <= doorLine.length; dc++) {
+      doorSpan.textContent = doorLine.slice(0, dc);
+      await sleep(120);
+    }
+    speak('请勿锁门。核查员已在敲门。', 0.34, 0.52);
+    document.title = '请配合';
+    await sleep(2000);
+
+    doorKnocks(3);
+    await sleep(2800);
+    clearSub();
+
+    barsOn(true);
+    tone1k(300);
+    await sleep(400);
+    barsOn(false);
+    await sub('请配合开门。核查很快就会结束。', { speed: 60, hold: 2600, voice: false, dim: true });
+    clearSub();
+  }
+
+  /* ---------- 路线 C · 空置房 ---------- */
+  async function sceneRouteC1() {
+    S.phase = 5;
+    S.voicePitch = 0.8;
+    S.voiceRate = 0.88;
+    setBg('#030a18');
+    musicSet(0.85, 0.78, 0.04);
+    visual('vRoom');
+    $('vRoom').querySelector('.roomImg').style.display = 'none';
+    $('vRoom').classList.remove('lit');
+    tickerOn('房屋状态核查中 · 空置房请勿收看 · 违规收视将被记录');
+
+    chime(true);
+    await sub('正在核对住户信息……', { speed: 56, hold: 1400 });
+    await sleep(800);
+    staticBurst(300);
+    await sub('核对完成。', { speed: 66, hold: 1200, pitch: 0.75, rate: 0.85 });
+    await sub('经核实：本户为空置房屋。', { speed: 62, hold: 2400, pitch: 0.7, rate: 0.8 });
+    clearSub();
+
+    await sub('系统查询结果：', { speed: 54, hold: 1200 });
+    var lines = [
+      '房屋编号：3-2-502',
+      '状态：空置',
+      '登记人口：0',
+      '最近收视记录：无',
+      '违规检测：检测到收视行为'
+    ];
+    var el = $('subLine');
+    el.classList.remove('hidden', 'dim');
+    for (var i = 0; i < lines.length; i++) {
+      el.innerHTML = '';
+      var span = document.createElement('span');
+      el.appendChild(span);
+      for (var c = 0; c <= lines[i].length; c++) {
+        span.textContent = lines[i].slice(0, c);
+        await sleep(44);
+      }
+      if (i === lines.length - 1) {
+        invertPulse(2, 80);
+        flashFrame('resource/ghost1.jpeg', 100);
+      }
+      await sleep(i === lines.length - 1 ? 2200 : 1100);
+    }
+    clearSub();
+    await sleep(400);
+  }
+
+  async function sceneRouteC2() {
+    S.phase = 6;
+    S.voicePitch = 0.65;
+    S.voiceRate = 0.82;
+    setBg('#020810');
+    musicSet(0.8, 0.72, 0.035);
+    startDrone();
+    swellDrone(0.09, 5);
+    visual('vLockers');
+    tickerOn('空置房屋处理通知 · 即将进行回收 · 无需住户应答');
+
+    chime(true);
+    await card('房屋回收通知', '空置房屋将于近日统一回收。\n回收期间无需通知住户。\n请勿占用公共资源。', { speed: 30, hold: 2600 });
+    clearCard();
+
+    // 报错地址（伪个性化但故意报错）
+    await sub('本房屋登记地址为：', { speed: 52, hold: 1200 });
+    await sub('幸福里 3 栋 2 单元 502 室。', { speed: 50, hold: 1800 });
+    await sub('……系统提示：该地址查无此人。', { speed: 58, hold: 2200, pitch: 0.6, rate: 0.78 });
+    clearSub();
+
+    await sub('空置房，不需要开灯。', { speed: 72, hold: 2200, pitch: 0.55, rate: 0.72 });
+    await sub('空置房，不需要收看通知。', { speed: 68, hold: 2200, pitch: 0.52, rate: 0.7 });
+    await sub('那么——现在在看电视的，是谁？', { speed: 78, hold: 3000, pitch: 0.48, rate: 0.68 });
+    clearSub();
+    await sleep(600);
+  }
+
+  async function sceneRouteC3() {
+    S.phase = 7;
+    S.voicePitch = 0.55;
+    S.voiceRate = 0.8;
+    setBg('#010508');
+    musicSet(0.7, 0.62, 0.03);
+    swellDrone(0.12, 4);
+    visual(null);
+    tickerOn('清退程序已启动 · 请保持安静 · 空置房无需敲门');
+
+    await sub('清退程序已启动。', { speed: 60, hold: 1600, pitch: 0.55, rate: 0.75 });
+    await sub('工作人员正在前往。', { speed: 56, hold: 1600, pitch: 0.52, rate: 0.72 });
+    clearSub();
+
+    // 开锁音效暗示
+    await sleep(1200);
+    lockpick();
+    await sleep(1500);
+    await sub('……无需应答。', { speed: 70, hold: 1800, pitch: 0.5, rate: 0.7 });
+    await sub('空置房，无需敲门。', { speed: 78, hold: 2400, pitch: 0.45, rate: 0.68 });
+    clearSub();
+    await sleep(500);
+  }
+
+  async function endRouteC() {
+    S.phase = 10;
+    setBg('#000');
+    stopSpeak();
+    stationOff(true);
+    visual(null);
+    tickerOff();
+
+    var lines = [
+      '分类结果：C 类 · 空置房',
+      '处理方式：清退',
+      '工作人员已携带钥匙前往',
+      '本户将不再有收视记录。'
+    ];
+    var el = $('subLine');
+    el.classList.remove('hidden', 'dim');
+    for (var i = 0; i < lines.length; i++) {
+      el.innerHTML = '';
+      var span = document.createElement('span');
+      var caret = document.createElement('span');
+      caret.className = 'caret';
+      el.appendChild(span);
+      el.appendChild(caret);
+      for (var c = 0; c <= lines[i].length; c++) {
+        span.textContent = lines[i].slice(0, c);
+        await sleep(50);
+      }
+      await sleep(i === lines.length - 1 ? 2600 : 1400);
+    }
+
+    if (S.visits >= 2) {
+      el.innerHTML = '';
+      var v2 = document.createElement('span');
+      el.appendChild(v2);
+      var v2line = '本户已确认空置 ' + S.visits + ' 次';
+      for (var v2c = 0; v2c <= v2line.length; v2c++) {
+        v2.textContent = v2line.slice(0, v2c);
+        await sleep(54);
+      }
+      await sleep(2200);
+    }
+
+    el.innerHTML = '';
+    var doorSpan = document.createElement('span');
+    var doorCaret = document.createElement('span');
+    doorCaret.className = 'caret';
+    el.appendChild(doorSpan);
+    el.appendChild(doorCaret);
+    var doorLine = '无需锁门。工作人员正在开锁。';
+    for (var dc = 0; dc <= doorLine.length; dc++) {
+      doorSpan.textContent = doorLine.slice(0, dc);
+      await sleep(130);
+    }
+    speak('无需锁门。工作人员正在开锁。', 0.3, 0.48);
+    document.title = '已清退';
+    await sleep(2400);
+
+    lockpick();
+    await sleep(1800);
+    clearSub();
+
+    barsOn(true);
+    tone1k(300);
+    await sleep(400);
+    barsOn(false);
+    await sub('房屋已回收。感谢您的「收看」。', { speed: 60, hold: 2600, voice: false, dim: true });
+    clearSub();
   }
 
   /* ---------- 分场 ---------- */
@@ -2094,153 +2801,6 @@ html{--gx:0;--gy:0}
     clearSub();
   }
 
-  async function scenePeak() {
-    S.phase = 9;
-    S.inClimax = true;
-    S.skip = false;
-    visual(null);
-    tickerOff();
-
-    await sleep(1000);
-    if (skipped()) { endClimax(); return; }
-
-    bigWord('现在关', 450, true);
-    invertPulse(4, 70);
-    faceJump('resource/ghost1.jpeg', { ms: 650, hold: 500, vol: 0.7, shake: true, vibrate: true });
-    thud();
-    await sleep(350);
-    if (skipped()) { endClimax(); return; }
-
-    thud();
-    faceJump('resource/ghost3.jpg', { ms: 600, hold: 420, vol: 0.65, invert: true });
-    await sleep(750);
-    if (skipped()) { endClimax(); return; }
-
-    staticBurst(700);
-    shakeOn(true);
-    await sleep(600);
-    shakeOn(false);
-    endClimax();
-
-    S.voicePitch = 0.3;
-    S.voiceRate = 0.5;
-    await sub('——收看确认中。', { speed: 90, hold: 2200, pitch: 0.3, rate: 0.5 });
-    clearSub();
-  }
-
-  async function sceneEndcard() {
-    S.phase = 10;
-    S.voicePitch = 0.9;
-    S.voiceRate = 0.85;
-    setBg('#000');
-    stopSpeak();
-    clearCard();
-    $('cardNo').textContent = '';
-    stationOff(true);
-    visual(null);
-    tickerOff();
-
-    var lines = [
-      '本户引导程序已执行',
-      '引导 · 步骤 ' + guide.obeyed.length + ' / ' + guide.total +
-        ' 配合 · 未遵从 ' + guide.violations.length + ' 项',
-      '配合项：' + (guide.obeyed.length ? guide.obeyed.join(' · ') : '无'),
-      '未遵从：' + (guide.violations.length ? guide.violations.join(' · ') : '无')
-    ];
-    if (guide.qAns === 'timeout') lines.push('应答超时 · 已代填「是」');
-    lines.push('收看确认  214 / 215');
-    lines.push('未确认  1 户');
-    var el = $('subLine');
-    el.classList.remove('hidden');
-    el.classList.remove('dim');
-    stopSpeak();
-
-    for (var i = 0; i < lines.length; i++) {
-      el.innerHTML = '';
-      var span = document.createElement('span');
-      var caret = document.createElement('span');
-      caret.className = 'caret';
-      el.appendChild(span);
-      el.appendChild(caret);
-      var longLine = i >= 2 && i <= 4;
-      for (var c = 0; c <= lines[i].length; c++) {
-        span.textContent = lines[i].slice(0, c);
-        await sleep(longLine ? 34 : 46);
-      }
-      await sleep((i === lines.length - 1) ? 2600 : (longLine ? 1500 : 1300));
-    }
-
-    if (S.visits >= 2) {
-      var vline = '本户已确认收看 ' + S.visits + ' 次';
-      el.innerHTML = '';
-      var span2 = document.createElement('span');
-      el.appendChild(span2);
-      for (var c2 = 0; c2 <= vline.length; c2++) {
-        span2.textContent = vline.slice(0, c2);
-        await sleep(52);
-      }
-      await sleep(2400);
-    }
-
-    el.innerHTML = '';
-    var finalLine = (S.visits >= 2)
-      ? '经核对：本单元，查无此户。'
-      : '待确认住户，请重新观看本通知。';
-    var wait = document.createElement('span');
-    wait.textContent = finalLine;
-    el.appendChild(wait);
-    speak(S.visits >= 2 ? '经核对。本单元，查无此户。' : '待确认住户。请重新观看本通知。', 0.9, 0.8);
-    await sleep(3200);
-    clearSub();
-    await sleep(700);
-
-    var pct = guidePct();
-    var evLine = (pct >= 75)
-      ? '评估：配合度 ' + pct + '% · 本户配合良好，列入「优先面导」名单'
-      : '评估：配合度 ' + pct + '% · 本户配合不足，引导员将上门重新引导';
-    el.classList.remove('hidden');
-    el.classList.remove('dim');
-    el.innerHTML = '';
-    var evSpan = document.createElement('span');
-    var evCaret = document.createElement('span');
-    evCaret.className = 'caret';
-    el.appendChild(evSpan);
-    el.appendChild(evCaret);
-    for (var evc = 0; evc <= evLine.length; evc++) {
-      evSpan.textContent = evLine.slice(0, evc);
-      await sleep(52);
-    }
-    await sleep(2400);
-
-    var doorLine = '请勿锁门。引导员已在路上。';
-    el.innerHTML = '';
-    var doorSpan = document.createElement('span');
-    var doorCaret = document.createElement('span');
-    doorCaret.className = 'caret';
-    el.appendChild(doorSpan);
-    el.appendChild(doorCaret);
-    for (var dc = 0; dc <= doorLine.length; dc++) {
-      doorSpan.textContent = doorLine.slice(0, dc);
-      await sleep(120);
-    }
-    speak('请勿锁门。引导员已在路上。', 0.32, 0.52);
-    await sleep(3400);
-    clearSub();
-
-    barsOn(true);
-    tone1k(320);
-    await sleep(1400);
-    barsOn(false);
-    stationOff(false);
-    setBg('#01030a');
-
-    await sub('明天同一时间，我们将再次播出。', { speed: 62, hold: 2400, pitch: 0.9, rate: 0.85 });
-    await sub('届时，请确保您已读完全部条款。', { speed: 58, hold: 2400, pitch: 0.9, rate: 0.85 });
-    await sub('——幸福里社区居民委员会', { speed: 70, hold: 3000, voice: false });
-    speak('幸福里社区居民委员会。', 0.9, 0.85);
-    await sleep(2600);
-    clearSub();
-  }
 
   async function sceneAfter() {
     S.phase = 11;
@@ -2259,7 +2819,16 @@ html{--gx:0;--gy:0}
     el.innerHTML = '';
     var span = document.createElement('span');
     el.appendChild(span);
-    var text = (S.visits >= 2) ? '——这次，关了吗？' : '——灯关了吗？';
+
+    // 尾声第一句按路线变化
+    var text;
+    if (route === 'C') {
+      text = (S.visits >= 2) ? '——这次，有人应门吗？' : '——有人在吗？';
+    } else if (route === 'B') {
+      text = (S.visits >= 2) ? '——这次，还想跑吗？' : '——还在吗？';
+    } else {
+      text = (S.visits >= 2) ? '——这次，还是模范吗？' : '——还在看吗？';
+    }
     for (var i = 0; i <= text.length; i++) {
       span.textContent = text.slice(0, i);
       await sleep(140);
@@ -2268,31 +2837,52 @@ html{--gx:0;--gy:0}
     await sleep(3600);
     clearSub();
 
-    document.title = '请关灯';
     if (S.titleTimer) clearInterval(S.titleTimer);
 
     await sleep(4200);
 
     stopSpeak();
-    doorKnocks(3);
-    await sleep(3300);
-
-    el.classList.remove('hidden');
-    el.classList.add('dim');
-    el.innerHTML = '';
-    var knockSpan = document.createElement('span');
-    var knockCaret = document.createElement('span');
-    knockCaret.className = 'caret';
-    el.appendChild(knockSpan);
-    el.appendChild(knockCaret);
-    var knockLine = '——开门吧。是物业。';
-    for (var klc = 0; klc <= knockLine.length; klc++) {
-      knockSpan.textContent = knockLine.slice(0, klc);
-      await sleep(170);
+    if (route === 'C') {
+      // 空置房：不开门，直接进
+      lockpick();
+      await sleep(2000);
+      el.classList.remove('hidden');
+      el.classList.add('dim');
+      el.innerHTML = '';
+      var cSpan = document.createElement('span');
+      var cCaret = document.createElement('span');
+      cCaret.className = 'caret';
+      el.appendChild(cSpan);
+      el.appendChild(cCaret);
+      var cLine = '——门开了。';
+      for (var cc = 0; cc <= cLine.length; cc++) {
+        cSpan.textContent = cLine.slice(0, cc);
+        await sleep(170);
+      }
+      speak('门开了。', 0.28, 0.45);
+      document.title = '已进入';
+      await sleep(3000);
+    } else {
+      // A/B：敲门
+      doorKnocks(3);
+      await sleep(3300);
+      el.classList.remove('hidden');
+      el.classList.add('dim');
+      el.innerHTML = '';
+      var knockSpan = document.createElement('span');
+      var knockCaret = document.createElement('span');
+      knockCaret.className = 'caret';
+      el.appendChild(knockSpan);
+      el.appendChild(knockCaret);
+      var knockLine = (route === 'B') ? '——核查员。请开门。' : '——开门吧。是物业。';
+      for (var klc = 0; klc <= knockLine.length; klc++) {
+        knockSpan.textContent = knockLine.slice(0, klc);
+        await sleep(170);
+      }
+      speak(knockLine.replace('——', ''), 0.3, 0.5);
+      document.title = '请开门';
+      await sleep(3400);
     }
-    speak('开门吧。是物业。', 0.3, 0.5);
-    document.title = '请开门';
-    await sleep(3400);
 
     flashFrame('resource/ghost2.jpg', 320);
     scream(300, 0.2);
@@ -2320,18 +2910,41 @@ html{--gx:0;--gy:0}
     startTitleTimer();
 
     try {
+      // 共享开场
       await sceneIdent();
       await sceneGuideA();
       await sceneRoutine();
       await sceneKnock();
+
+      // 共享中段（规则卡 / 统计 / 跳吓 / 凑近 / 灯光检查）
       await sceneRulesA();
       await sceneStats();
       await sceneRulesB();
       await sceneJump1();
       await scenePersonal();
       await sceneGuideLight();
-      await scenePeak();
-      await sceneEndcard();
+
+      // 分岔点
+      var r = await sceneFork();
+
+      // 路线专属内容 + 结局
+      if (r === 'A') {
+        await sceneRouteA1();
+        await sceneRouteA2();
+        await sceneRouteA3();
+        await endRouteA();
+      } else if (r === 'B') {
+        await sceneRouteB1();
+        await sceneRouteB2();
+        await endRouteB();
+      } else {
+        await sceneRouteC1();
+        await sceneRouteC2();
+        await sceneRouteC3();
+        await endRouteC();
+      }
+
+      // 共享尾招（按路线微调）
       await sceneAfter();
     } catch (e) {}
   }
