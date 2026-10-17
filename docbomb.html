@@ -1,0 +1,843 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0d0f0b" />
+    <meta
+      name="description"
+      content="拆弹笔记 DocBomb：把制度、笔记、说明书变成一局 3 分钟的拆弹游戏。5 道题，15 秒一关，答对剪线，答错加速。"
+    />
+    <meta property="og:title" content="拆弹笔记 DocBomb — 把无聊文档拆成 3 分钟游戏" />
+    <meta
+      property="og:description"
+      content="粘贴一段无聊材料，AI 抽出五个要害，塞进炸弹。你敢剪哪根线？"
+    />
+    <title>拆弹笔记 DocBomb · 苔石工具</title>
+    <link rel="icon" href="docbomb/assets/logo.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="ui.css" />
+    <link rel="stylesheet" href="docbomb/styles.css" />
+  </head>
+  <body>
+    <svg class="svg-sprite" aria-hidden="true">
+      <symbol id="i-bomb" viewBox="0 0 48 48">
+        <path d="M28.5 16.2a14 14 0 1 1-6.4-5.8" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" />
+        <circle cx="24" cy="29" r="10.4" fill="currentColor" />
+        <path d="M29.5 14.8 35 9.4" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" />
+        <path d="M35 9.4c2.7-2.6 6.4-1.3 6.3 1.4 0 1.9-1.6 3.3-3.5 3.2" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" />
+        <path d="m40.5 5.5 2.1-2.4M42.4 11.7l3-.4M37.8 13.2l1.8 2.7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
+        <path d="M19.5 25.5h9M19.5 30h6.2" fill="none" stroke="#0d0f0b" stroke-width="2.2" stroke-linecap="round" />
+      </symbol>
+      <symbol id="i-arrow-up-right" viewBox="0 0 24 24">
+        <path d="M6 18 18 6M8 6h10v10" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+      </symbol>
+      <symbol id="i-arrow-right" viewBox="0 0 24 24">
+        <path d="M4 12h15m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+      </symbol>
+      <symbol id="i-arrow-left" viewBox="0 0 24 24">
+        <path d="M20 12H5m6-6-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+      </symbol>
+      <symbol id="i-volume" viewBox="0 0 24 24">
+        <path d="M4 9v6h4l5 4V5L8 9H4Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
+        <path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+      </symbol>
+      <symbol id="i-mute" viewBox="0 0 24 24">
+        <path d="M4 9v6h4l5 4V5L8 9H4Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
+        <path d="m16 9 5 6m0-6-5 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+      </symbol>
+      <symbol id="i-upload" viewBox="0 0 24 24">
+        <path d="M12 16V4m-5 5 5-5 5 5M5 15v4h14v-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+      </symbol>
+      <symbol id="i-close" viewBox="0 0 24 24">
+        <path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+      </symbol>
+      <symbol id="i-download" viewBox="0 0 24 24">
+        <path d="M12 4v12m-5-5 5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+      </symbol>
+      <symbol id="i-share" viewBox="0 0 24 24">
+        <circle cx="18" cy="5" r="2.4" fill="none" stroke="currentColor" stroke-width="1.8" />
+        <circle cx="6" cy="12" r="2.4" fill="none" stroke="currentColor" stroke-width="1.8" />
+        <circle cx="18" cy="19" r="2.4" fill="none" stroke="currentColor" stroke-width="1.8" />
+        <path d="m8.2 10.8 7.6-4.5M8.2 13.2l7.6 4.5" fill="none" stroke="currentColor" stroke-width="1.8" />
+      </symbol>
+      <symbol id="i-check" viewBox="0 0 24 24">
+        <path d="m5 12.5 4.5 4.5L19 6.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+      </symbol>
+      <symbol id="i-scissors" viewBox="0 0 24 24">
+        <circle cx="6" cy="7" r="3" fill="none" stroke="currentColor" stroke-width="1.8" />
+        <circle cx="6" cy="17" r="3" fill="none" stroke="currentColor" stroke-width="1.8" />
+        <path d="m8.3 8.8 11 7M8.3 15.2l11-7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+      </symbol>
+      <symbol id="i-play" viewBox="0 0 24 24">
+        <path d="m9 5 10 7-10 7V5Z" fill="currentColor" />
+      </symbol>
+      <symbol id="i-lock" viewBox="0 0 24 24">
+        <rect x="5" y="10" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.8" />
+        <path d="M8 10V8a4 4 0 0 1 8 0v2" fill="none" stroke="currentColor" stroke-width="1.8" />
+      </symbol>
+    </svg>
+
+    <div class="page-grain" aria-hidden="true"></div>
+    <div class="page-grid" aria-hidden="true"></div>
+
+    <header class="site-header" id="siteHeader">
+      <a class="brand" href="#" data-nav-home aria-label="拆弹笔记首页">
+        <span class="brand-mark" aria-hidden="true">
+          <svg><use href="#i-bomb"></use></svg>
+        </span>
+        <span class="brand-type">
+          <strong>拆弹笔记</strong>
+          <small>DOCBOMB / FIELD UNIT 07</small>
+        </span>
+      </a>
+      <nav class="main-nav" aria-label="主导航">
+        <button class="nav-link" type="button" data-open-help>怎么玩</button>
+        <button class="nav-link" type="button" data-go-history>拆弹记录</button>
+        <button class="nav-link sound-link" type="button" data-sound-toggle aria-label="关闭音效">
+          <svg class="sound-on-icon"><use href="#i-volume"></use></svg>
+          <svg class="sound-off-icon"><use href="#i-mute"></use></svg>
+          <span class="sound-label">音效</span>
+        </button>
+        <a class="nav-link" href="tools.html">工具合集 ↗</a>
+      </nav>
+      <button class="header-cta" type="button" data-focus-payload>
+        装填材料
+        <svg><use href="#i-arrow-up-right"></use></svg>
+      </button>
+    </header>
+
+    <main id="main">
+      <!-- 01 / HOME ------------------------------------------------------->
+      <section class="view home-view is-active" id="view-home" data-view="home">
+        <div class="hero shell">
+          <div class="hero-copy">
+            <div class="eyebrow reveal-1">
+              <span class="status-dot"></span>
+              DOCUMENT DEFUSAL KIT / v0.9
+            </div>
+            <h1 class="hero-title reveal-2">
+              <span>把无聊文档</span>
+              <span>拆成 <em>3 分钟</em></span>
+              <span>拆弹游戏<span class="title-period">。</span></span>
+            </h1>
+            <p class="hero-lede reveal-3">
+              粘贴制度、笔记、说明书，或者老板的 PPT 大纲。AI 抽出五个要害，塞进炸弹。每关 15
+              秒，剪对一根线，活过一轮；剪错，倒计时会替你尖叫。
+            </p>
+            <div class="hero-stats reveal-3" aria-label="游戏参数">
+              <div><strong>05</strong><span>枚知识炸弹</span></div>
+              <div><strong>15<small>s</small></strong><span>每关反应时间</span></div>
+              <div><strong>00</strong><span>份文件被上传</span></div>
+            </div>
+            <div class="hero-note reveal-4">
+              <span class="note-line"></span>
+              材料越枯燥，拆起来越响。
+            </div>
+          </div>
+
+          <div class="payload-column reveal-3">
+            <div class="payload-console" id="payloadConsole">
+              <span class="screw screw-tl" aria-hidden="true"></span>
+              <span class="screw screw-tr" aria-hidden="true"></span>
+              <span class="screw screw-bl" aria-hidden="true"></span>
+              <span class="screw screw-br" aria-hidden="true"></span>
+              <div class="console-head">
+                <span>PAYLOAD BAY / 装填舱</span>
+                <span class="console-status" id="consoleStatus"><i></i> READY</span>
+              </div>
+              <div class="console-body">
+                <div class="console-heading">
+                  <h2>把材料扔进来。</h2>
+                  <span class="console-index">02</span>
+                </div>
+                <p class="console-sub">越枯燥越好。它负责拆，你负责别剪错。</p>
+
+                <div class="sample-picker">
+                  <span class="sample-label">快速装填</span>
+                  <div class="sample-chips" id="sampleChips"></div>
+                </div>
+
+                <div class="drop-zone" id="dropZone">
+                  <textarea
+                    id="materialInput"
+                    maxlength="30000"
+                    spellcheck="false"
+                    placeholder="在这里粘贴一段材料：&#10;&#10;公司制度、课程笔记、产品说明、论文摘要，&#10;或者老板发来的 47 页 PPT 大纲……"
+                    aria-label="粘贴要拆解的材料"
+                  ></textarea>
+                  <span class="drop-hint">松开鼠标，材料入舱</span>
+                  <div class="textarea-meta">
+                    <span id="charCount">0 字 / 至少 60 字</span>
+                    <div class="textarea-actions">
+                      <button type="button" class="mini-action" id="uploadTrigger">
+                        <svg><use href="#i-upload"></use></svg>
+                        上传 .txt
+                      </button>
+                      <input type="file" id="fileInput" accept=".txt,.md,.markdown,text/plain,text/markdown" hidden />
+                    </div>
+                  </div>
+                </div>
+
+                <button type="button" class="primary-action" id="generateBtn">
+                  <span class="primary-label">开始拆解</span>
+                  <span class="primary-sub">5 道题 · 约 3 分钟</span>
+                  <svg><use href="#i-arrow-up-right"></use></svg>
+                </button>
+                <p class="privacy-line">
+                  <svg><use href="#i-lock"></use></svg>
+                  本地处理，不上传服务器，不用登录。你的烂材料很安全。
+                </p>
+              </div>
+            </div>
+            <div class="payload-caption">
+              <span>NO. 07 / DISPOSAL UNIT</span>
+              <span>HANDLE WITH CURIOSITY</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="caution-band" aria-hidden="true">
+          <div class="caution-track">
+            <span>CAUTION · 知识有爆炸风险 · CAUTION · 请勿空腹拆弹 · CAUTION · 剪错不负责 · CAUTION · 复习请趁热 ·</span>
+            <span>CAUTION · 知识有爆炸风险 · CAUTION · 请勿空腹拆弹 · CAUTION · 剪错不负责 · CAUTION · 复习请趁热 ·</span>
+          </div>
+        </div>
+
+        <section class="protocol shell">
+          <div class="section-head">
+            <div>
+              <div class="eyebrow">FIELD PROTOCOL / 拆弹流程</div>
+              <h2>三步，把材料<br />变成一场小型事故。</h2>
+            </div>
+            <p>
+              不需要生成摘要，也不需要整理目录。<br />
+              把原文丢进来，剩下的交给引信。
+            </p>
+          </div>
+          <div class="protocol-grid">
+            <article class="protocol-card">
+              <div class="protocol-top">
+                <span class="protocol-num">01</span>
+                <span class="protocol-tag">LOAD</span>
+              </div>
+              <div class="protocol-art load-art" aria-hidden="true">
+                <div class="mini-console">
+                  <span></span><span></span><span></span><span class="short"></span>
+                  <i></i>
+                </div>
+                <span class="art-label">UPLOAD / 58%</span>
+              </div>
+              <h3>装填一份无聊材料</h3>
+              <p>5,000 字的制度、三页课程笔记，或者一份你早就想忘掉的产品说明书。</p>
+            </article>
+            <article class="protocol-card">
+              <div class="protocol-top">
+                <span class="protocol-num">02</span>
+                <span class="protocol-tag">CUT</span>
+              </div>
+              <div class="protocol-art wire-art" aria-hidden="true">
+                <svg viewBox="0 0 280 96" preserveAspectRatio="none">
+                  <path d="M4 24 C 60 5, 92 44, 144 24 S 226 4, 276 20" />
+                  <path d="M4 48 C 52 32, 98 65, 150 48 S 228 32, 276 45" />
+                  <path d="M4 72 C 58 58, 102 88, 154 72 S 226 60, 276 70" />
+                </svg>
+                <span class="wire-cursor">15.0</span>
+              </div>
+              <h3>15 秒，剪一根线</h3>
+              <p>AI 把关键概念埋进五道题。答对前进，答错给炸弹提速，并附赠一句风凉话。</p>
+            </article>
+            <article class="protocol-card">
+              <div class="protocol-top">
+                <span class="protocol-num">03</span>
+                <span class="protocol-tag">KEEP</span>
+              </div>
+              <div class="protocol-art certificate-art" aria-hidden="true">
+                <div class="mini-cert">
+                  <span>DEFUSAL<br />CERTIFICATE</span>
+                  <i>已拆</i>
+                </div>
+                <span class="art-label">SERIAL DB-2026</span>
+              </div>
+              <h3>带着证书和卡片撤退</h3>
+              <p>通关生成知识拆弹证书和五张复习卡。打印、分享，或者拿去吓同事。</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="history-section shell" id="history">
+          <div class="history-head">
+            <div>
+              <div class="eyebrow">DISPOSAL LOG / 拆弹记录</div>
+              <h2>你拆过的东西，<br />都会留下痕迹。</h2>
+            </div>
+            <p>记录只保存在这台设备上。<br />不联网，不排名，不内卷。</p>
+          </div>
+          <div class="history-list" id="historyList"></div>
+        </section>
+
+        <footer class="site-footer">
+          <div class="footer-top shell">
+            <div class="footer-brand">
+              <svg><use href="#i-bomb"></use></svg>
+              <div><strong>拆弹笔记</strong><span>DOCBOMB</span></div>
+            </div>
+            <p>把知识拆开，才装得进去。</p>
+            <div class="footer-links">
+              <button type="button" data-open-help>玩法说明</button>
+              <button type="button" data-go-history>拆弹记录</button>
+              <a href="tools.html">工具合集</a>
+              <a href="#top" data-nav-home>回到舱门</a>
+            </div>
+          </div>
+          <div class="footer-ghost" aria-hidden="true">DOCBOMB</div>
+          <div class="footer-bottom shell">
+            <span>© 2026 DOCBOMB / A SMALL TOOL FOR BORING DOCUMENTS</span>
+            <span>BUILT WITH SUSPICION OF SLIDES</span>
+          </div>
+        </footer>
+      </section>
+
+      <!-- 02 / BRIEFING --------------------------------------------------->
+      <section class="view briefing-view" id="view-briefing" data-view="briefing">
+        <div class="briefing-head shell">
+          <button type="button" class="text-back" id="briefingBack">
+            <svg><use href="#i-arrow-left"></use></svg>
+            换一份材料
+          </button>
+          <div class="eyebrow">MISSION BRIEF / 任务简报</div>
+          <div class="briefing-sender" id="briefingSenderBanner" hidden></div>
+        </div>
+        <div class="briefing-grid shell">
+          <article class="dossier">
+            <div class="dossier-top">
+              <span>MISSION DOSSIER / 材料档案</span>
+              <span class="dossier-class">TOP SECRET</span>
+            </div>
+            <div class="dossier-body">
+              <div class="dossier-kicker">
+                <span id="briefingTag">组织制度</span>
+                <span>NO. <b id="briefingSerial">000</b></span>
+              </div>
+              <h1 id="briefingTitle">员工信息安全守则</h1>
+              <p class="dossier-summary" id="briefingSummary"></p>
+              <div class="dossier-block">
+                <div class="dossier-label">关键概念 / CONCEPTS</div>
+                <div class="concept-chips" id="briefingConcepts"></div>
+              </div>
+              <div class="dossier-stats">
+                <div>
+                  <span>材料长度</span>
+                  <strong id="briefingChars">0 字</strong>
+                </div>
+                <div>
+                  <span>阅读耗时</span>
+                  <strong id="briefingRead">约 0 秒</strong>
+                </div>
+                <div>
+                  <span>危险等级</span>
+                  <strong class="danger-value" id="briefingDangerText">三级</strong>
+                </div>
+              </div>
+              <div class="danger-meter" id="briefingDanger" aria-label="危险等级">
+                <i></i><i></i><i></i><i></i><i></i>
+              </div>
+              <div class="redacted-lines" aria-hidden="true">
+                <span></span><span></span><span class="short"></span>
+              </div>
+              <div class="dossier-footer">
+                <span>已自动提炼 5 个知识点</span>
+                <span>答案均在原文中</span>
+              </div>
+            </div>
+            <span class="dossier-stamp">绝密</span>
+          </article>
+
+          <aside class="mission-panel">
+            <div class="mission-top">
+              <span>DEFUSAL PROTOCOL</span>
+              <span class="live-tag"><i></i> ARMED</span>
+            </div>
+            <div class="mission-clock">
+              <span>主引信</span>
+              <strong>03:00</strong>
+              <small>MASTER FUSE / 180 SEC</small>
+            </div>
+            <div class="mission-rules">
+              <div>
+                <span>01</span>
+                <p>五道题，对应五根线。只有一次选择机会。</p>
+              </div>
+              <div>
+                <span>02</span>
+                <p>每题限时 15 秒。答错不会爆炸，但引信会加速。</p>
+              </div>
+              <div>
+                <span>03</span>
+                <p>全部拆完，领取证书＋五张复习卡片。</p>
+              </div>
+            </div>
+            <div class="mission-meta">
+              <div><span>题目数量</span><strong id="briefingQuestions">5</strong></div>
+              <div><span>预计用时</span><strong>3 min</strong></div>
+              <div><span>需要登录</span><strong>NO</strong></div>
+            </div>
+            <button type="button" class="defuse-start" id="startMissionBtn">
+              <span class="start-icon"><svg><use href="#i-play"></use></svg></span>
+              <span class="start-copy">
+                <strong>开始拆弹</strong>
+                <small>PRESS THE BUTTON. CUT THE WIRE.</small>
+              </span>
+              <svg class="start-arrow"><use href="#i-arrow-up-right"></use></svg>
+            </button>
+            <p class="mission-disclaimer">
+              题目由本地拆弹引擎生成。偶尔会比老板的 PPT 更绕，但答案一定在材料里。
+            </p>
+          </aside>
+        </div>
+      </section>
+
+      <!-- 03 / GAME ------------------------------------------------------>
+      <section class="view game-view" id="view-game" data-view="game">
+        <header class="game-header">
+          <a class="game-brand" href="#" data-nav-home aria-label="拆弹笔记首页">
+            <span class="brand-mark small">
+              <svg><use href="#i-bomb"></use></svg>
+            </span>
+            <span><strong>拆弹笔记</strong><small>LIVE DEFUSAL</small></span>
+          </a>
+          <div class="game-mission">
+            <span>当前材料</span>
+            <strong id="gameMissionTitle">—</strong>
+          </div>
+          <div class="game-header-actions">
+            <button type="button" class="icon-button" data-sound-toggle aria-label="关闭音效">
+              <svg class="sound-on-icon"><use href="#i-volume"></use></svg>
+              <svg class="sound-off-icon"><use href="#i-mute"></use></svg>
+            </button>
+            <button type="button" class="quit-button" id="quitGameBtn">退出拆弹</button>
+          </div>
+        </header>
+
+        <div class="mobile-game-hud" aria-hidden="true">
+          <span class="mgh-label">MASTER FUSE</span>
+          <strong id="mobileMasterTimer">03:00</strong>
+          <span class="mgh-divider"></span>
+          <span id="mobileSpeed">×1.00</span>
+          <span id="mobileCut">0 / 5</span>
+        </div>
+
+        <div class="game-layout">
+          <aside class="bomb-panel">
+            <div class="bomb-topline">
+              <span>DEVICE <b id="deviceSerial">DB-0000</b></span>
+              <span class="bomb-state" id="bombState"><i></i> ARMED</span>
+            </div>
+
+            <div class="gauge-wrap">
+              <div class="gauge-ticks" aria-hidden="true"></div>
+              <div class="gauge-ring" aria-hidden="true"></div>
+              <div class="gauge-progress" id="gaugeProgress" aria-hidden="true"></div>
+              <div class="gauge-center">
+                <span class="gauge-label">MASTER FUSE / 主引信</span>
+                <strong id="masterTimer">03:00</strong>
+                <div class="gauge-sub">
+                  <span id="speedLabel">速度 ×1.00</span>
+                  <span id="cutCount">已剪 0 / 5</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="wire-bank">
+              <div class="wire-bank-head">
+                <span>WIRE HARNESS / 引信组</span>
+                <span id="wireHint">逐根拆除</span>
+              </div>
+              <div id="wireList" class="wire-list"></div>
+            </div>
+
+            <div class="bomb-footer">
+              <div class="speed-meter" aria-label="引信速度">
+                <span>SPEED</span>
+                <div class="speed-bars" id="speedBars">
+                  <i class="on"></i><i></i><i></i><i></i><i></i>
+                </div>
+              </div>
+              <span class="bomb-signature">NO SECOND CHANCES</span>
+            </div>
+          </aside>
+
+          <section class="question-panel" id="questionPanel">
+            <div class="question-topline">
+              <div class="question-level">
+                <span>LEVEL</span>
+                <strong id="questionLevel">01</strong>
+                <span>/ 05</span>
+              </div>
+              <span class="question-tag" id="questionTag">数字核对</span>
+              <div class="question-clock" id="questionClock" role="timer" aria-label="本题剩余时间">
+                <span id="questionSeconds">15</span>
+                <small>SEC</small>
+              </div>
+            </div>
+
+            <div class="level-progress" id="levelProgress" aria-hidden="true">
+              <i class="is-current"></i><i></i><i></i><i></i><i></i>
+            </div>
+
+            <div class="question-copy">
+              <div class="question-instruction" id="questionInstruction">把缺失的数值接回引信</div>
+              <h2 class="question-prompt" id="questionPrompt">—</h2>
+            </div>
+
+            <div class="option-list" id="optionList"></div>
+
+            <div class="question-idle" id="questionIdle">
+              <div class="question-idle-head">
+                <span>SCISSORS READY / 剪刀就位</span>
+                <span>ONE CUT ONLY / 只有一次</span>
+              </div>
+              <div class="question-idle-body">
+                <p>选一根线。<em>剪错，它就加速。</em></p>
+                <svg aria-hidden="true"><use href="#i-scissors"></use></svg>
+              </div>
+            </div>
+
+            <div class="feedback-area" id="feedbackArea" aria-live="polite" hidden>
+              <div class="feedback-card" id="feedbackCard">
+                <div class="feedback-head">
+                  <span class="feedback-kicker" id="feedbackKicker">线路切断</span>
+                  <strong id="feedbackTitle">+1 知识已拆除</strong>
+                </div>
+                <p id="feedbackText"></p>
+                <div class="feedback-foot">
+                  <span id="feedbackMeta">引信速度 ×1.00</span>
+                  <button type="button" class="continue-button" id="continueBtn">
+                    <span>剪下一根线</span>
+                    <svg><use href="#i-arrow-right"></use></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="question-bottom">
+              <div class="game-score">
+                <span>正确 <b id="gameCorrect">0</b></span>
+                <span>失误 <b id="gameWrong">0</b></span>
+                <span>速度 <b id="gameSpeed">×1.00</b></span>
+              </div>
+              <span class="keyboard-hint">按 1–4 接线 <span>/</span> Enter 继续</span>
+            </div>
+          </section>
+        </div>
+
+        <div class="fail-overlay" id="failOverlay" hidden>
+          <div class="fail-panel">
+            <div class="fail-kicker">MASTER FUSE DEPLETED</div>
+            <h2>引爆。</h2>
+            <p id="failText">主引信烧到了头。知识没炸，但你的面子可能有点。</p>
+            <div class="fail-stats">
+              <div><span>已拆引信</span><strong id="failCorrect">0 / 5</strong></div>
+              <div><span>失误</span><strong id="failWrong">0</strong></div>
+              <div><span>用时</span><strong id="failTime">0:00</strong></div>
+            </div>
+            <div class="fail-actions">
+              <button type="button" class="primary-action compact" id="retryBtn">
+                <span class="primary-label">重新接线</span>
+                <svg><use href="#i-arrow-right"></use></svg>
+              </button>
+              <button type="button" class="ghost-button" id="failHomeBtn">换一份材料</button>
+            </div>
+            <small>提示：错误会让引信加速。下次别把 15 秒全用来深呼吸。</small>
+          </div>
+        </div>
+      </section>
+
+      <!-- 04 / RESULT ---------------------------------------------------->
+      <section class="view result-view" id="view-result" data-view="result">
+        <div class="result-head shell">
+          <div>
+            <div class="eyebrow"><span class="status-dot"></span> DEFUSAL COMPLETE / 拆弹完毕</div>
+            <h1><span id="resultTitleText">拆弹成功</span><span class="title-period">。</span></h1>
+            <p id="resultSub">五根线，五次判断。你从这份材料里活着走了出来。</p>
+            <div class="result-byline" id="resultByline"></div>
+          </div>
+          <div class="grade-block">
+            <div class="grade-stamp" id="resultGrade">S</div>
+            <span id="resultRank">首席排爆员</span>
+            <small>FINAL GRADE</small>
+          </div>
+        </div>
+
+        <div class="result-grid shell">
+          <div class="certificate-zone">
+            <article class="certificate" id="certificate">
+              <div class="cert-corner top-left">DOCBOMB / OFFICIAL DOCUMENT</div>
+              <div class="cert-corner top-right" id="certSerial">DB-2026-00000</div>
+              <div class="cert-inner">
+                <div class="cert-head">
+                  <div class="cert-logo">
+                    <svg><use href="#i-bomb"></use></svg>
+                    <span>DOCBOMB<br />DEFUSAL DIVISION</span>
+                  </div>
+                  <div class="cert-code">
+                    <span>CERTIFICATE</span>
+                    <strong>NO. <b id="certNumber">000</b></strong>
+                  </div>
+                </div>
+                <div class="cert-title-wrap">
+                  <span class="cert-eyebrow">KNOWLEDGE DEFUSAL CERTIFICATE</span>
+                  <h2>知识拆弹证书</h2>
+                </div>
+                <p class="cert-body">
+                  兹证明拆弹员 <strong id="certCallsign">匿名拆弹员</strong>，
+                  已成功拆除《<em id="certTitle">未命名材料</em>》中的
+                  <b id="certBombCount">5 枚知识炸弹</b>。在限时拆弹过程中，其判断、手速与阅读材料时的耐心均未引发重大事故。
+                </p>
+                <div class="cert-stats">
+                  <div><span>拆除</span><strong id="certCorrect">5 / 5</strong></div>
+                  <div><span>剩余时间</span><strong id="certTime">00:00</strong></div>
+                  <div><span>拆弹得分</span><strong id="certScore">000</strong></div>
+                  <div><span>评定</span><strong id="certGrade">S</strong></div>
+                </div>
+                <p class="cert-quote">“材料会过期，知识不会。但请记得复习。”</p>
+                <div class="cert-bottom">
+                  <div class="cert-sign">
+                    <span>排爆训练中心 / CHIEF INSTRUCTOR</span>
+                    <strong>拆弹笔记</strong>
+                    <small>此证书不具备法律效力，但值得发朋友圈。</small>
+                  </div>
+                  <div class="cert-meta">
+                    <span>ISSUED <b id="certDate">2026.01.01</b></span>
+                    <span>VALID <b>FOREVER / 永久有效</b></span>
+                  </div>
+                </div>
+                <span class="cert-stamp">已拆<br />DONE</span>
+              </div>
+              <div class="cert-wire" aria-hidden="true">
+                <i></i><i></i><i></i><i></i>
+              </div>
+            </article>
+            <div class="cert-actions">
+              <button type="button" class="ghost-button" id="downloadCertBtn">
+                <svg><use href="#i-download"></use></svg>
+                保存证书 PNG
+              </button>
+              <span>1600 × 1100 / 可以直接打印</span>
+            </div>
+          </div>
+
+          <aside class="result-actions">
+            <div class="score-card">
+              <div class="score-card-head"><span>DEFUSAL SCORE</span><span>自评：还行</span></div>
+              <div class="big-score" id="resultScore">000</div>
+              <div class="score-breakdown" id="resultStats"></div>
+            </div>
+            <div class="callsign-card">
+              <label for="callsignInput">拆弹员代号 / CALLSIGN</label>
+              <input id="callsignInput" maxlength="20" autocomplete="off" placeholder="匿名拆弹员" />
+              <span>写在证书上，也写在挑战链接里。</span>
+            </div>
+            <button type="button" class="share-button" id="shareChallengeBtn">
+              <span>
+                <strong>把这份材料丢给朋友</strong>
+                <small>生成挑战链接 · 题目完全相同</small>
+              </span>
+              <svg><use href="#i-share"></use></svg>
+            </button>
+            <div class="result-secondary">
+              <button type="button" class="ghost-button" id="replayBtn">
+                <svg><use href="#i-play"></use></svg>
+                再拆一次
+              </button>
+              <button type="button" class="ghost-button" id="newMissionBtn">
+                换份材料
+                <svg><use href="#i-arrow-right"></use></svg>
+              </button>
+            </div>
+            <div class="result-note">
+              <span class="result-note-num">TIP</span>
+              <p>五张复习卡在下面。翻面再看答案，比直接看答案更像在学习。</p>
+            </div>
+          </aside>
+        </div>
+
+        <section class="review-section shell">
+          <div class="review-head">
+            <div>
+              <div class="eyebrow">DEBRIS ANALYSIS / 残骸回收</div>
+              <h2>带走这 5 张复习卡。</h2>
+            </div>
+            <div class="review-head-right">
+              <p>点击卡片翻面。卡背有答案和原文出处。</p>
+              <button type="button" class="text-button" id="flipAllBtn">全部翻面</button>
+            </div>
+          </div>
+          <div class="review-grid" id="reviewCards"></div>
+        </section>
+
+        <div class="result-footer shell">
+          <button type="button" class="text-back" data-nav-home>
+            <svg><use href="#i-arrow-left"></use></svg>
+            回到拆弹舱
+          </button>
+          <span>DOCBOMB / NO DOCUMENT WAS HARMED</span>
+        </div>
+      </section>
+
+      <!-- 05 / CHALLENGE ------------------------------------------------->
+      <section class="view challenge-view" id="view-challenge" data-view="challenge">
+        <div class="challenge-bg" aria-hidden="true">
+          <span>INCOMING</span>
+          <span>TRANSMISSION</span>
+        </div>
+        <div class="challenge-card">
+          <div class="challenge-top">
+            <span class="live-tag"><i></i> INCOMING TRANSMISSION</span>
+            <span>INTERCEPTED / 信号已截获</span>
+          </div>
+          <div class="challenge-bomb" aria-hidden="true">
+            <svg><use href="#i-bomb"></use></svg>
+            <span class="challenge-spark"></span>
+          </div>
+          <p class="challenge-eyebrow">有人给你寄了一枚知识炸弹</p>
+          <h1><span id="challengeSender">神秘拆弹员</span> 向你发起挑战。</h1>
+          <div class="challenge-dossier">
+            <div>
+              <span>目标材料</span>
+              <strong id="challengeTitle">—</strong>
+            </div>
+            <div>
+              <span>材料类型</span>
+              <strong id="challengeTag">—</strong>
+            </div>
+            <div>
+              <span>拆弹参数</span>
+              <strong id="challengeMeta">5 道题 · 3 分钟</strong>
+            </div>
+          </div>
+          <div class="concept-chips challenge-concepts" id="challengeConcepts"></div>
+          <div class="challenge-actions">
+            <button type="button" class="defuse-start compact-start" id="acceptChallengeBtn">
+              <span class="start-icon"><svg><use href="#i-play"></use></svg></span>
+              <span class="start-copy">
+                <strong>接受挑战</strong>
+                <small>同一份材料，同一套题</small>
+              </span>
+              <svg class="start-arrow"><use href="#i-arrow-up-right"></use></svg>
+            </button>
+            <button type="button" class="ghost-button" id="declineChallengeBtn">我还是算了</button>
+          </div>
+          <p class="challenge-note">对方会看到你的拆弹证书吗？不会。除非你自己发过去。</p>
+        </div>
+      </section>
+    </main>
+
+    <!-- ANALYSIS OVERLAY ------------------------------------------------->
+    <div class="analysis-overlay" id="analysisOverlay" hidden>
+      <div class="analysis-panel" role="status" aria-live="polite">
+        <div class="analysis-top">
+          <span>AI ANALYSIS / 正在拆解</span>
+          <span class="analysis-pct" id="analysisPct">00%</span>
+        </div>
+        <div class="scan-window">
+          <div class="scan-paper" aria-hidden="true">
+            <span class="scan-title"></span>
+            <span></span><span></span><span class="short"></span>
+            <span></span><span class="mid"></span><span></span>
+            <span class="short"></span>
+          </div>
+          <div class="scan-beam" aria-hidden="true"></div>
+          <div class="scan-crosshair" aria-hidden="true"></div>
+          <span class="scan-corner sc-tl"></span>
+          <span class="scan-corner sc-tr"></span>
+          <span class="scan-corner sc-bl"></span>
+          <span class="scan-corner sc-br"></span>
+        </div>
+        <div class="analysis-lines" id="analysisLines"></div>
+        <div class="analysis-progress"><i id="analysisBar"></i></div>
+        <div class="analysis-bottom">
+          <span>LOCAL ENGINE / 不上传原文</span>
+          <span id="analysisStatus">扫描材料中…</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- DIALOGS ----------------------------------------------------------->
+    <dialog class="modal help-modal" id="helpDialog">
+      <button type="button" class="modal-close" data-close-dialog aria-label="关闭">
+        <svg><use href="#i-close"></use></svg>
+      </button>
+      <div class="modal-kicker">FIELD MANUAL / 操作手册</div>
+      <h2>拆弹之前，<br />先读三行字。</h2>
+      <div class="help-steps">
+        <div>
+          <span>01</span>
+          <p><strong>装填。</strong> 粘贴至少 60 字的材料。制度、笔记、说明书、论文摘要，什么都行。</p>
+        </div>
+        <div>
+          <span>02</span>
+          <p><strong>判断。</strong> 五道题，每题 15 秒。选中你觉得对的线，剪断它。</p>
+        </div>
+        <div>
+          <span>03</span>
+          <p><strong>承担后果。</strong> 答错不会立刻爆炸，但主引信会加速。五次机会，别全用来犹豫。</p>
+        </div>
+      </div>
+      <div class="help-tips">
+        <span>快捷键</span>
+        <p>游戏中按 <kbd>1</kbd>–<kbd>4</kbd> 选择，按 <kbd>Enter</kbd> 继续，按 <kbd>Esc</kbd> 退出。</p>
+      </div>
+      <button type="button" class="primary-action modal-action" data-close-dialog>
+        <span class="primary-label">知道了，开始拆</span>
+        <svg><use href="#i-arrow-right"></use></svg>
+      </button>
+    </dialog>
+
+    <dialog class="modal share-modal" id="shareDialog">
+      <button type="button" class="modal-close" data-close-dialog aria-label="关闭">
+        <svg><use href="#i-close"></use></svg>
+      </button>
+      <div class="modal-kicker">CHALLENGE LINK / 挑战链接</div>
+      <h2>把这枚炸弹，<br />丢给朋友。</h2>
+      <p class="share-lede">对方会拿到完全相同的五道题。没有排行榜，只有彼此的沉默。</p>
+      <div class="share-link-row">
+        <input type="text" id="shareLink" readonly aria-label="挑战链接" />
+        <button type="button" class="copy-button" id="copyShareBtn">复制</button>
+      </div>
+      <div class="share-hint" id="shareHint">链接已包含全部题目，不需要服务器。</div>
+      <div class="share-actions">
+        <button type="button" class="primary-action compact" id="nativeShareBtn" hidden>
+          <span class="primary-label">系统分享</span>
+          <svg><use href="#i-share"></use></svg>
+        </button>
+        <button type="button" class="ghost-button" data-close-dialog>先不发了</button>
+      </div>
+    </dialog>
+
+    <dialog class="modal quit-modal" id="quitDialog">
+      <div class="modal-kicker">ABORT MISSION / 中止拆弹</div>
+      <h2>现在退出，<br />引信可不会暂停。</h2>
+      <p class="share-lede">当前这一局的进度会消失。证书、卡片和面子，都要重新来过。</p>
+      <div class="quit-actions">
+        <button type="button" class="danger-button" id="confirmQuitBtn">仍然退出</button>
+        <button type="button" class="ghost-button" id="cancelQuitBtn">继续拆弹</button>
+      </div>
+    </dialog>
+
+    <div class="snark-toast" id="snarkToast" hidden>
+      <span class="snark-mark">“</span>
+      <p id="snarkText"></p>
+      <span class="snark-source">拆弹教练 / 不安慰你</span>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+    <div class="damage-flash" id="damageFlash" aria-hidden="true"></div>
+
+    <noscript>
+      <div class="noscript">拆弹笔记需要 JavaScript 才能点燃引信。请在浏览器设置里启用它。</div>
+    </noscript>
+
+    <script type="module" src="docbomb/src/app.js"></script>
+  </body>
+</html>

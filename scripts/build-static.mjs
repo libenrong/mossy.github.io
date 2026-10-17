@@ -6,8 +6,9 @@
  *   /site/                根目录静态站（index.html + script.js + styles.css）
  *   /site/resource/       静态站相对引用的资源副本
  *   /resource/            共享资源，供 /psych.html、/cert.html 等根路径页面使用
- *   /psych.html /cert.html /tools.html
+ *   /psych.html /cert.html /tools.html /docbomb.html
  *   /project.html /project.css /js/   英语学习页（拆分模块版，根目录为唯一来源）
+ *   /docbomb/           拆弹笔记 DocBomb 的页面样式、题目引擎与图标资源
  *
  * 为什么资源要放两份：
  *   静态站的 index.html 用 "resource/xxx" 相对路径，部署在 /site/ 下时
@@ -62,9 +63,15 @@ console.log('[build-static] resource/ -> site/resource/')
 
 // 4) 共享工具页放到站根，与 tools.html 里的链接保持一致；
 //    ui.css 是工具区共享壳（设计 token + 顶栏），各工具页相对引用它。
-for (const file of ['psych.html', 'haunt.html', 'notice.html', 'cert.html', 'tools.html', 'ui.css']) {
+for (const file of ['psych.html', 'haunt.html', 'notice.html', 'cert.html', 'tools.html', 'docbomb.html', 'ui.css']) {
   copy(file, join(dist, file))
 }
+
+// 4b) 拆弹笔记：页面入口为 /docbomb.html，运行时资源整体放在 /docbomb/。
+rmSync(join(dist, 'docbomb'), { recursive: true, force: true })
+cpSync(join(root, 'docbomb'), join(dist, 'docbomb'), { recursive: true })
+rmSync(join(dist, 'docbomb', 'package.json'), { force: true })
+console.log('[build-static] docbomb/ -> docbomb/')
 
 // 5) 英语学习页（project.html）已拆分为 html + project.css + js/ 模块，
 //    根目录是唯一来源；docs/public 里的旧整页副本会被这里覆盖。

@@ -1,0 +1,5 @@
+{
+  "private": true,
+  "type": "module",
+  "description": "Runtime modules for the DocBomb tool page."
+}
