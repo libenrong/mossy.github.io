@@ -28,6 +28,7 @@ const ZH_STOPWORDS = new Set(
   达到 具有 使用 利用 支持 包括 位于 属于 作为 成为 保持 提供 完成 出现 发生 需要 确保 应该
   进行 通过 根据 按照 对于 关于 以及 其中 例如 主要 重要 基本 同时 方面 情况 问题 工作
   将 于 须 名 请勿 输出 随附 整机 表明 未 未发现 一项 两项 三项 这种 这些 那种 每个 每天 每周
+  时 首次 适合 第 步骤 阶段 环节 序号 顺便 其中 此外
   `.split(/\s+/).filter(Boolean)
 );
 
@@ -227,7 +228,19 @@ export function normalizeDocument(raw) {
     .replace(/^```[a-z]*\s*$/gim, '')
     .replace(/\*\*|__/g, '')
     .replace(/^#{1,6}\s*/gm, '')
-    .replace(/^\s*(?:[-*•·–—]|\d+[.)、]|[一二三四五六七八九十]+[、.])\s*/gm, '');
+    .replace(/^\s*(?:[-*•·–—]|\d+[.)、]|[一二三四五六七八九十]+[、.])\s*/gm, '')
+    // List labels are structure, not knowledge. Drop them at line/sentence starts
+    // so "第一步：……" never becomes a quiz target.
+    .replace(
+      /(^|[。！？!?；;\n])\s*(?:第[一二三四五六七八九十百千万零两\d]+(?:步|条|项|章|节|部分|点|阶段|关|轮|则)|步骤[一二三四五六七八九十百千万零两\d]+|阶段[一二三四五六七八九十百千万零两\d]+)\s*[：:、.．]?\s*/gu,
+      '$1'
+    )
+    // Inline "第二步：" / "步骤 2：" labels are still just structure.
+    .replace(
+      /(?:第[一二三四五六七八九十百千万零两\d]+(?:步|条|项|章|节|部分|点|阶段|关|轮|则)|步骤\s*[一二三四五六七八九十百千万零两\d]+|阶段\s*[一二三四五六七八九十百千万零两\d]+)\s*[：:、.．]\s*/gu,
+      ''
+    )
+    .replace(/(^|[。！？!?；;\n])\s*(?:\d+|[一二三四五六七八九十]+)[、.．)]\s*/gu, '$1');
   return normalizeWhitespace(text);
 }
 
@@ -309,12 +322,29 @@ function cleanToken(token) {
     .trim();
 }
 
+const ORDINAL_TERM_RE =
+  /^(?:第\s*)?[一二两三四五六七八九十百千万零两\d]+(?:步|条|项|章|节|部分|点|阶段|关|轮|则|号|组|类|课|题)$/u;
+
+function isOrdinalTerm(term) {
+  const clean = cleanToken(term);
+  if (!clean) return false;
+  if (ORDINAL_TERM_RE.test(clean)) return true;
+  return /^(?:步骤|阶段|环节|序号)[一二两三四五六七八九十百千万零两\d]+$/u.test(clean);
+}
+
+function isOrdinalNumberAt(sentence, index) {
+  if (index < 0) return false;
+  const before = String(sentence || '').slice(Math.max(0, index - 8), index);
+  return /(?:第|步骤|阶段|环节|序号)\s*$/.test(before);
+}
+
 function tokenIsUseful(token, locale) {
   const clean = cleanToken(token);
   if (!clean) return false;
   const chars = Array.from(clean);
   if (chars.length < 2 || chars.length > 18) return false;
   if (/^\d+$/.test(clean)) return false;
+  if (isOrdinalTerm(clean)) return false;
   if (/^[一二两三四五六七八九十百千零]+(?:年|个月|周|天|小时|分钟|秒|次|人|名|位|倍|种|项|个|克|毫升|元|瓦|岁|分)$/.test(clean)) return false;
   if (locale === 'en' && clean.length < 3) return false;
   if (locale === 'zh' && !CJK.test(clean) && !LATIN.test(clean)) return false;
@@ -416,6 +446,7 @@ function findConceptTargets(sentence, concepts) {
     .map((item) => (typeof item === 'string' ? item : item.term))
     .filter((term) => sentence.includes(term))
     .filter((term) => charLength(term) >= 2 && charLength(term) <= 12)
+    .filter((term) => !isOrdinalTerm(term))
     .sort((a, b) => charLength(b) - charLength(a));
 }
 
@@ -481,7 +512,7 @@ function numberVariants(numberText, allNumbers, rng) {
     const unit = cnMatch[2] || '';
     const values = [value + 1, value - 1, value + 2, value * 2]
       .filter((item) => item > 0 && item <= 99)
-      .map((item) => numberToChinese(item) + unit);
+      .map((item) => `${item === 2 ? '两' : numberToChinese(item)}${unit}`);
     return uniqueBy(shuffle(values, rng).filter((item) => item !== numberText), (item) => item);
   }
   const rawValue = Number(match[1].replace(',', '.'));
@@ -574,7 +605,7 @@ function mutateConcept(sentence, concepts, allConcepts, rng) {
   const targets = shuffle(findConceptTargets(sentence, concepts), rng);
   const pool = allConcepts
     .map((item) => (typeof item === 'string' ? item : item.term))
-    .filter((term) => term && !sentence.includes(term) && charLength(term) >= 2);
+    .filter((term) => term && !sentence.includes(term) && charLength(term) >= 2 && !isOrdinalTerm(term));
   for (const target of targets) {
     const replacement = pickRandom(pool, rng);
     if (!replacement) continue;
@@ -614,12 +645,43 @@ function mutateStatement(sentence, fact, allConcepts, allNumbers, rng, preferred
 }
 
 function getNumbers(sentence) {
-  const arabic = [...sentence.matchAll(NUMBER_RE)].map((match) => match[0].trim());
-  const chinese = [...sentence.matchAll(CHINESE_NUMBER_RE)].map((match) => match[0].trim());
+  const arabic = [...sentence.matchAll(NUMBER_RE)]
+    .filter((match) => !isOrdinalNumberAt(sentence, match.index))
+    .map((match) => match[0].trim());
+  const chinese = [...sentence.matchAll(CHINESE_NUMBER_RE)]
+    .filter((match) => !isOrdinalNumberAt(sentence, match.index))
+    .map((match) => match[0].trim());
   return uniqueBy(
     [...arabic, ...chinese].filter((value) => value.length <= 20),
     (value) => value
   );
+}
+
+function clauseFallbackSentences(sentences) {
+  const expanded = [];
+  for (const sentence of sentences) {
+    if (charLength(sentence) > 180) {
+      expanded.push(sentence);
+      continue;
+    }
+    const parts = sentence
+      .split(/[，,；;]/u)
+      .map((part) =>
+        part
+          .trim()
+          .replace(/^(?:并且|并|同时|以及|且)\s*/u, '')
+          .replace(/[，,；;]$/u, '')
+      )
+      .filter((part) => charLength(part) >= 10);
+    if (parts.length >= 2) {
+      for (const part of parts) {
+        expanded.push(/[。！？!?]$/u.test(part) ? part : `${part}。`);
+      }
+    } else {
+      expanded.push(sentence);
+    }
+  }
+  return uniqueBy(expanded, (sentence) => sentence.replace(/\s+/g, ''));
 }
 
 function looksLikeHeadingLine(line) {
@@ -919,7 +981,10 @@ function buildKeywordCloze(fact, allConcepts, optionPool, rng, avoidTargets) {
   const targets = findConceptTargets(fact.sentence, fact.concepts).filter((term) => !avoidTargets.has(term));
   const extras = findConceptTargets(fact.sentence, allConcepts).filter((term) => !avoidTargets.has(term));
   const ordered = uniqueBy([...targets, ...extras], (term) => term);
-  for (const target of ordered) {
+  const preferred = ordered.slice(0, 5);
+  const rest = ordered.slice(5);
+  const targetOrder = [...shuffle(preferred, rng), ...shuffle(rest, rng)];
+  for (const target of targetOrder) {
     if (target === '关键数字') continue;
     const masked = maskTerm(fact.sentence, target);
     if (!masked) continue;
@@ -1014,7 +1079,15 @@ function buildBestChoice(fact, allConcepts, allNumbers, rng, avoidTargets) {
     '原文细节';
 
   const question = finalizeChoice({
-    prompt: '哪一根线，连着材料的原意？',
+    prompt: pickRandom(
+      [
+        '哪一根线，连着材料的原意？',
+        '以下哪一项没有被改过？',
+        '找出唯一忠于原文的陈述。',
+        '哪条线还连着原文？',
+      ],
+      rng
+    ),
     instruction: '只有一条陈述忠于原文，其余都动过手脚',
     correct,
     distractors: mutations.map((item) => item.text),
@@ -1035,6 +1108,20 @@ function pickFact(facts, usedSentenceIds, predicate = () => true) {
   return fallback[0] || null;
 }
 
+/**
+ * Weighted shuffle: facts keep a quality bias without always appearing in the
+ * same order. This is what makes two attempts at the same document feel fresh.
+ */
+function shuffleFacts(facts, rng) {
+  return facts
+    .map((fact) => {
+      const weight = 1 + Math.max(0, Math.min(6, Number(fact.score) || 0) - 2) * 0.16;
+      return { fact, key: Math.pow(rng(), 1 / weight) };
+    })
+    .sort((a, b) => b.key - a.key)
+    .map((item) => item.fact);
+}
+
 function topUpQuestions(questions, facts, allConcepts, optionPool, allNumbers, rng, usedSentenceIds, avoidTargets) {
   const result = [...questions];
   if (result.length >= 5) return result.slice(0, 5);
@@ -1046,33 +1133,48 @@ function topUpQuestions(questions, facts, allConcepts, optionPool, allNumbers, r
     (fact) => buildBoolean(fact, allConcepts, allNumbers, rng, { forceFalse: false, avoidTargets }),
   ];
 
-  for (const fact of facts) {
+  // Prefer facts that have not produced a question yet.
+  const orderedFacts = [...facts].sort(
+    (a, b) => Number(usedSentenceIds.has(a.id)) - Number(usedSentenceIds.has(b.id))
+  );
+
+  const seen = (question) =>
+    result.some((item) => item.prompt === question.prompt && item.tag === question.tag);
+
+  // Breadth-first filling: one question per unused source before borrowing a
+  // second question from the same sentence. This is what prevents sets like
+  // "true/false on sentence A + another true/false on sentence A".
+  const firstPerFact = [];
+  for (const fact of orderedFacts) {
+    if (usedSentenceIds.has(fact.id)) continue;
     for (const build of builders) {
-      if (result.length >= 5) return result;
       const question = build(fact);
-      if (!question) continue;
-      if (result.some((item) => item.prompt === question.prompt && item.tag === question.tag)) continue;
+      if (!question || seen(question)) continue;
+      if (firstPerFact.some((item) => item.question.prompt === question.prompt && item.question.tag === question.tag)) continue;
+      firstPerFact.push({ fact, question });
+      break;
+    }
+  }
+  for (const item of firstPerFact) {
+    if (result.length >= 5) break;
+    if (usedSentenceIds.has(item.fact.id)) continue;
+    result.push(item.question);
+    usedSentenceIds.add(item.fact.id);
+  }
+
+  // Only if the document simply does not have five usable facts: add a second
+  // question from an already-used fact, with a different target/type.
+  for (const fact of orderedFacts) {
+    if (result.length >= 5) break;
+    for (const build of builders) {
+      if (result.length >= 5) break;
+      const question = build(fact);
+      if (!question || seen(question)) continue;
       result.push(question);
       usedSentenceIds.add(fact.id);
     }
   }
 
-  // Extremely short or list-like documents: reuse facts with different blanks/statements.
-  for (let pass = 0; pass < 3 && result.length < 5; pass += 1) {
-    for (const fact of facts) {
-      if (result.length >= 5) break;
-      const question =
-        pass % 2 === 0
-          ? buildKeywordCloze(fact, allConcepts, optionPool, rng, avoidTargets)
-          : buildBoolean(fact, allConcepts, allNumbers, rng, {
-              forceFalse: pass === 1,
-              avoidTargets,
-            });
-      if (!question) continue;
-      if (result.some((item) => item.prompt === question.prompt && item.tag === question.tag)) continue;
-      result.push(question);
-    }
-  }
   return result.slice(0, 5);
 }
 
@@ -1102,7 +1204,11 @@ export function generateChallenge(rawText, options = {}) {
   );
   const allSentences = extractSentences(text);
   const sentences = extractSentences(text, { skipHeading: true });
-  const factSentences = sentences.length ? sentences : allSentences;
+  let factSentences = sentences.length ? sentences : allSentences;
+  if (factSentences.length < 5) {
+    const expanded = clauseFallbackSentences(factSentences);
+    if (expanded.length > factSentences.length) factSentences = expanded;
+  }
   const numbersBySentence = factSentences.map(getNumbers);
   const allNumbers = uniqueBy(
     numbersBySentence.flat().filter((number) => number.length <= 18),
@@ -1112,11 +1218,14 @@ export function generateChallenge(rawText, options = {}) {
     [...concepts, ...extractConcepts(text, locale, 24)],
     (term) => term.toLowerCase()
   );
-  const facts = sentenceRanking(factSentences, concepts, numbersBySentence).slice(0, 9);
-  if (!facts.length) throw new Error('没有找到可用的完整句子。换一段材料试试。');
+  const rankedFacts = sentenceRanking(factSentences, concepts, numbersBySentence).slice(0, 10);
+  if (!rankedFacts.length) throw new Error('没有找到可用的完整句子。换一段材料试试。');
 
   const seed = options.seed != null ? options.seed : hashString(text + title);
   const rng = makeRng(seed);
+  // Shuffle after ranking: the same document should not always produce the
+  // exact same five source sentences.
+  const facts = shuffleFacts(rankedFacts, rng);
   const usedSentenceIds = new Set();
   const avoidTargets = new Set();
   const questions = [];
@@ -1194,7 +1303,7 @@ export function generateChallenge(rawText, options = {}) {
     2,
     5
   );
-  const summaryFact = facts.slice().sort((a, b) => b.score - a.score)[0];
+  const summaryFact = rankedFacts.slice().sort((a, b) => b.score - a.score)[0];
   const readingSeconds = Math.max(20, Math.round(length / 8));
 
   return {
