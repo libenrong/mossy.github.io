@@ -72,6 +72,22 @@ for (const question of listChallenge.questions) {
   }
 }
 
+/* 括号序号 （1）/(1) 与圈号 ① 同样只是结构，不能当考点或答案 */
+const ENUM_DOC = `研发流程如下。（1）先确认需求并记录项目编号。（2）评估技术可行性与整体成本。（3）制定详细的开发计划与里程碑。（4）最后安排人员开始实施并跟踪进度。
+巡检要点：①检查电源连接是否牢固可靠。②核对设备编号是否正确无误。③记录初始读数并对准仪表拍照。④关闭设备电源并填写巡检记录表。`;
+for (let seed = 1; seed <= 12; seed += 1) {
+  const enumChallenge = generateChallenge(ENUM_DOC, { seed });
+  for (const question of enumChallenge.questions) {
+    const haystack = [question.prompt, ...question.options, question.explanation].join('\n');
+    if (/[①-⑳]|[（(]\s*____\s*[）)]/.test(haystack)) {
+      fail('enumeration marker leaked into a question: ' + question.prompt);
+    }
+    if (/^[0-9]{1,3}$/.test(question.correctText || '')) {
+      fail('enumeration index used as answer: ' + question.prompt + ' => ' + question.correctText);
+    }
+  }
+}
+
 /* 挑战链接必须可压缩、可还原 */
 const challenge = generateChallenge(SAMPLE_DOCS[0].content, { seed: 7 });
 challenge.by = '冒烟测试员';

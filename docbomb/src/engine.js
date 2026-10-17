@@ -338,6 +338,41 @@ function isOrdinalNumberAt(sentence, index) {
   return /(?:第|步骤|阶段|环节|序号)\s*$/.test(before);
 }
 
+// List/sequence markers carry no knowledge worth quizzing. They show up as
+// circled digits (①②③), parenthesised indexes ((1)/（一）/【3】), dotted or
+// enumerated prefixes (1. / 1、 / 一、 / 第一步：) and ordinal labels (第X条).
+const CIRCLED_MARKER_RE = /[①-⑳⑴-⒇⒈-⒛]/gu;
+const PAREN_MARKER_RE =
+  /[（(【\[]\s*(?:第\s*)?(?:[0-9０-９]{1,3}(?:[.．]\d+)?|[一二两三四五六七八九十百千]{1,3})\s*(?:步|条|项|章|节|点|阶段|轮|则|关|课|题)?\s*[）)】\]]/gu;
+const LEADING_MARKER_RE =
+  /^\s*第?\s*(?:[0-9０-９]{1,3}(?:[.．]\d+)?|[一二两三四五六七八九十百千]{1,3})\s*(?:步|条|项|章|节|点|阶段|轮|则|关|课|题)?\s*[、.．)）:：](?![0-9０-９])\s*/u;
+
+// Remove enumeration decoration so it never becomes a quiz target or leaks
+// into a prompt. "（1）先备份数据库。" -> "先备份数据库。"
+function stripEnumerationMarkers(sentence) {
+  return String(sentence || '')
+    .replace(CIRCLED_MARKER_RE, ' ')
+    .replace(PAREN_MARKER_RE, ' ')
+    .replace(LEADING_MARKER_RE, '')
+    .replace(/[ \t]{2,}/g, ' ')
+    .trim();
+}
+
+// A number that is really a list index (wrapped in brackets, or trailed by a
+// delimiter like 1. 1、 1）一、). Decimals such as 3.14 are left intact.
+function isEnumerationNumberAt(sentence, index, value) {
+  const text = String(sentence || '');
+  if (index < 0) return false;
+  const before = text[index - 1] || '';
+  const after = text[index + String(value).length] || '';
+  if ('（(【['.includes(before) && '）)】]'.includes(after)) return true;
+  if ('、.．)）:：'.includes(after)) {
+    const next = text[index + String(value).length + 1] || '';
+    if (!/[0-9０-９]/.test(next)) return true;
+  }
+  return false;
+}
+
 function tokenIsUseful(token, locale) {
   const clean = cleanToken(token);
   if (!clean) return false;
@@ -647,9 +682,11 @@ function mutateStatement(sentence, fact, allConcepts, allNumbers, rng, preferred
 function getNumbers(sentence) {
   const arabic = [...sentence.matchAll(NUMBER_RE)]
     .filter((match) => !isOrdinalNumberAt(sentence, match.index))
+    .filter((match) => !isEnumerationNumberAt(sentence, match.index, match[0]))
     .map((match) => match[0].trim());
   const chinese = [...sentence.matchAll(CHINESE_NUMBER_RE)]
     .filter((match) => !isOrdinalNumberAt(sentence, match.index))
+    .filter((match) => !isEnumerationNumberAt(sentence, match.index, match[0]))
     .map((match) => match[0].trim());
   return uniqueBy(
     [...arabic, ...chinese].filter((value) => value.length <= 20),
@@ -709,6 +746,7 @@ function extractSentences(text, options = {}) {
       let sentence = piece.trim();
       if (!sentence) continue;
       sentence = sentence.replace(/[；;]\s*$/, '。');
+      sentence = stripEnumerationMarkers(sentence);
       if (charLength(sentence) < 10) continue;
       if (/^[\s\p{P}\p{S}]+$/u.test(sentence)) continue;
       sentences.push(sentence);
